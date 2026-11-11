@@ -25,13 +25,14 @@ In sviluppo il login usa un issuer OpenID Connect finto (`tools/fake-oidc`), con
 packages/
   domain/          regole di dominio pure, senza dipendenze
   application/     casi d'uso e porte (interfacce verso l'esterno)
-  infrastructure/  adattatori: Postgres (migrazioni SQL in migrations/), coda pg-boss, OIDC, configurazione, log
+  infrastructure/  adattatori: Postgres (migrazioni SQL in migrations/, RLS), coda pg-boss, OIDC, file (BLOB_DIR), estrazione del testo, configurazione, log
   api/             interfaccia HTTP (Hono + OpenAPI), indipendente da Next
 apps/
   web/             Next.js: UI di Studio e montaggio dell'API; composition root del web
   worker/          esegue i lavori in coda; composition root del worker
 tools/
   fake-oidc/       issuer OpenID Connect finto per sviluppo, test e demo (mai in produzione)
+  synthetic/       generatore di documenti sintetici per le demo (`node tools/synthetic/src/cli.ts <cartella>`)
 demo/              una demo per ogni incremento (run.sh + COPIONE.md)
 ```
 Le dipendenze puntano solo verso l'interno:

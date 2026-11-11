@@ -74,11 +74,92 @@
   },
   "placeholder": {
     "ask": "Questions to the project memory arrive with increment 4.",
-    "deliverables": "Deliverables (status reports, client emails…) arrive with increment 5.",
-    "memory": "Document upload and memory arrive with increment 2."
+    "deliverables": "Deliverables (status reports, client emails…) arrive with increment 5."
   },
   "errors": {
     "generic": "Something went wrong. Try again.",
     "sessionExpired": "Session expired: sign in again."
+  },
+  "memory": {
+    "title": "Memory",
+    "subtitle": "Project documents: their extracted text and classification feed Ask and the deliverables.",
+    "dropHere": "Drop files here or",
+    "choose": "choose from your computer",
+    "limits": "PDF, Word, PowerPoint, Excel, text, Markdown, CSV, VTT · up to 50 MB",
+    "uploading": "Uploading {name}…",
+    "uploaded": "{name} uploaded",
+    "empty": "No documents yet: upload the first one.",
+    "columns": {
+      "name": "Document",
+      "kind": "Kind",
+      "audience": "Audience",
+      "date": "Date",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "toConfirm": "to confirm",
+    "dateFrom": "from {source}",
+    "chunks": "{count, plural, =0 {no passages} one {# passage} other {# passages}}",
+    "view": "View text",
+    "delete": "Delete",
+    "deleted": "{name} deleted",
+    "confirmDelete": "Delete {name}? Its text and file are removed.",
+    "textTitle": "Extracted text",
+    "textNote": "First {count} passages, with their place in the document.",
+    "noText": "No text extracted.",
+    "retention": "Documents are deleted automatically after the retention period.",
+    "errors": {
+      "conflict": "The project already holds this file.",
+      "empty": "The file is empty.",
+      "too_large": "The file is over 50 MB.",
+      "invalid_name": "Invalid file name.",
+      "forbidden": "Only the uploader, the owner or an admin can delete it."
+    }
+  },
+  "documentStatus": {
+    "pending": "Processing",
+    "ready": "Ready",
+    "failed": "Unreadable"
+  },
+  "documentKinds": {
+    "status_report": "Status report",
+    "meeting_minutes": "Meeting minutes",
+    "transcript": "Transcript",
+    "contract": "Contract",
+    "contract_deliverables": "Deliverables annex",
+    "purchase_order": "Purchase order",
+    "invoice": "Invoice",
+    "timesheet": "Timesheet",
+    "backlog_export": "Backlog",
+    "economics_export": "Economics",
+    "presentation": "Presentation",
+    "generic": "Generic"
+  },
+  "audiences": {
+    "internal": "Internal",
+    "client": "Client"
+  },
+  "dateSources": {
+    "pm": "PM",
+    "system": "system",
+    "file_name": "file name",
+    "metadata": "metadata",
+    "file_modified": "file date",
+    "acquisition": "upload"
+  },
+  "locators": {
+    "page": "p. {n}",
+    "paragraph": "§ {n}",
+    "slide": "slide {n}",
+    "cell": "{sheet}!{ref}",
+    "line": "lines {from}–{to}"
+  },
+  "extractionWarnings": {
+    "no_text": "no text",
+    "encrypted": "password protected",
+    "truncated": "truncated",
+    "unsupported_format": "unsupported format",
+    "timeout": "timed out",
+    "extraction_failed": "extraction failed"
   }
 }

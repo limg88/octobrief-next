@@ -3,6 +3,7 @@ import { z } from 'zod'
 /** Every background job: its name and the shape of its payload. Payloads never carry secrets. */
 export const JOB_SCHEMAS = {
   'system.ping': z.object({ requestedAt: z.iso.datetime() }),
+  'document.process': z.object({ documentId: z.uuid() }),
 } as const
 
 export type JobName = keyof typeof JOB_SCHEMAS

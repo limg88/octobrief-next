@@ -34,6 +34,9 @@ add_env_key OIDC_ALLOW_INSECURE_ISSUER "true"
 add_env_key OIDC_CLIENT_ID "octobrief-dev"
 add_env_key OIDC_CLIENT_SECRET "$(openssl rand -hex 24)"
 add_env_key ADMIN_EMAILS "alba.amministratrice@example.test"
+# Uploaded files; absolute because web and worker run from different directories.
+add_env_key BLOB_DIR "$(pwd)/.data/blobs"
+add_env_key RETENTION_DAYS "365"
 
 docker compose --env-file .env.local up -d --wait
 

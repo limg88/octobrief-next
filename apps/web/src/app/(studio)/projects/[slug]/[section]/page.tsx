@@ -6,7 +6,7 @@ import { isSection } from '@/components/shell/navigation'
 /** Sections that arrive with later increments: a placeholder that says when. */
 export default async function SectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params
-  if (!isSection(section) || section === 'overview') notFound()
+  if (!isSection(section) || section === 'overview' || section === 'memory') notFound()
   const t = await getTranslations()
   const Icon = SECTION_ICONS[section]
   return (

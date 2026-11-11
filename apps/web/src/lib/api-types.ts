@@ -1,4 +1,14 @@
-import type { Locale, MemberRole, UserRole } from '@octobrief/domain'
+import type {
+  Audience,
+  DateSource,
+  DocumentKind,
+  DocumentStatus,
+  Locale,
+  Locator,
+  MemberRole,
+  Uncertain,
+  UserRole,
+} from '@octobrief/domain'
 
 // Shapes of the JSON responses, as documented in /api/openapi.json.
 
@@ -24,4 +34,28 @@ export interface MemberDto {
   displayName: string
   email: string | null
   role: MemberRole
+}
+
+export interface DocumentDto {
+  id: string
+  fileName: string
+  mediaType: string
+  sizeBytes: number
+  status: DocumentStatus
+  kind: DocumentKind | null
+  audience: Audience | null
+  audienceSource: 'pm' | 'rule' | 'default' | null
+  documentDate: string | null
+  dateSource: DateSource | null
+  uncertain: Uncertain[]
+  warnings: string[]
+  chunkCount: number
+  uploadedBy: string
+  uploaderName: string
+  uploadedAt: string
+}
+
+export interface DocumentTextDto {
+  document: DocumentDto
+  chunks: { locator: Locator; text: string }[]
 }

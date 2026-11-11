@@ -85,6 +85,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 |---|---|
 | 0 | completato (11/11/2026), demo `demo/00-fondamenta` |
 | 1 | completato (11/11/2026), demo `demo/01-accesso-e-shell` |
+| 2a | completato (11/11/2026), demo `demo/02-documenti` |
+| 2b | da fare: pseudonimizzatore, catena LLM (modello finto in demo, `llm-api` opzionale), fatti con citazioni verificate, embeddings, «Cosa ho capito» |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -102,3 +104,25 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Test dei componenti React** con jsdom e Testing Library. Dalla coverage sono esclusi solo:
   - i primitivi shadcn copiati da Studio (`components/ui`);
   - il wiring di Next (route, proxy, configurazione i18n, font).
+
+### Scelte prese durante l'incremento 2a
+- **Incremento 2 diviso in due parti**, ciascuna con la sua demo:
+  - **2a**: documenti (caricamento, estrazione, classificazione, RLS, conservazione);
+  - **2b**: conoscenza (pseudonimizzazione, LLM, fatti con citazioni, embeddings).
+
+  Nelle demo e nei test il modello è finto e deterministico; con una variabile si passa al gateway `llm-api` reale.
+- **Estrazione** portata da NX in `packages/infrastructure/src/extract` (subpath `@octobrief/infrastructure/extract`, usato solo dal worker, così le librerie PDF e zip restano fuori dal bundle web):
+  - gira in un processo figlio con 512 MB di memoria, 60 s di tempo massimo, nessuna variabile d'ambiente e un watchdog;
+  - i formati di template (incremento 5) non sono stati portati.
+- **Classificazione a regole** (portata da NX in `domain`), senza LLM. Calcola:
+  - il tipo, dal tipo di file, dal nome o dall'inizio del testo;
+  - i destinatari, interni di default;
+  - la data, dal nome del file, dai metadati o dalla data di caricamento.
+
+  I campi incerti vanno confermati dal PM. I dati economici restano interni per regola.
+- **RLS attiva** su `documents` e `document_chunks`:
+  - il web esegue ogni query in una transazione con `app.user_id`, quindi vede solo i progetti dove la persona è membro (o tutti, se è admin);
+  - il worker ha una policy propria;
+  - il web può modificare solo i campi della classificazione.
+- **File** in `BLOB_DIR`, un percorso assoluto. Sono indirizzati per contenuto (`<progetto>/<sha256>`), con permessi 0600 e scrittura atomica. Lo stesso contenuto caricato due volte nello stesso progetto dà 409.
+- **Conservazione**: invece di un job pianificato in coda, il worker esegue la pulizia all'avvio e poi ogni ora. Elimina prima i file e poi le righe, così non restano file orfani.

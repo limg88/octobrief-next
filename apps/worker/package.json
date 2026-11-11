@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@octobrief/application": "workspace:*",
-    "@octobrief/infrastructure": "workspace:*"
+    "@octobrief/infrastructure": "workspace:*",
+    "@octobrief/domain": "workspace:*"
   }
 }

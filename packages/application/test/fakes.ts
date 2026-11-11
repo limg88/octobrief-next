@@ -1,4 +1,17 @@
-import type { JobStatus, Locale, MemberRole, Project, ProjectMember, User } from '@octobrief/domain'
+import { createHash, randomUUID } from 'node:crypto'
+import type {
+  Classification,
+  ClassificationState,
+  DocumentSummary,
+  Extraction,
+  JobStatus,
+  Locale,
+  MemberRole,
+  Project,
+  ProjectMember,
+  TextChunk,
+  User,
+} from '@octobrief/domain'
 import { ApplicationError } from '../src/errors.ts'
 import type { JobData, JobName } from '../src/jobs.ts'
 import { JOB_SCHEMAS } from '../src/jobs.ts'
@@ -9,6 +22,12 @@ import type {
   SessionStore,
   UserRepository,
 } from '../src/ports/auth-stores.ts'
+import type { BlobStore } from '../src/ports/blob-store.ts'
+import type {
+  DocumentProcessingStore,
+  DocumentRepository,
+  NewDocument,
+} from '../src/ports/document-repository.ts'
 import type {
   IdentityProvider,
   LoginIdentity,
@@ -17,6 +36,7 @@ import type {
 import type { JobQueue } from '../src/ports/job-queue.ts'
 import type { Logger } from '../src/ports/logger.ts'
 import type { ProjectRepository, ProjectWithRole } from '../src/ports/project-repository.ts'
+import type { TextExtractor } from '../src/ports/text-extractor.ts'
 
 export class InMemoryJobQueue implements JobQueue {
   readonly jobs = new Map<string, { name: JobName; data: unknown; status: JobStatus }>()
@@ -188,5 +208,153 @@ export class InMemoryProjects implements ProjectRepository {
     if (this.roleOf(projectId, userId) !== null) return false
     this.members.push({ projectId, userId, role })
     return true
+  }
+}
+
+export class InMemoryBlobs implements BlobStore {
+  readonly blobs = new Map<string, Uint8Array>()
+  async put(projectId: string, bytes: Uint8Array) {
+    const sha256 = createHash('sha256').update(bytes).digest('hex')
+    const key = `${projectId}/${sha256}`
+    this.blobs.set(key, bytes)
+    return { key, sha256 }
+  }
+  async get(key: string) {
+    const bytes = this.blobs.get(key)
+    if (!bytes) throw new Error('missing blob')
+    return bytes
+  }
+  async delete(key: string) {
+    this.blobs.delete(key)
+  }
+}
+
+export class FakeExtractor implements TextExtractor {
+  private readonly result: (fileName: string) => Extraction
+  constructor(result: (fileName: string) => Extraction) {
+    this.result = result
+  }
+  async extract(_bytes: Uint8Array, _mediaType: string, fileName: string) {
+    return this.result(fileName)
+  }
+}
+
+interface StoredDocument {
+  summary: DocumentSummary
+  blobKey: string
+  chunks: TextChunk[]
+}
+
+/** Both views of the documents table; `visible` stands in for row-level security. */
+export class InMemoryDocuments implements DocumentRepository, DocumentProcessingStore {
+  readonly rows = new Map<string, StoredDocument>()
+  private readonly projects: InMemoryProjects
+  private readonly users: InMemoryUsers
+  constructor(projects: InMemoryProjects, users: InMemoryUsers) {
+    this.projects = projects
+    this.users = users
+  }
+  private visible(viewerId: string, projectId: string): boolean {
+    const admin = [...this.users.bySubject.values()].some(
+      (u) => u.id === viewerId && u.role === 'admin',
+    )
+    return (
+      admin || this.projects.members.some((m) => m.projectId === projectId && m.userId === viewerId)
+    )
+  }
+  private update(id: string, change: Partial<DocumentSummary>, chunks?: TextChunk[]) {
+    const row = this.rows.get(id) as StoredDocument
+    this.rows.set(id, {
+      ...row,
+      summary: { ...row.summary, ...change },
+      chunks: chunks ?? row.chunks,
+    })
+  }
+  async create(viewerId: string, document: NewDocument) {
+    if (!this.visible(viewerId, document.projectId)) throw new Error('row-level security')
+    const duplicate = [...this.rows.values()].some(
+      (r) => r.summary.projectId === document.projectId && r.blobKey === document.blobKey,
+    )
+    if (duplicate) return null
+    const summary: DocumentSummary = {
+      id: randomUUID(),
+      projectId: document.projectId,
+      fileName: document.fileName,
+      mediaType: document.mediaType,
+      sizeBytes: document.sizeBytes,
+      status: 'pending',
+      kind: null,
+      audience: null,
+      audienceSource: null,
+      documentDate: null,
+      dateSource: null,
+      uncertain: [],
+      warnings: [],
+      chunkCount: 0,
+      uploadedBy: document.uploadedBy,
+      uploaderName: document.uploadedBy,
+      uploadedAt: new Date('2026-11-11T10:00:00Z'),
+    }
+    this.rows.set(summary.id, { summary, blobKey: document.blobKey, chunks: [] })
+    return summary
+  }
+  async list(viewerId: string, projectId: string) {
+    if (!this.visible(viewerId, projectId)) return []
+    return [...this.rows.values()]
+      .filter((r) => r.summary.projectId === projectId)
+      .map((r) => r.summary)
+  }
+  async find(viewerId: string, projectId: string, documentId: string) {
+    const row = this.rows.get(documentId)
+    if (!row || row.summary.projectId !== projectId || !this.visible(viewerId, projectId))
+      return null
+    return row.summary
+  }
+  async chunks(_viewerId: string, documentId: string, limit: number) {
+    return (this.rows.get(documentId)?.chunks ?? []).slice(0, limit)
+  }
+  async saveClassification(_viewerId: string, documentId: string, state: ClassificationState) {
+    this.update(documentId, { ...state, uncertain: [...state.uncertain] })
+    return (this.rows.get(documentId) as StoredDocument).summary
+  }
+  async remove(_viewerId: string, documentId: string) {
+    const row = this.rows.get(documentId)
+    this.rows.delete(documentId)
+    return row?.blobKey ?? null
+  }
+  async pending(documentId: string) {
+    const row = this.rows.get(documentId)
+    if (row?.summary.status !== 'pending') return null
+    const { id, fileName, mediaType, uploadedAt } = row.summary
+    return { id, fileName, mediaType, uploadedAt, blobKey: row.blobKey }
+  }
+  async markReady(documentId: string, extraction: Extraction, classification: Classification) {
+    this.update(
+      documentId,
+      {
+        status: 'ready',
+        kind: classification.kind,
+        audience: classification.audience,
+        audienceSource: classification.audienceSource,
+        documentDate: classification.dateOf.date,
+        dateSource: classification.dateOf.source,
+        uncertain: classification.uncertain,
+        warnings: extraction.warnings,
+        chunkCount: extraction.chunks.length,
+      },
+      extraction.chunks,
+    )
+  }
+  async markFailed(documentId: string, extraction: Extraction) {
+    this.update(documentId, { status: 'failed', warnings: extraction.warnings })
+  }
+  async expired(cutoff: Date, limit: number) {
+    return [...this.rows.values()]
+      .filter((r) => r.summary.uploadedAt < cutoff)
+      .slice(0, limit)
+      .map((r) => ({ id: r.summary.id, blobKey: r.blobKey }))
+  }
+  async removeExpired(documentId: string) {
+    this.rows.delete(documentId)
   }
 }

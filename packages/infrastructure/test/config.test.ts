@@ -8,6 +8,7 @@ const WEB_ENV = {
   OIDC_CLIENT_ID: 'client',
   OIDC_CLIENT_SECRET: 'secret-value',
   ADMIN_EMAILS: ' Alba@Example.test, ,bob@example.test',
+  BLOB_DIR: '/var/lib/octobrief/blobs',
 }
 
 describe('web config', () => {
@@ -23,6 +24,11 @@ describe('web config', () => {
       allowInsecureIssuer: false,
     })
     expect([...config.adminEmails]).toEqual(['alba@example.test', 'bob@example.test'])
+    expect(config.blobDir).toBe('/var/lib/octobrief/blobs')
+  })
+
+  it('wants an absolute blob directory', () => {
+    expect(() => loadWebConfig({ ...WEB_ENV, BLOB_DIR: '.data/blobs' })).toThrow(/BLOB_DIR/)
   })
 
   it('allows an insecure issuer on loopback only', () => {
@@ -53,9 +59,19 @@ describe('web config', () => {
 })
 
 describe('worker config', () => {
-  it('reads the worker database URL', () => {
-    const config = loadWorkerConfig({ DATABASE_WORKER_URL: 'postgresql://worker@localhost/db' })
-    expect(config.databaseUrl).toBe('postgresql://worker@localhost/db')
+  const WORKER_ENV = {
+    DATABASE_WORKER_URL: 'postgresql://worker@localhost/db',
+    BLOB_DIR: '/var/lib/octobrief/blobs',
+  }
+
+  it('reads database URL, blob directory and retention with its default', () => {
+    expect(loadWorkerConfig(WORKER_ENV)).toEqual({
+      databaseUrl: 'postgresql://worker@localhost/db',
+      blobDir: '/var/lib/octobrief/blobs',
+      retentionDays: 365,
+    })
+    expect(loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '30' }).retentionDays).toBe(30)
+    expect(() => loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '0' })).toThrow(/RETENTION_DAYS/)
     expect(() => loadWorkerConfig({})).toThrow(/DATABASE_WORKER_URL/)
   })
 })

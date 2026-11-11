@@ -3,6 +3,8 @@ import { type Api, type ApiDependencies, createApi } from '@octobrief/api'
 import {
   createConsoleLogger,
   createDatabaseProbe,
+  createDocumentRepository,
+  createFileBlobStore,
   createLoginAttemptStore,
   createOidcIdentityProvider,
   createPool,
@@ -39,6 +41,8 @@ async function build(): Promise<WebContainer> {
     sessions: createSessionStore(pool),
     loginAttempts: createLoginAttemptStore(pool),
     projects: createProjectRepository(pool),
+    documents: createDocumentRepository(pool),
+    blobs: createFileBlobStore(config.blobDir),
     adminEmails: config.adminEmails,
     logger,
     publicUrl: config.publicUrl,

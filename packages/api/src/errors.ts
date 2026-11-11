@@ -1,5 +1,5 @@
 import { ApplicationError, type ApplicationErrorCode } from '@octobrief/application'
-import { InvalidProjectError } from '@octobrief/domain'
+import { InvalidDocumentError, InvalidProjectError } from '@octobrief/domain'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
@@ -19,6 +19,9 @@ export function handleError(error: Error, c: Context): Response {
   }
   if (error instanceof InvalidProjectError) {
     return c.json({ error: 'invalid', field: error.field }, 400)
+  }
+  if (error instanceof InvalidDocumentError) {
+    return c.json({ error: 'invalid', reason: error.reason }, 400)
   }
   return c.json({ error: 'internal' }, 500)
 }

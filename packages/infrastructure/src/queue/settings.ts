@@ -14,4 +14,6 @@ export interface QueueSettings {
 
 export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
   'system.ping': { retryLimit: 1, retryDelay: 1, expireInSeconds: 60 },
+  // Extraction runs in a child stopped after 60 s; a retry covers a worker restart.
+  'document.process': { retryLimit: 2, retryDelay: 10, expireInSeconds: 300 },
 }

@@ -74,11 +74,92 @@
   },
   "placeholder": {
     "ask": "Le domande alla memoria di progetto arrivano con l'incremento 4.",
-    "deliverables": "I deliverable (SAL, mail al cliente…) arrivano con l'incremento 5.",
-    "memory": "Caricamento documenti e memoria arrivano con l'incremento 2."
+    "deliverables": "I deliverable (SAL, mail al cliente…) arrivano con l'incremento 5."
   },
   "errors": {
     "generic": "Qualcosa è andato storto. Riprova.",
     "sessionExpired": "Sessione scaduta: accedi di nuovo."
+  },
+  "memory": {
+    "title": "Memoria",
+    "subtitle": "Documenti del progetto: il testo estratto e la classificazione alimentano Chiedi e i deliverable.",
+    "dropHere": "Trascina qui i file o",
+    "choose": "scegli dal computer",
+    "limits": "PDF, Word, PowerPoint, Excel, testo, Markdown, CSV, VTT · fino a 50 MB",
+    "uploading": "Caricamento di {name}…",
+    "uploaded": "{name} caricato",
+    "empty": "Nessun documento: carica il primo.",
+    "columns": {
+      "name": "Documento",
+      "kind": "Tipo",
+      "audience": "Destinatari",
+      "date": "Data",
+      "status": "Stato",
+      "actions": "Azioni"
+    },
+    "toConfirm": "da confermare",
+    "dateFrom": "da {source}",
+    "chunks": "{count, plural, =0 {nessun brano} one {# brano} other {# brani}}",
+    "view": "Vedi testo",
+    "delete": "Elimina",
+    "deleted": "{name} eliminato",
+    "confirmDelete": "Eliminare {name}? Testo e file vengono rimossi.",
+    "textTitle": "Testo estratto",
+    "textNote": "Primi {count} brani, con la posizione nel documento.",
+    "noText": "Nessun testo estratto.",
+    "retention": "I documenti vengono eliminati automaticamente dopo il periodo di conservazione.",
+    "errors": {
+      "conflict": "Il progetto contiene già questo file.",
+      "empty": "Il file è vuoto.",
+      "too_large": "Il file supera 50 MB.",
+      "invalid_name": "Nome del file non valido.",
+      "forbidden": "Può eliminarlo solo chi l'ha caricato, il responsabile o un admin."
+    }
+  },
+  "documentStatus": {
+    "pending": "In elaborazione",
+    "ready": "Pronto",
+    "failed": "Non leggibile"
+  },
+  "documentKinds": {
+    "status_report": "SAL / stato avanzamento",
+    "meeting_minutes": "Verbale",
+    "transcript": "Trascrizione",
+    "contract": "Contratto",
+    "contract_deliverables": "Allegato deliverable",
+    "purchase_order": "Ordine",
+    "invoice": "Fattura",
+    "timesheet": "Timesheet",
+    "backlog_export": "Backlog",
+    "economics_export": "Dati economici",
+    "presentation": "Presentazione",
+    "generic": "Generico"
+  },
+  "audiences": {
+    "internal": "Interno",
+    "client": "Cliente"
+  },
+  "dateSources": {
+    "pm": "PM",
+    "system": "sistema",
+    "file_name": "nome del file",
+    "metadata": "metadati",
+    "file_modified": "data del file",
+    "acquisition": "caricamento"
+  },
+  "locators": {
+    "page": "pag. {n}",
+    "paragraph": "§ {n}",
+    "slide": "slide {n}",
+    "cell": "{sheet}!{ref}",
+    "line": "righe {from}–{to}"
+  },
+  "extractionWarnings": {
+    "no_text": "nessun testo",
+    "encrypted": "protetto da password",
+    "truncated": "troncato",
+    "unsupported_format": "formato non supportato",
+    "timeout": "tempo scaduto",
+    "extraction_failed": "estrazione fallita"
   }
 }

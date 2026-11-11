@@ -1,6 +1,7 @@
 import type { ProjectRepository, ProjectWithRole } from '@octobrief/application'
 import type { MemberRole, Project, ProjectMember } from '@octobrief/domain'
 import type pg from 'pg'
+import { inTransaction } from './transaction.ts'
 
 interface ProjectRow {
   id: string
@@ -63,10 +64,8 @@ export function createProjectRepository(pool: pg.Pool): ProjectRepository {
       return new Set(rows.map((row) => row.slug))
     },
 
-    async create(input) {
-      const client = await pool.connect()
-      try {
-        await client.query('BEGIN')
+    create(input) {
+      return inTransaction(pool, async (client) => {
         const { rows } = await client.query<ProjectRow>(
           `INSERT INTO projects AS p (slug, name, client, created_by) VALUES ($1, $2, $3, $4)
            RETURNING ${PROJECT_COLUMNS}`,
@@ -77,14 +76,8 @@ export function createProjectRepository(pool: pg.Pool): ProjectRepository {
           `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, 'owner')`,
           [project.id, input.ownerId],
         )
-        await client.query('COMMIT')
         return project
-      } catch (error) {
-        await client.query('ROLLBACK')
-        throw error
-      } finally {
-        client.release()
-      }
+      })
     },
 
     async listMembers(projectId: string) {
