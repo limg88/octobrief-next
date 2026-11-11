@@ -12,11 +12,13 @@
   "dependencies": {
     "@octobrief/application": "workspace:*",
     "@octobrief/domain": "workspace:*",
+    "openid-client": "6.8.8",
     "pg": "8.23.1",
     "pg-boss": "12.38.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@octobrief/fake-oidc": "workspace:*",
     "@types/pg": "8.23.1"
   }
 }

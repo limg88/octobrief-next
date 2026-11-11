@@ -12,7 +12,7 @@
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
     "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.json",
     "lint": "biome check . && pnpm arch",
-    "arch": "depcruise packages apps --config .dependency-cruiser.cjs",
+    "arch": "depcruise packages apps tools --config .dependency-cruiser.cjs",
     "format": "biome format --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

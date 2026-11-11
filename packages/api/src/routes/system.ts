@@ -2,15 +2,16 @@ import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi'
 import { getPingStatus, requestPing } from '@octobrief/application'
 import { JOB_STATUSES } from '@octobrief/domain'
 import type { ApiDependencies } from '../dependencies.ts'
+import type { ApiEnv } from '../env.ts'
+import { requireAdmin, requireSession } from '../middleware/session.ts'
+import { ErrorSchema } from './schemas.ts'
 
-// Diagnostic routes for the web → queue → worker round trip.
-// TODO(increment 1): restrict to PMO admins once authentication exists.
+// Diagnostic routes for the web → queue → worker round trip; admins only.
 
 const PingAcceptedSchema = z.object({ jobId: z.string() }).openapi('PingAccepted')
 const PingStatusSchema = z
   .object({ jobId: z.string(), status: z.enum(JOB_STATUSES as [string, ...string[]]) })
   .openapi('PingStatus')
-const ErrorSchema = z.object({ error: z.string() }).openapi('Error')
 
 const requestPingRoute = createRoute({
   method: 'post',
@@ -43,7 +44,9 @@ const pingStatusRoute = createRoute({
   },
 })
 
-export function registerSystemRoutes(app: OpenAPIHono, deps: ApiDependencies): void {
+export function registerSystemRoutes(app: OpenAPIHono<ApiEnv>, deps: ApiDependencies): void {
+  app.use('/system/*', requireSession(deps), requireAdmin)
+
   app.openapi(requestPingRoute, async (c) => c.json(await requestPing(deps.queue), 202))
 
   app.openapi(pingStatusRoute, async (c) => {

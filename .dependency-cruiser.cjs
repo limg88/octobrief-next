@@ -31,6 +31,13 @@ module.exports = {
       to: { path: '^(packages/api|apps)/' },
     },
     {
+      name: 'tools-stay-out-of-production',
+      comment: 'development tools (fake issuer, generators) are never imported by shipped code.',
+      severity: 'error',
+      from: { path: '^(packages|apps)/[^/]+/src' },
+      to: { path: '^tools/' },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       from: {},

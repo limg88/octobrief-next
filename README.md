@@ -16,19 +16,22 @@ Requisiti: Node 24, pnpm 12, Docker.
 ```bash
 pnpm install
 pnpm db:setup     # Postgres su 127.0.0.1:5450, ruoli, coda; genera .env.local
-pnpm dev          # web su http://127.0.0.1:3310 + worker
+pnpm dev          # web su http://127.0.0.1:3310, worker e issuer di login finto su :4320
 ```
+In sviluppo il login usa un issuer OpenID Connect finto (`tools/fake-oidc`), con persone sintetiche: Paola (PM), Marco (PM) e Alba (admin). Per passare a Entra ID vedi [docs/roadmap.md](docs/roadmap.md), sezione «Scelte prese durante l'incremento 1».
 
 ## Struttura
 ```
 packages/
   domain/          regole di dominio pure, senza dipendenze
   application/     casi d'uso e porte (interfacce verso l'esterno)
-  infrastructure/  adattatori: Postgres, coda pg-boss, configurazione, log
+  infrastructure/  adattatori: Postgres (migrazioni SQL in migrations/), coda pg-boss, OIDC, configurazione, log
   api/             interfaccia HTTP (Hono + OpenAPI), indipendente da Next
 apps/
-  web/             Next.js: UI e montaggio dell'API; composition root del web
+  web/             Next.js: UI di Studio e montaggio dell'API; composition root del web
   worker/          esegue i lavori in coda; composition root del worker
+tools/
+  fake-oidc/       issuer OpenID Connect finto per sviluppo, test e demo (mai in produzione)
 demo/              una demo per ogni incremento (run.sh + COPIONE.md)
 ```
 Le dipendenze puntano solo verso l'interno:

@@ -26,6 +26,14 @@ add_env_key DATABASE_OWNER_URL "postgres://octobrief_owner:${owner_pw}@127.0.0.1
 add_env_key DATABASE_URL "postgres://octobrief_app:${app_pw}@127.0.0.1:5450/octobrief"
 add_env_key DATABASE_WORKER_URL "postgres://octobrief_worker:${worker_pw}@127.0.0.1:5450/octobrief"
 add_env_key WEB_PORT "3310"
+# Local login against the fake OpenID Connect issuer (tools/fake-oidc). For Entra ID set
+# OIDC_ISSUER=https://login.microsoftonline.com/<tenant>/v2.0 and drop OIDC_ALLOW_INSECURE_ISSUER.
+add_env_key PUBLIC_URL "http://127.0.0.1:3310"
+add_env_key OIDC_ISSUER "http://127.0.0.1:4320"
+add_env_key OIDC_ALLOW_INSECURE_ISSUER "true"
+add_env_key OIDC_CLIENT_ID "octobrief-dev"
+add_env_key OIDC_CLIENT_SECRET "$(openssl rand -hex 24)"
+add_env_key ADMIN_EMAILS "alba.amministratrice@example.test"
 
 docker compose --env-file .env.local up -d --wait
 

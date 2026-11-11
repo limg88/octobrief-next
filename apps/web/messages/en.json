@@ -1,0 +1,84 @@
+{
+  "ui": {
+    "close": "Close",
+    "commandPalette": "Command palette",
+    "searchCommand": "Search for a command to run"
+  },
+  "login": {
+    "title": "Sign in to Octobrief",
+    "subtitle": "The Project Manager co-pilot: project memory and verified deliverables.",
+    "signIn": "Sign in with Microsoft",
+    "failed": "Sign-in failed. Try again; if it keeps happening, tell your administrator."
+  },
+  "shell": {
+    "product": "Octobrief",
+    "chooseProject": "Choose a project",
+    "allProjects": "All projects",
+    "noProjects": "No projects",
+    "search": "Search and commands",
+    "admin": "Admin",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "System",
+    "language": "Language",
+    "signOut": "Sign out",
+    "shortcut": "G then {key}",
+    "projects": "Projects"
+  },
+  "nav": {
+    "overview": "Overview",
+    "ask": "Ask",
+    "deliverables": "Deliverables",
+    "memory": "Memory"
+  },
+  "palette": {
+    "placeholder": "Type a command or search…",
+    "empty": "No results.",
+    "goTo": "Go to",
+    "projects": "Projects",
+    "actions": "Actions",
+    "newProject": "New project",
+    "toggleTheme": "Toggle light/dark theme",
+    "switchLanguage": "Passa all'italiano",
+    "signOut": "Sign out"
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "The projects you are part of.",
+    "subtitleAdmin": "Every project of the organization (you are an administrator).",
+    "empty": "No projects yet. Create one to get started.",
+    "new": "New project",
+    "name": "Project name",
+    "client": "Client (optional)",
+    "create": "Create project",
+    "creating": "Creating…",
+    "created": "Project “{name}” created",
+    "invalidName": "The name is required (at most 120 characters).",
+    "invalidClient": "The client can have at most 120 characters.",
+    "roleOwner": "Owner",
+    "roleMember": "Member",
+    "roleAdmin": "Visible as admin",
+    "createdAt": "Created on {date}",
+    "notFound": "Project not found or not visible."
+  },
+  "members": {
+    "title": "Members",
+    "add": "Add",
+    "email": "Email of a person who has signed in before",
+    "added": "Member added",
+    "notFound": "Nobody with this email has ever signed in.",
+    "conflict": "Already a member of the project.",
+    "forbidden": "Only the owner or an administrator can add members.",
+    "onlyOwners": "Only the project owner or an administrator can add members."
+  },
+  "placeholder": {
+    "ask": "Questions to the project memory arrive with increment 4.",
+    "deliverables": "Deliverables (status reports, client emails…) arrive with increment 5.",
+    "memory": "Document upload and memory arrive with increment 2."
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again.",
+    "sessionExpired": "Session expired: sign in again."
+  }
+}

@@ -84,3 +84,21 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | # | Stato |
 |---|---|
 | 0 | completato (11/11/2026), demo `demo/00-fondamenta` |
+| 1 | completato (11/11/2026), demo `demo/01-accesso-e-shell` |
+
+### Scelte prese durante l'incremento 1
+- **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
+- **RLS rimandata**. Per ora i permessi li controllano i casi d'uso: un progetto non visibile risponde 404, i membri li gestiscono solo responsabile e admin. Le policy RLS arrivano con i dati condivisi (documenti, incremento 2).
+- **Login**:
+  - Il flusso è OpenID Connect con authorization code + PKCE + state + nonce.
+  - La richiesta di login in corso viene salvata sul DB (monouso, 10 minuti).
+  - Le sessioni sono salvate sul DB come hash del token: sono revocabili e durano 8 ore.
+  - Ogni sessione ha un token CSRF, con controllo dell'origine sulle richieste che modificano dati.
+- **Primi admin**: le email elencate in `ADMIN_EMAILS` diventano admin al login, solo se Entra le dichiara verificate. Un admin non viene mai retrocesso in automatico.
+- **Entra ID**: si registra un'app con redirect URI `<PUBLIC_URL>/api/auth/callback`, senza permessi Graph. Poi in `.env.local` si impostano:
+  - `OIDC_ISSUER=https://login.microsoftonline.com/<tenant>/v2.0`;
+  - `OIDC_CLIENT_ID` e `OIDC_CLIENT_SECRET`;
+  - `OIDC_ALLOW_INSECURE_ISSUER=false`.
+- **Test dei componenti React** con jsdom e Testing Library. Dalla coverage sono esclusi solo:
+  - i primitivi shadcn copiati da Studio (`components/ui`);
+  - il wiring di Next (route, proxy, configurazione i18n, font).

@@ -11,7 +11,7 @@
 ```bash
 bash demo/00-fondamenta/run.sh
 ```
-Lo script esegue da solo tutti i passi qui sotto e si ferma con `✔ Demo 00 completata.` Se vuoi lasciare web e worker accesi per aprire il browser, lancia invece `KEEP=1 bash demo/00-fondamenta/run.sh`.
+Lo script esegue da solo i passi 1–6 e si ferma con `✔ Demo 00 completata.` Se vuoi lasciare web e worker accesi per aprire il browser, lancia invece `KEEP=1 bash demo/00-fondamenta/run.sh`.
 
 ## Copione passo per passo
 
@@ -21,10 +21,9 @@ Lo script esegue da solo tutti i passi qui sotto e si ferma con `✔ Demo 00 com
 | 2 | "Un solo comando prepara il database: Postgres 17 con pgvector, tre ruoli distinti (owner, web, worker) e lo schema della coda. Le password sono generate in `.env.local` e non finiscono mai nel repository." | `pnpm db:setup` | `Postgres ready on 127.0.0.1:5450` |
 | 3 | "Avvio web e worker insieme." | `pnpm dev` (in un secondo terminale) | Nel log del worker compare `worker started`; Next risponde su `http://127.0.0.1:3310` |
 | 4 | "Il sistema controlla da solo le sue dipendenze." | `curl -s http://127.0.0.1:3310/api/health` | `{"status":"up","components":[{"name":"database","status":"up"},{"name":"queue","status":"up"}]}` |
-| 5 | "Il web non esegue mai lavoro pesante: lo mette in coda. Lo dimostro con un ping." | `curl -s -X POST http://127.0.0.1:3310/api/system/pings` | `{"jobId":"<uuid>"}`, risposta HTTP 202 |
-| 6 | "Il worker lo prende in carico e lo completa." | `curl -s http://127.0.0.1:3310/api/system/pings/<uuid>` | `"status":"completed"`; nel terminale del worker compare la riga JSON `ping received` con lo stesso `jobId` |
-| 7 | "Il contratto delle API è generato dal codice: frontend e test lo useranno come unica fonte di verità." | Apri `http://127.0.0.1:3310/api/openapi.json` | Tre percorsi: `/api/health`, `/api/system/pings`, `/api/system/pings/{jobId}` |
-| 8 | "La pagina iniziale è provvisoria: la shell di Studio arriva con l'incremento 1." | Apri `http://127.0.0.1:3310` | Stato del sistema `up`, con i due componenti |
+| 5 | "Il web non esegue mai lavoro pesante: lo mette in coda. Lo dimostro con un ping. Dall'incremento 1 la diagnostica è riservata agli admin, quindi lo script entra prima come Alba (admin)." | Lo script fa il login tramite l'issuer finto, poi esegue `POST /api/system/pings` | `Ping accodato: <uuid>` |
+| 6 | "Il worker lo prende in carico e lo completa." | `GET /api/system/pings/<uuid>` | `stato: completed`; nel log del worker compare la riga JSON `ping received` con lo stesso `jobId` |
+| 7 | "Il contratto delle API è generato dal codice: frontend e test lo useranno come unica fonte di verità." | Apri `http://127.0.0.1:3310/api/openapi.json` | I percorsi delle API, tra cui `/api/health` e `/api/system/pings` |
 
 ## Qualità (fuori dalla demo, alla chiusura dell'incremento)
 ```bash

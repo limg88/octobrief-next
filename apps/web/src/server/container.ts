@@ -1,10 +1,14 @@
 import 'server-only'
-import { type Api, createApi } from '@octobrief/api'
-import type { HealthProbe } from '@octobrief/application'
+import { type Api, type ApiDependencies, createApi } from '@octobrief/api'
 import {
   createConsoleLogger,
   createDatabaseProbe,
+  createLoginAttemptStore,
+  createOidcIdentityProvider,
   createPool,
+  createProjectRepository,
+  createSessionStore,
+  createUserRepository,
   loadWebConfig,
   openPgBossQueue,
 } from '@octobrief/infrastructure'
@@ -13,16 +17,35 @@ import {
 
 export interface WebContainer {
   readonly api: Api
-  readonly probes: readonly HealthProbe[]
+  readonly deps: ApiDependencies
 }
+
+const CALLBACK_PATH = '/api/auth/callback'
 
 async function build(): Promise<WebContainer> {
   const config = loadWebConfig()
   const logger = createConsoleLogger('web')
   const pool = createPool(config.databaseUrl, 'octobrief-web')
   const queue = await openPgBossQueue(config.databaseUrl, { supervise: false, logger })
-  const probes = [createDatabaseProbe(pool), queue.probe]
-  return { api: createApi({ probes, queue }), probes }
+  const deps: ApiDependencies = {
+    probes: [createDatabaseProbe(pool), queue.probe],
+    queue,
+    identity: createOidcIdentityProvider({
+      ...config.oidc,
+      callbackUrl: new URL(CALLBACK_PATH, config.publicUrl).toString(),
+      postLogoutUrl: new URL('/login', config.publicUrl).toString(),
+    }),
+    users: createUserRepository(pool),
+    sessions: createSessionStore(pool),
+    loginAttempts: createLoginAttemptStore(pool),
+    projects: createProjectRepository(pool),
+    adminEmails: config.adminEmails,
+    logger,
+    publicUrl: config.publicUrl,
+    secureCookies: config.secureCookies,
+    now: () => new Date(),
+  }
+  return { api: createApi(deps), deps }
 }
 
 // One container per process, kept across dev hot reloads.

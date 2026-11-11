@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - apps/*
+  - tools/*
 
 # Only versions published at least 14 days ago (20160 minutes), transitive ones included.
 minimumReleaseAge: 20160

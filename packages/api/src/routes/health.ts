@@ -1,6 +1,7 @@
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi'
 import { checkHealth } from '@octobrief/application'
 import type { ApiDependencies } from '../dependencies.ts'
+import type { ApiEnv } from '../env.ts'
 
 const HealthStatusSchema = z.enum(['up', 'down'])
 
@@ -28,7 +29,7 @@ const healthRoute = createRoute({
   },
 })
 
-export function registerHealthRoutes(app: OpenAPIHono, deps: ApiDependencies): void {
+export function registerHealthRoutes(app: OpenAPIHono<ApiEnv>, deps: ApiDependencies): void {
   app.openapi(healthRoute, async (c) => {
     const report = await checkHealth(deps.probes)
     const body = { status: report.status, components: [...report.components] }

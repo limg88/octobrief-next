@@ -1,0 +1,84 @@
+{
+  "ui": {
+    "close": "Chiudi",
+    "commandPalette": "Palette dei comandi",
+    "searchCommand": "Cerca un comando da eseguire"
+  },
+  "login": {
+    "title": "Accedi a Octobrief",
+    "subtitle": "Il co-pilota dei Project Manager: memoria di progetto e deliverable verificati.",
+    "signIn": "Accedi con Microsoft",
+    "failed": "Accesso non riuscito. Riprova; se succede ancora, avvisa l'amministratore."
+  },
+  "shell": {
+    "product": "Octobrief",
+    "chooseProject": "Scegli un progetto",
+    "allProjects": "Tutti i progetti",
+    "noProjects": "Nessun progetto",
+    "search": "Cerca e comandi",
+    "admin": "Admin",
+    "theme": "Tema",
+    "themeDark": "Scuro",
+    "themeLight": "Chiaro",
+    "themeSystem": "Sistema",
+    "language": "Lingua",
+    "signOut": "Esci",
+    "shortcut": "G poi {key}",
+    "projects": "Progetti"
+  },
+  "nav": {
+    "overview": "Panoramica",
+    "ask": "Chiedi",
+    "deliverables": "Deliverable",
+    "memory": "Memoria"
+  },
+  "palette": {
+    "placeholder": "Scrivi un comando o cerca…",
+    "empty": "Nessun risultato.",
+    "goTo": "Vai a",
+    "projects": "Progetti",
+    "actions": "Azioni",
+    "newProject": "Nuovo progetto",
+    "toggleTheme": "Cambia tema chiaro/scuro",
+    "switchLanguage": "Switch to English",
+    "signOut": "Esci"
+  },
+  "projects": {
+    "title": "Progetti",
+    "subtitle": "I progetti di cui fai parte.",
+    "subtitleAdmin": "Tutti i progetti dell'organizzazione (sei amministratore).",
+    "empty": "Nessun progetto ancora. Creane uno per iniziare.",
+    "new": "Nuovo progetto",
+    "name": "Nome del progetto",
+    "client": "Cliente (facoltativo)",
+    "create": "Crea progetto",
+    "creating": "Creazione…",
+    "created": "Progetto «{name}» creato",
+    "invalidName": "Il nome è obbligatorio (massimo 120 caratteri).",
+    "invalidClient": "Il cliente può avere al massimo 120 caratteri.",
+    "roleOwner": "Responsabile",
+    "roleMember": "Membro",
+    "roleAdmin": "Visibile come admin",
+    "createdAt": "Creato il {date}",
+    "notFound": "Progetto non trovato o non visibile."
+  },
+  "members": {
+    "title": "Membri",
+    "add": "Aggiungi",
+    "email": "Email di una persona che ha già fatto accesso",
+    "added": "Membro aggiunto",
+    "notFound": "Nessuna persona con questa email ha mai fatto accesso.",
+    "conflict": "È già membro del progetto.",
+    "forbidden": "Solo il responsabile o un amministratore può aggiungere membri.",
+    "onlyOwners": "Solo il responsabile del progetto o un amministratore può aggiungere membri."
+  },
+  "placeholder": {
+    "ask": "Le domande alla memoria di progetto arrivano con l'incremento 4.",
+    "deliverables": "I deliverable (SAL, mail al cliente…) arrivano con l'incremento 5.",
+    "memory": "Caricamento documenti e memoria arrivano con l'incremento 2."
+  },
+  "errors": {
+    "generic": "Qualcosa è andato storto. Riprova.",
+    "sessionExpired": "Sessione scaduta: accedi di nuovo."
+  }
+}
