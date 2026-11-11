@@ -1,0 +1,27 @@
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": false,
+    "superpowers@claude-plugins-official": false,
+    "figma@claude-plugins-official": false,
+    "context7@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "code-review@claude-plugins-official": false,
+    "skill-creator@claude-plugins-official": false,
+    "github@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "claude-code-setup@claude-plugins-official": false,
+    "commit-commands@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": false,
+    "caveman@caveman": false
+  },
+  "permissions": {
+    "deny": [
+      "mcp__rea",
+      "mcp__easel"
+    ]
+  }
+}

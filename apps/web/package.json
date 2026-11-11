@@ -1,0 +1,26 @@
+{
+  "name": "@octobrief/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/with-env.ts next dev",
+    "build": "next build",
+    "start": "node ../../scripts/with-env.ts next start",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@octobrief/api": "workspace:*",
+    "@octobrief/application": "workspace:*",
+    "@octobrief/domain": "workspace:*",
+    "@octobrief/infrastructure": "workspace:*",
+    "next": "16.4.2",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

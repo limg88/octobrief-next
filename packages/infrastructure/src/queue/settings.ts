@@ -1,0 +1,17 @@
+import type { JobName } from '@octobrief/application'
+
+/** The Postgres schema that holds the queue tables. */
+export const QUEUE_SCHEMA = 'pgboss'
+
+/** Roles that use the queue at run time: the web sends jobs, the worker takes them. */
+export const QUEUE_ROLES = ['octobrief_app', 'octobrief_worker'] as const
+
+export interface QueueSettings {
+  readonly retryLimit: number
+  readonly retryDelay: number
+  readonly expireInSeconds: number
+}
+
+export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
+  'system.ping': { retryLimit: 1, retryDelay: 1, expireInSeconds: 60 },
+}

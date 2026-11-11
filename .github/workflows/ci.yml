@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Every action is pinned to a full commit SHA; the comment names its release tag.
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.1-pg17
+        # Bootstrap password, replaced by a random one before any test runs.
+        env:
+          POSTGRES_DB: octobrief
+          POSTGRES_USER: octobrief_owner
+          POSTGRES_PASSWORD: ci-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5450:5432
+        options: >-
+          --health-cmd "pg_isready -U octobrief_owner -d octobrief"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create database roles
+        run: |
+          bootstrap_pw="ci-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}"
+          owner_pw="$(openssl rand -hex 16)"
+          app_pw="$(openssl rand -hex 16)"
+          worker_pw="$(openssl rand -hex 16)"
+          echo "::add-mask::${owner_pw}"
+          echo "::add-mask::${app_pw}"
+          echo "::add-mask::${worker_pw}"
+          echo "ALTER ROLE octobrief_owner PASSWORD :'owner_password';" |
+            PGPASSWORD="${bootstrap_pw}" psql -h 127.0.0.1 -p 5450 -U octobrief_owner -d octobrief \
+              -v ON_ERROR_STOP=1 -v "owner_password=${owner_pw}"
+          echo "DATABASE_OWNER_URL=postgres://octobrief_owner:${owner_pw}@127.0.0.1:5450/octobrief" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgres://octobrief_app:${app_pw}@127.0.0.1:5450/octobrief" >> "$GITHUB_ENV"
+          echo "DATABASE_WORKER_URL=postgres://octobrief_worker:${worker_pw}@127.0.0.1:5450/octobrief" >> "$GITHUB_ENV"
+          PGPASSWORD="${owner_pw}" psql -h 127.0.0.1 -p 5450 -U octobrief_owner -d octobrief \
+            -v ON_ERROR_STOP=1 -v "app_password=${app_pw}" -v "worker_password=${worker_pw}" \
+            -f scripts/db-setup-roles.sql
+      - run: pnpm db:migrate
+      - name: Tests with coverage thresholds (80%)
+        run: pnpm test:coverage
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSfL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/gitleaks"
+          tar -xzf gitleaks.tgz -C "$RUNNER_TEMP/gitleaks" gitleaks
+          rm gitleaks.tgz
+          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
+      - run: gitleaks git --redact --exit-code 1 .
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level high

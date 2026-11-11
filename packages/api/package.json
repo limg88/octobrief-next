@@ -1,0 +1,19 @@
+{
+  "name": "@octobrief/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.6.0",
+    "@octobrief/application": "workspace:*",
+    "@octobrief/domain": "workspace:*",
+    "hono": "^4.13.0",
+    "zod": "4.6.7"
+  }
+}

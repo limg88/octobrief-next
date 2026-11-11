@@ -1,0 +1,15 @@
+node_modules/
+.next/
+coverage/
+dist/
+.tmp/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets and local state: never committed (public repository).
+.env
+.env.*
+!.env.example
+private/
+
+.DS_Store

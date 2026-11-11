@@ -1,0 +1,32 @@
+{
+  "name": "octobrief",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "db:setup": "bash scripts/dev-setup.sh",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
+    "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.json",
+    "lint": "biome check . && pnpm arch",
+    "arch": "depcruise packages apps --config .dependency-cruiser.cjs",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "build": "pnpm --filter @octobrief/web build",
+    "demo:00": "bash demo/00-fondamenta/run.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "5.0.5",
+    "dependency-cruiser": "^18.7.0",
+    "pg": "8.23.1",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
