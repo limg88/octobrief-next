@@ -6,7 +6,7 @@ import {
   isPullSource,
   itemFileName,
   normalizeSourceName,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 describe('sources', () => {
   it('tells the sources the worker reads from those a feeder feeds', () => {

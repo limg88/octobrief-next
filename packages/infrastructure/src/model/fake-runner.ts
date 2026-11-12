@@ -196,18 +196,130 @@ function projectAnswer(request: ModelRequest): unknown {
   return { lang: 'it', segments, contradictions, absences }
 }
 
+/** A value of the document the writer may quote: its label, its text and the notes it cites. */
+interface QuotableValue {
+  section: string
+  label: string
+  text: string
+  notes: number[]
+}
+
+/** What the writer of a recipe asks for: one text of a document, with what the PM wants changed. */
+interface SlotRequest {
+  testo_da_scrivere?: {
+    id?: string
+    nature_ammesse?: string[]
+    massimo_caratteri?: number
+  }
+  documento?: {
+    sezioni?: Array<{
+      id: string
+      blocchi?: Array<{
+        id: string
+        tipo: string
+        etichetta?: string
+        valore?: { testo?: string | null; note?: number[] }
+      }>
+    }>
+  }
+  richiesta_del_pm?: string
+}
+
+/** Sentences one fake text holds at most. */
+const MAX_SLOT_SENTENCES = 2
+const DEFAULT_SLOT_CHARS = 400
+
+function slotRequestOf(request: ModelRequest): SlotRequest {
+  for (const message of request.messages) {
+    if (message.role !== 'user') continue
+    try {
+      const parsed = JSON.parse(message.content) as SlotRequest
+      if (parsed.testo_da_scrivere) return parsed
+    } catch {
+      // Not the request of a text: a note of the engine.
+    }
+  }
+  return {}
+}
+
+/** The values of the document that carry a text and a note, those of the text's section first. */
+function quotableValues(slot: SlotRequest): QuotableValue[] {
+  const slotId = slot.testo_da_scrivere?.id
+  const sections = slot.documento?.sezioni ?? []
+  const own = sections.find((section) => section.blocchi?.some((block) => block.id === slotId))
+  const ordered = own ? [own, ...sections.filter((section) => section !== own)] : sections
+  return ordered.flatMap((section) =>
+    (section.blocchi ?? []).flatMap((block) => {
+      const text = block.valore?.testo
+      const notes = block.valore?.note ?? []
+      return block.tipo === 'valore' && block.etichetta && text && notes.length > 0
+        ? [{ section: section.id, label: block.etichetta, text, notes }]
+        : []
+    }),
+  )
+}
+
+/** Whether the text asked for is the first one the document has. */
+function isFirstText(slot: SlotRequest): boolean {
+  const blocks = (slot.documento?.sezioni ?? []).flatMap((section) => section.blocchi ?? [])
+  return (
+    blocks.find((block) => block.tipo === 'testo_da_scrivere')?.id === slot.testo_da_scrivere?.id
+  )
+}
+
+/**
+ * A text of a document, written only with values the document already holds, each quoted as it
+ * is and citing its note: nothing the checks could find unsupported. When the PM asked for a
+ * change the text quotes the following values instead: enough to see a revision replace a text.
+ */
+function slotText(request: ModelRequest, options: FakeRunnerOptions): unknown {
+  const slot = slotRequestOf(request)
+  const maxChars = slot.testo_da_scrivere?.massimo_caratteri ?? DEFAULT_SLOT_CHARS
+  const natures = slot.testo_da_scrivere?.nature_ammesse ?? ['fact']
+  const nature = natures.includes('fact') ? 'fact' : (natures[0] ?? 'fact')
+  const values = quotableValues(slot)
+  const from = slot.richiesta_del_pm && values.length > 1 ? 1 : 0
+  const segments: Array<{ text: string; nature: string; sources: Array<{ note: number }> }> = []
+  const invented = INVENTED_SENTENCE.trim()
+  const invents = options.inventInDrafts === true && !slot.richiesta_del_pm && isFirstText(slot)
+  // The invented figure takes its room first: the text never passes its limit.
+  let length = invents ? invented.length + 1 : 0
+  for (const value of [...values.slice(from), ...values.slice(0, from)]) {
+    const text = `${value.label}: ${value.text.replace(/[.!?]+$/u, '')}.`
+    if (segments.length === MAX_SLOT_SENTENCES || length + text.length + 1 > maxChars) continue
+    segments.push({ text, nature, sources: value.notes.map((note) => ({ note })) })
+    length += text.length + 1
+  }
+  if (invents) segments.push({ text: invented, nature, sources: [] })
+  const absences =
+    segments.length > 0
+      ? []
+      : [
+          {
+            question: 'Quali informazioni deve riportare questo testo?',
+            proposal: 'Indica i fatti da comunicare nei parametri del documento.',
+          },
+        ]
+  return { lang: 'it', segments, absences, internalNotes: [] }
+}
+
 /** What the fake model answers, by the name of the response schema of the request. */
-const SKILLS: Readonly<Record<string, (request: ModelRequest) => unknown>> = {
+const SKILLS: Readonly<
+  Record<string, (request: ModelRequest, options: FakeRunnerOptions) => unknown>
+> = {
   compiled_facts: (request) => {
     const data = request.messages.find((message) => message.role === 'user')
     return data?.content ? compiledFacts(data.content) : {}
   },
   project_answer: projectAnswer,
+  slot_text: slotText,
+  // The fake reviewer finds nothing: the deterministic gates do the checking.
+  draft_review: () => ({ findings: [] }),
 }
 
-function answer(request: ModelRequest): string {
+function answer(request: ModelRequest, options: FakeRunnerOptions): string {
   const skill = SKILLS[request.responseSchema?.name ?? '']
-  return JSON.stringify(skill ? skill(request) : {})
+  return JSON.stringify(skill ? skill(request, options) : {})
 }
 
 /**
@@ -216,7 +328,9 @@ function answer(request: ModelRequest): string {
  */
 function toolTurn(request: ModelRequest): ModelResponse {
   const searched = request.messages.some((message) => message.role === 'tool')
-  const canSearch = request.tools?.some((tool) => tool.name === SEARCH_TOOL) === true
+  // Only a question is searched for: the writer of a recipe already has its data.
+  const canSearch =
+    questionOf(request) !== '' && request.tools?.some((tool) => tool.name === SEARCH_TOOL) === true
   const usage = { inputTokens: 0, outputTokens: 0 }
   if (searched || !canSearch) {
     return {
@@ -271,6 +385,11 @@ export function fakeEmbedding(text: string): number[] {
 export interface FakeRunnerOptions {
   /** A file where every request is appended as one JSON line, as the model received it. */
   readonly transcriptPath?: string | undefined
+  /**
+   * Makes the first text of a first draft carry a figure no source holds: the way to see,
+   * without a real model, an anomaly found, a change asked and the anomaly gone.
+   */
+  readonly inventInDrafts?: boolean | undefined
 }
 
 const TRANSCRIPT_MODE = 0o600
@@ -289,7 +408,7 @@ export function fakeRunner(options: FakeRunnerOptions = {}): ModelRunner {
       record({ kind: 'chat', messages: request.messages })
       if (request.tools?.length) return toolTurn(request)
       return {
-        message: { role: 'assistant', content: answer(request) },
+        message: { role: 'assistant', content: answer(request, options) },
         finishReason: 'stop',
         usage: { inputTokens: 0, outputTokens: 0 },
         backend: FAKE_BACKEND,

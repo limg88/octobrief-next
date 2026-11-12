@@ -10,6 +10,7 @@ const WEB_ENV = {
   ADMIN_EMAILS: ' Alba@Example.test, ,bob@example.test',
   BLOB_DIR: '/var/lib/octobrief/blobs',
   SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  RECIPES_DIR: '/srv/octobrief/recipes',
 }
 
 describe('web config', () => {
@@ -64,6 +65,8 @@ describe('worker config', () => {
     DATABASE_WORKER_URL: 'postgresql://worker@localhost/db',
     BLOB_DIR: '/var/lib/octobrief/blobs',
     SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    RECIPES_DIR: '/srv/octobrief/recipes',
+    TEMPLATES_DIR: '/srv/octobrief/templates',
   }
 
   it('reads database URL, blob directory and retention with its default', () => {
@@ -73,6 +76,8 @@ describe('worker config', () => {
       retentionDays: 365,
       model: { chat: { backend: 'fake' }, embedding: { backend: 'fake' } },
       syncIntervalMinutes: 15,
+      recipesDir: '/srv/octobrief/recipes',
+      templatesDir: '/srv/octobrief/templates',
       sources: { secretsKey: expect.objectContaining({ version: 1 }), devEndpoints: {} },
     })
     expect(loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '30' }).retentionDays).toBe(30)

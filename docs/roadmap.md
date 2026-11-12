@@ -89,7 +89,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 2b | completato (12/11/2026), demo `demo/03-conoscenza` |
 | 3 | completato (12/11/2026), demo `demo/04-fonti` |
 | 4 | completato (12/11/2026), demo `demo/05-chiedi` |
-| 5 | da fare |
+| 5 | completato (12/11/2026), demo `demo/06-deliverable` |
+| 6 | da fare |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -183,3 +184,28 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Non portati da NX**: limiti di sessione per backend e soglie di freschezza per progetto.
 - **E2E**: `pnpm e2e` (Playwright + axe) copre login, creazione progetto, caricamento, «Cosa ho capito» e Chiedi; in CI gira in un job dedicato.
 - **Modello finto**: cerca una volta con la domanda e risponde citando i brani e i fatti che ne condividono le parole. Con `#inventa` aggiunge un numero mai letto, per mostrare il controllo.
+
+### Scelte prese durante l'incremento 5
+- **Motore portato per intero da NX**: formato delle ricette, raccolta dei dati, scheletro, scrittura dei testi, controlli comuni e della ricetta, red-team, versione per il cliente, approvazione. Sono circa 17.000 righe con i loro test.
+- **Ricette**: file JSON in `recipes/` (cartella `RECIPES_DIR`), validati all'avvio; una ricetta non valida blocca l'avvio.
+  - Ci sono tutte le otto ricette di NX: SAL economico, Mail al cliente, Verbale da trascritto, Stima dei costi, Dashboard bug e CR, Closing Status, Deliverable Sprint, Deliverable di fase assessment.
+  - Non c'è ancora la modifica delle ricette dall'interfaccia, né la configurazione per progetto (template, etichette, valori predefiniti).
+- **Ciclo di vita di un documento**: in coda → in preparazione (raccolta, scrittura, controllo) → da rivedere → approvato.
+  - **Chiedi modifica**: riscrive solo i testi indicati; la revisione è tenuta solo se non cambia altro e non aggiunge anomalie.
+  - **Accetta**: solo le anomalie che il motore dichiara accettabili, con una motivazione di almeno una frase.
+  - **Approva**: rifiutata finché resta un'anomalia aperta. Possono decidere chi ha chiesto il documento, il responsabile del progetto e gli admin.
+- **File**:
+  - Markdown scritto dal sistema;
+  - Word, PowerPoint ed Excel prodotti dal **renderer Python isolato** (`apps/renderer`, portato da NX con i suoi 465 test) a partire dai template in `templates/` (`TEMPLATES_DIR`);
+  - senza `RENDERER_URL` si producono solo i Markdown;
+  - una ricetta per il cliente produce solo la versione per il cliente, calcolata dai controlli di destinazione.
+- **Renderer in Docker Compose** sotto il profilo `renderer`: rete interna senza uscita, utente non root, file system in sola lettura. Si avvia solo quando serve: `docker compose --profile renderer up -d --wait`.
+- **Non portati da NX**:
+  - ciclo automatico di revisione dopo la prima bozza;
+  - tetti di spesa e prezzi dei modelli (qui solo i limiti predefiniti di chiamate e durata);
+  - valori dichiarati dal PM in documenti precedenti;
+  - decisioni del PM sulle contraddizioni;
+  - conferme degli story point.
+- **Eccezioni alle regole di architettura**, limitate al nucleo portato (`packages/domain/src/recipe` e `gate`): può avere cicli di import interni; i due moduli di hashing usano `node:crypto`. Per questo il nucleo è esportato a parte (`@octobrief/domain/recipe`) e non entra nel bundle del browser.
+- **Modello finto**: scrive ogni testo citando valori già presenti nel documento con le loro note. Con `LLM_FAKE_INVENT_IN_DRAFTS=true` mette una cifra senza fonte nel primo testo della prima bozza (solo per le demo).
+- **Dati del warehouse nelle ricette**: le righe DWSI sono lette, ma il collegamento fra righe e documento di origine è semplificato (il documento più recente della fonte). Da rivedere quando ci sarà un warehouse reale.

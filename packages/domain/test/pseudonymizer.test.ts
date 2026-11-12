@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_DICTIONARY_PEOPLE, PeopleMatcher, Pseudonymizer } from '../src/index.ts'
+import { MAX_DICTIONARY_PEOPLE, PeopleMatcher, Pseudonymizer } from '../src/recipe/index.ts'
 import { growthSlope, HANG_GUARD_MS, MAX_GROWTH_SLOPE, TIMING_TEST_TIMEOUT_MS } from './timing.ts'
 
 const people = [{ displayName: 'Mario Rossi', email: 'mario.rossi@example.com' }]

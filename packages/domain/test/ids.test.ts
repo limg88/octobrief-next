@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DomainError, newId, type ProjectId, parseId } from '../src/index.ts'
+import { DomainError, newId, type ProjectId, parseId } from '../src/recipe/index.ts'
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 

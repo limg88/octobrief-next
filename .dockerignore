@@ -1,0 +1,15 @@
+# Only what the renderer image needs leaves the repository: never node_modules, .env files or data.
+*
+!apps/renderer/requirements.txt
+!apps/renderer/requirements-dev.txt
+!apps/renderer/pyproject.toml
+!apps/renderer/renderer
+!apps/renderer/tests
+!apps/renderer/fixtures
+!packages/domain/schemas/octobrief.document-1.schema.json
+!packages/domain/schemas/formula-functions.json
+!packages/domain/test/fixtures/formulas.json
+!packages/domain/test/fixtures/render
+!templates
+**/__pycache__
+**/*.pyc

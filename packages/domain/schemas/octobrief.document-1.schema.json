@@ -1,0 +1,1636 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "octobrief.document/1"
+        },
+        "recipe": {
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": ["slug", "version", "title"],
+          "additionalProperties": false
+        },
+        "lang": {
+          "type": "string",
+          "enum": ["it"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "header": {
+          "type": "object",
+          "properties": {
+            "dataAsOf": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": ["dataAsOf", "generatedAt"],
+          "additionalProperties": false
+        },
+        "audience": {
+          "type": "string",
+          "const": "internal"
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "version": {
+                "type": "string",
+                "enum": ["internal", "client", "both"]
+              },
+              "notDeduced": {
+                "type": "boolean"
+              },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "segments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string",
+                                "maxLength": 20000
+                              },
+                              "nature": {
+                                "type": "string",
+                                "enum": ["fact", "inference", "suggestion"]
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              },
+                              "sources": {
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "sourceCategories": {
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "contract_amounts",
+                                    "invoiced_amounts",
+                                    "costs",
+                                    "margins",
+                                    "rates",
+                                    "estimates",
+                                    "hours",
+                                    "story_points",
+                                    "personal",
+                                    "other"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "text",
+                              "nature",
+                              "category",
+                              "sources",
+                              "sourceCategories"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["kind", "id", "segments", "notDeduced"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "list"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "columns": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "required": ["id", "title", "category"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "text": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 2000
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "category": {
+                                      "type": "string",
+                                      "enum": [
+                                        "contract_amounts",
+                                        "invoiced_amounts",
+                                        "costs",
+                                        "margins",
+                                        "rates",
+                                        "estimates",
+                                        "hours",
+                                        "story_points",
+                                        "personal",
+                                        "other"
+                                      ]
+                                    },
+                                    "operandCategories": {
+                                      "minItems": 1,
+                                      "maxItems": 10,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "enum": [
+                                          "contract_amounts",
+                                          "invoiced_amounts",
+                                          "costs",
+                                          "margins",
+                                          "rates",
+                                          "estimates",
+                                          "hours",
+                                          "story_points",
+                                          "personal",
+                                          "other"
+                                        ]
+                                      }
+                                    },
+                                    "sources": {
+                                      "maxItems": 20,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    }
+                                  },
+                                  "required": ["text", "category", "operandCategories", "sources"],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": ["key", "cells"],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": ["kind", "id", "columns", "notDeduced", "items"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "table"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "columns": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "required": ["id", "title", "category"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "text": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 2000
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "category": {
+                                      "type": "string",
+                                      "enum": [
+                                        "contract_amounts",
+                                        "invoiced_amounts",
+                                        "costs",
+                                        "margins",
+                                        "rates",
+                                        "estimates",
+                                        "hours",
+                                        "story_points",
+                                        "personal",
+                                        "other"
+                                      ]
+                                    },
+                                    "operandCategories": {
+                                      "minItems": 1,
+                                      "maxItems": 10,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "enum": [
+                                          "contract_amounts",
+                                          "invoiced_amounts",
+                                          "costs",
+                                          "margins",
+                                          "rates",
+                                          "estimates",
+                                          "hours",
+                                          "story_points",
+                                          "personal",
+                                          "other"
+                                        ]
+                                      }
+                                    },
+                                    "sources": {
+                                      "maxItems": 20,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    }
+                                  },
+                                  "required": ["text", "category", "operandCategories", "sources"],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": ["key", "cells"],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": ["kind", "id", "columns", "notDeduced", "rows"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "value"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "cell": {
+                          "type": "object",
+                          "properties": {
+                            "text": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "category": {
+                              "type": "string",
+                              "enum": [
+                                "contract_amounts",
+                                "invoiced_amounts",
+                                "costs",
+                                "margins",
+                                "rates",
+                                "estimates",
+                                "hours",
+                                "story_points",
+                                "personal",
+                                "other"
+                              ]
+                            },
+                            "operandCategories": {
+                              "minItems": 1,
+                              "maxItems": 10,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "sources": {
+                              "maxItems": 20,
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            }
+                          },
+                          "required": ["text", "category", "operandCategories", "sources"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": ["kind", "id", "label", "cell"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "static"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        }
+                      },
+                      "required": ["kind", "id", "text"],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            },
+            "required": ["id", "title", "version", "notDeduced", "blocks"],
+            "additionalProperties": false
+          }
+        },
+        "sourceNotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "n": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "dataAsOf": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ref": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "evidence"
+                      },
+                      "evidenceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "locator": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "page"
+                              },
+                              "page": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": ["kind", "page"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "paragraph"
+                              },
+                              "index": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": ["kind", "index"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "slide"
+                              },
+                              "slide": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": ["kind", "slide"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "cell"
+                              },
+                              "sheet": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ref": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["kind", "sheet", "ref"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "line"
+                              },
+                              "from": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              },
+                              "to": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": ["kind", "from", "to"],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["kind", "evidenceId", "locator"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "work_item"
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      },
+                      "field": {
+                        "type": "string",
+                        "enum": [
+                          "summary",
+                          "type",
+                          "state",
+                          "sprint",
+                          "iteration",
+                          "area",
+                          "assignee",
+                          "story_points",
+                          "priority",
+                          "created",
+                          "changed",
+                          "closed",
+                          "due",
+                          "parent",
+                          "tags"
+                        ]
+                      }
+                    },
+                    "required": ["kind", "sourceId", "id"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "work_item_counts"
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "query": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "required": ["kind", "sourceId", "query"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "system_row"
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "view": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "key": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "column": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "value": {
+                              "type": "string",
+                              "maxLength": 1000
+                            }
+                          },
+                          "required": ["column", "value"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "columns": {
+                        "minItems": 1,
+                        "maxItems": 50,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      }
+                    },
+                    "required": ["kind", "sourceId", "view", "key"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "fact"
+                      },
+                      "factId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "required": ["kind", "factId"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "parameter"
+                      },
+                      "parameterId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "evidenceIds": {
+                        "minItems": 1,
+                        "maxItems": 200,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      }
+                    },
+                    "required": ["kind", "parameterId"],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": ["n", "label", "dataAsOf", "ref"],
+            "additionalProperties": false
+          }
+        },
+        "internalNotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 20000
+              },
+              "nature": {
+                "type": "string",
+                "enum": ["fact", "inference", "suggestion"]
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "contract_amounts",
+                  "invoiced_amounts",
+                  "costs",
+                  "margins",
+                  "rates",
+                  "estimates",
+                  "hours",
+                  "story_points",
+                  "personal",
+                  "other"
+                ]
+              },
+              "sources": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "sourceCategories": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "contract_amounts",
+                    "invoiced_amounts",
+                    "costs",
+                    "margins",
+                    "rates",
+                    "estimates",
+                    "hours",
+                    "story_points",
+                    "personal",
+                    "other"
+                  ]
+                }
+              }
+            },
+            "required": ["text", "nature", "category", "sources", "sourceCategories"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "recipe",
+        "lang",
+        "title",
+        "header",
+        "audience",
+        "sections",
+        "sourceNotes",
+        "internalNotes"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "octobrief.document/1"
+        },
+        "recipe": {
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": ["slug", "version", "title"],
+          "additionalProperties": false
+        },
+        "lang": {
+          "type": "string",
+          "enum": ["it"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "header": {
+          "type": "object",
+          "properties": {
+            "dataAsOf": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": ["dataAsOf", "generatedAt"],
+          "additionalProperties": false
+        },
+        "audience": {
+          "type": "string",
+          "const": "client"
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "version": {
+                "type": "string",
+                "enum": ["internal", "client", "both"]
+              },
+              "notDeduced": {
+                "type": "boolean"
+              },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "segments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string",
+                                "maxLength": 20000
+                              },
+                              "nature": {
+                                "type": "string",
+                                "enum": ["fact", "inference", "suggestion"]
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              },
+                              "sources": {
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "sourceCategories": {
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "contract_amounts",
+                                    "invoiced_amounts",
+                                    "costs",
+                                    "margins",
+                                    "rates",
+                                    "estimates",
+                                    "hours",
+                                    "story_points",
+                                    "personal",
+                                    "other"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "text",
+                              "nature",
+                              "category",
+                              "sources",
+                              "sourceCategories"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["kind", "id", "segments", "notDeduced"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "list"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "columns": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "required": ["id", "title", "category"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "text": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 2000
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "category": {
+                                      "type": "string",
+                                      "enum": [
+                                        "contract_amounts",
+                                        "invoiced_amounts",
+                                        "costs",
+                                        "margins",
+                                        "rates",
+                                        "estimates",
+                                        "hours",
+                                        "story_points",
+                                        "personal",
+                                        "other"
+                                      ]
+                                    },
+                                    "operandCategories": {
+                                      "minItems": 1,
+                                      "maxItems": 10,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "enum": [
+                                          "contract_amounts",
+                                          "invoiced_amounts",
+                                          "costs",
+                                          "margins",
+                                          "rates",
+                                          "estimates",
+                                          "hours",
+                                          "story_points",
+                                          "personal",
+                                          "other"
+                                        ]
+                                      }
+                                    },
+                                    "sources": {
+                                      "maxItems": 20,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    }
+                                  },
+                                  "required": ["text", "category", "operandCategories", "sources"],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": ["key", "cells"],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": ["kind", "id", "columns", "notDeduced", "items"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "table"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "columns": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "required": ["id", "title", "category"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "notDeduced": {
+                          "type": "boolean"
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1000
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "text": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 2000
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "category": {
+                                      "type": "string",
+                                      "enum": [
+                                        "contract_amounts",
+                                        "invoiced_amounts",
+                                        "costs",
+                                        "margins",
+                                        "rates",
+                                        "estimates",
+                                        "hours",
+                                        "story_points",
+                                        "personal",
+                                        "other"
+                                      ]
+                                    },
+                                    "operandCategories": {
+                                      "minItems": 1,
+                                      "maxItems": 10,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "enum": [
+                                          "contract_amounts",
+                                          "invoiced_amounts",
+                                          "costs",
+                                          "margins",
+                                          "rates",
+                                          "estimates",
+                                          "hours",
+                                          "story_points",
+                                          "personal",
+                                          "other"
+                                        ]
+                                      }
+                                    },
+                                    "sources": {
+                                      "maxItems": 20,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    }
+                                  },
+                                  "required": ["text", "category", "operandCategories", "sources"],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": ["key", "cells"],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": ["kind", "id", "columns", "notDeduced", "rows"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "value"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "cell": {
+                          "type": "object",
+                          "properties": {
+                            "text": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "category": {
+                              "type": "string",
+                              "enum": [
+                                "contract_amounts",
+                                "invoiced_amounts",
+                                "costs",
+                                "margins",
+                                "rates",
+                                "estimates",
+                                "hours",
+                                "story_points",
+                                "personal",
+                                "other"
+                              ]
+                            },
+                            "operandCategories": {
+                              "minItems": 1,
+                              "maxItems": 10,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "contract_amounts",
+                                  "invoiced_amounts",
+                                  "costs",
+                                  "margins",
+                                  "rates",
+                                  "estimates",
+                                  "hours",
+                                  "story_points",
+                                  "personal",
+                                  "other"
+                                ]
+                              }
+                            },
+                            "sources": {
+                              "maxItems": 20,
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            }
+                          },
+                          "required": ["text", "category", "operandCategories", "sources"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": ["kind", "id", "label", "cell"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "static"
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        }
+                      },
+                      "required": ["kind", "id", "text"],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            },
+            "required": ["id", "title", "version", "notDeduced", "blocks"],
+            "additionalProperties": false
+          }
+        },
+        "sourceNotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "n": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "dataAsOf": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["n", "label", "dataAsOf"],
+            "additionalProperties": false
+          }
+        },
+        "internalNotes": {
+          "maxItems": 0,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 20000
+              },
+              "nature": {
+                "type": "string",
+                "enum": ["fact", "inference", "suggestion"]
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "contract_amounts",
+                  "invoiced_amounts",
+                  "costs",
+                  "margins",
+                  "rates",
+                  "estimates",
+                  "hours",
+                  "story_points",
+                  "personal",
+                  "other"
+                ]
+              },
+              "sources": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "sourceCategories": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "contract_amounts",
+                    "invoiced_amounts",
+                    "costs",
+                    "margins",
+                    "rates",
+                    "estimates",
+                    "hours",
+                    "story_points",
+                    "personal",
+                    "other"
+                  ]
+                }
+              }
+            },
+            "required": ["text", "nature", "category", "sources", "sourceCategories"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "recipe",
+        "lang",
+        "title",
+        "header",
+        "audience",
+        "sections",
+        "sourceNotes",
+        "internalNotes"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -22,4 +22,8 @@ export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
   'source.sync': { retryLimit: 0, retryDelay: 1, expireInSeconds: 1800 },
   // A failed answer is recorded on the question: the PM asks again.
   'question.answer': { retryLimit: 0, retryDelay: 1, expireInSeconds: 900 },
+  // A failed run, revision or render is recorded on the run: the PM decides what to do next.
+  'deliverable.run': { retryLimit: 0, retryDelay: 1, expireInSeconds: 3600 },
+  'deliverable.revise': { retryLimit: 0, retryDelay: 1, expireInSeconds: 1800 },
+  'deliverable.render': { retryLimit: 1, retryDelay: 10, expireInSeconds: 600 },
 }

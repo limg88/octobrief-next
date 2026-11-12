@@ -1,0 +1,122 @@
+{
+  "description": "Documents that neither the core nor the renderer accepts.",
+  "cases": [
+    {
+      "description": "a client document with an internal note",
+      "document": {
+        "schema": "octobrief.document/1",
+        "recipe": { "slug": "sal-economico", "version": "1.0.0", "title": "SAL economico" },
+        "audience": "client",
+        "lang": "it",
+        "title": "SAL",
+        "header": { "dataAsOf": null, "generatedAt": "2026-11-06T09:30:00.000Z" },
+        "sections": [],
+        "sourceNotes": [],
+        "internalNotes": [
+          {
+            "text": "Margine basso.",
+            "nature": "fact",
+            "category": "margins",
+            "sources": [],
+            "sourceCategories": []
+          }
+        ]
+      }
+    },
+    {
+      "description": "a client document whose source note cites a place",
+      "document": {
+        "schema": "octobrief.document/1",
+        "recipe": { "slug": "sal-economico", "version": "1.0.0", "title": "SAL economico" },
+        "audience": "client",
+        "lang": "it",
+        "title": "SAL",
+        "header": { "dataAsOf": null, "generatedAt": "2026-11-06T09:30:00.000Z" },
+        "sections": [],
+        "sourceNotes": [
+          {
+            "n": 1,
+            "label": "Offerta interna",
+            "dataAsOf": null,
+            "ref": { "kind": "fact", "factId": "f-1" }
+          }
+        ],
+        "internalNotes": []
+      }
+    },
+    {
+      "description": "a section with a property the model does not know",
+      "document": {
+        "schema": "octobrief.document/1",
+        "recipe": { "slug": "stato-progetto", "version": "1.0.0", "title": "Stato" },
+        "audience": "internal",
+        "lang": "it",
+        "title": "Stato",
+        "header": { "dataAsOf": null, "generatedAt": "2026-11-06T09:30:00.000Z" },
+        "sections": [
+          {
+            "id": "s",
+            "title": "Sintesi",
+            "version": "both",
+            "notDeduced": false,
+            "blocks": [],
+            "path": "/tmp/x"
+          }
+        ],
+        "sourceNotes": [],
+        "internalNotes": []
+      }
+    },
+    {
+      "description": "a segment with fewer categories than cited sources",
+      "document": {
+        "schema": "octobrief.document/1",
+        "recipe": { "slug": "stato-progetto", "version": "1.0.0", "title": "Stato" },
+        "audience": "internal",
+        "lang": "it",
+        "title": "Stato",
+        "header": { "dataAsOf": null, "generatedAt": "2026-11-06T09:30:00.000Z" },
+        "sections": [
+          {
+            "id": "s",
+            "title": "Sintesi",
+            "version": "both",
+            "notDeduced": false,
+            "blocks": [
+              {
+                "kind": "text",
+                "id": "t",
+                "segments": [
+                  {
+                    "text": "Chiusi 3.",
+                    "nature": "fact",
+                    "category": "other",
+                    "sources": [1, 2],
+                    "sourceCategories": ["other"]
+                  }
+                ],
+                "notDeduced": false
+              }
+            ]
+          }
+        ],
+        "sourceNotes": [],
+        "internalNotes": []
+      }
+    },
+    {
+      "description": "a document of another schema",
+      "document": {
+        "schema": "octobrief.document/2",
+        "recipe": { "slug": "stato-progetto", "version": "1.0.0", "title": "Stato" },
+        "audience": "internal",
+        "lang": "it",
+        "title": "Stato",
+        "header": { "dataAsOf": null, "generatedAt": "2026-11-06T09:30:00.000Z" },
+        "sections": [],
+        "sourceNotes": [],
+        "internalNotes": []
+      }
+    }
+  ]
+}

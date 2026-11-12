@@ -73,9 +73,6 @@
     "forbidden": "Only the owner or an administrator can add members.",
     "onlyOwners": "Only the project owner or an administrator can add members."
   },
-  "placeholder": {
-    "deliverables": "Deliverables (status reports, client emails…) arrive with increment 5."
-  },
   "errors": {
     "generic": "Something went wrong. Try again.",
     "sessionExpired": "Session expired: sign in again."
@@ -282,6 +279,76 @@
       "absence_with_data": "absence note carrying data",
       "absence_with_name": "absence note naming a person",
       "absence_with_mixed_script": "absence note mixing alphabets"
+    }
+  },
+  "deliverables": {
+    "title": "Deliverables",
+    "subtitle": "Documents prepared by a recipe: the code gathers the data, the model writes the texts, the checks decide what can be approved.",
+    "catalog": "Recipes",
+    "runs": "Documents of the project",
+    "noRuns": "No documents yet.",
+    "choose": "Choose a recipe to prepare a document, or a document to review.",
+    "prepare": "Prepare the document",
+    "cancel": "Cancel",
+    "from": "from",
+    "to": "to",
+    "addRow": "Add row",
+    "removeRow": "Remove the last row",
+    "unsupportedParameter": "This parameter cannot be filled in from here yet.",
+    "noRows": "No rows.",
+    "notes": "Sources",
+    "revision": "revision {n}",
+    "summary": "{checks, plural, one {# check} other {# checks}} · {open, plural, =0 {no open anomalies} one {# open anomaly} other {# open anomalies}} · {accepted, plural, =0 {none accepted} one {# accepted} other {# accepted}}",
+    "anomalies": "Anomalies",
+    "warnings": "Warnings",
+    "files": "Files",
+    "approve": "Approve",
+    "notApprovable": "It can be approved when no anomaly is left open.",
+    "accept": "Accept with this reason",
+    "requestChange": "Request a change",
+    "changeQueued": "Rewriting started",
+    "changePlaceholder": "What to change, or why you accept it",
+    "reasonPlaceholder": "Why you accept it (at least a sentence)",
+    "reasonFor": "Reason or request for: {text}",
+    "reasonTooShort": "A reason of at least a sentence is needed, or the anomaly cannot be accepted.",
+    "failed": "The preparation failed ({code}).",
+    "revisionNotKept": "The last requested change was not kept ({code}): the document stayed as it was.",
+    "renderFailed": "The files were not made ({code}): you can approve again.",
+    "status": {
+      "queued": "Queued",
+      "running": "Being prepared",
+      "ready": "To review",
+      "failed": "Failed",
+      "discarded": "Discarded"
+    },
+    "phase": {
+      "gathering": "Gathering the data…",
+      "writing": "Writing the texts…",
+      "checking": "Checking the document…",
+      "revising": "Rewriting the requested texts…"
+    },
+    "approval": {
+      "approving": "Approved: making the files…",
+      "approved": "Approved",
+      "render_failed": "Approved, files not made"
+    },
+    "findingKind": {
+      "anomaly": "Anomaly",
+      "warning": "Warning"
+    },
+    "findingClass": {
+      "data": "data",
+      "form": "form",
+      "structure": "structure"
+    },
+    "findingStatus": {
+      "open": "open",
+      "accepted": "accepted",
+      "decided": "decided"
+    },
+    "audience": {
+      "internal": "internal use",
+      "client": "for the client"
     }
   },
   "documentStatus": {

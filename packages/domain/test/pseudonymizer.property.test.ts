@@ -1,6 +1,6 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
-import { firstNameVariants, Pseudonymizer } from '../src/index.ts'
+import { firstNameVariants, Pseudonymizer } from '../src/recipe/index.ts'
 import { growthSlope, HANG_GUARD_MS, MAX_GROWTH_SLOPE } from './timing.ts'
 
 // Property-based tests of the pseudonymizer. Everything is synthetic: names, addresses

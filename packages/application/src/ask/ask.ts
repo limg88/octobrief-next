@@ -2,6 +2,7 @@ import {
   type AnswerParseError,
   type AnswerSourceRef,
   type AnswerStore,
+  askReadingTurns,
   createReadLog,
   DomainError,
   type EvidenceId,
@@ -281,7 +282,8 @@ export async function askProject<Tx>(
     tools,
     {
       userId: input.userId,
-      maxTurns: MAX_ASK_TURNS - 1,
+      // Within the session the backend allows (its generations and its length), if it limits it.
+      maxTurns: askReadingTurns(runner.session, MAX_ASK_TURNS - 1),
       onTurnLimit: 'stop',
       onOutputLimit: 'stop',
       ...(deps.signal ? { signal: deps.signal } : {}),

@@ -17,7 +17,7 @@ import {
   rehydrateFact,
   type SourceRef,
   valuesEqual,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 const project = newId<ProjectId>()
 const evA = newId<EvidenceId>()

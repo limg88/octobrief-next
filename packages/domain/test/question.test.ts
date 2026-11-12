@@ -6,7 +6,7 @@ import {
   MAX_QUESTION_LENGTH,
   parseQuestionText,
   QUESTION_PHASES,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 describe('question text', () => {
   it('is kept in its canonical form', () => {

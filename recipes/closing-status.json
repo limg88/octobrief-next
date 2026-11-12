@@ -1,0 +1,798 @@
+{
+  "changeSummary": "Avanzamento e chiusi solo sull'incremento: gli elementi modificati nel periodo e, fra questi, quelli chiusi, non la storia intera del tracker; un controllo segnala chiusi oltre il totale. Nuovo parametro facoltativo «Iterazione del PI nel tracker»: se il PM lo indica, si contano solo gli elementi sotto quell'iterazione. La verifica dei completati guarda i chiusi del periodo.",
+  "recipe": {
+    "schema": "octobrief.recipe/1",
+    "slug": "closing-status",
+    "version": "1.1.0",
+    "title": "Closing Status",
+    "purpose": "Chiude un periodo (fase, rilascio, PI) con il cliente: cosa è stato consegnato rispetto al contratto, cosa no e perché, l'avanzamento dal tracker, le variazioni di scope, i rischi e le azioni aperte.",
+    "audience": "client",
+    "lang": "it",
+    "parameters": [
+      {
+        "id": "period",
+        "type": "period",
+        "label": "Periodo di chiusura",
+        "required": true,
+        "step": 1
+      },
+      {
+        "id": "contract_doc",
+        "type": "evidence_selection",
+        "label": "Documento dei deliverable del contratto",
+        "help": "Il contratto o l'elenco dei deliverable da cui copi la tabella dei deliverable.",
+        "required": true,
+        "step": 1,
+        "documentKinds": ["contract_deliverables", "contract"],
+        "multiple": false
+      },
+      {
+        "id": "closed_states",
+        "type": "rows",
+        "label": "Stati di chiusura nel tracker",
+        "help": "Gli stati che nel tracker vogliono dire chiuso, uno per riga, come li scrive il tracker.",
+        "required": true,
+        "step": 1,
+        "maxRows": 10,
+        "key": ["state"],
+        "columns": [
+          {
+            "id": "state",
+            "label": "Stato",
+            "kind": "text",
+            "maxLength": 60
+          }
+        ]
+      },
+      {
+        "id": "pi_iteration",
+        "type": "text",
+        "label": "Iterazione del PI nel tracker",
+        "help": "Il percorso dell'iterazione del PI come lo scrive il tracker (per esempio «Progetto\\PI 7»): se lo indichi, avanzamento e chiusi contano solo gli elementi sotto quell'iterazione.",
+        "required": false,
+        "step": 1,
+        "maxLength": 300
+      },
+      {
+        "id": "deliverables",
+        "type": "rows",
+        "label": "Deliverable del contratto",
+        "help": "Una riga per deliverable, copiata dal documento del contratto.",
+        "required": true,
+        "step": 1,
+        "maxRows": 100,
+        "columns": [
+          {
+            "id": "code",
+            "label": "Codice",
+            "kind": "text",
+            "maxLength": 20
+          },
+          {
+            "id": "title",
+            "label": "Deliverable",
+            "kind": "text",
+            "maxLength": 200
+          },
+          {
+            "id": "due",
+            "label": "Scadenza",
+            "kind": "date"
+          }
+        ],
+        "evidence": "contract_doc",
+        "key": ["code"]
+      },
+      {
+        "id": "delivered",
+        "type": "rows",
+        "label": "Deliverable consegnati",
+        "help": "Il codice di ogni deliverable consegnato nel periodo e la data della consegna.",
+        "required": false,
+        "step": 2,
+        "maxRows": 100,
+        "columns": [
+          {
+            "id": "code",
+            "label": "Codice",
+            "kind": "text",
+            "maxLength": 20
+          },
+          {
+            "id": "date",
+            "label": "Data di consegna",
+            "kind": "date"
+          }
+        ],
+        "key": ["code"]
+      },
+      {
+        "id": "not_delivered",
+        "type": "rows",
+        "label": "Deliverable non consegnati o rinviati",
+        "help": "Il codice di ogni deliverable non consegnato e il motivo o la decisione che lo ha rinviato.",
+        "required": false,
+        "step": 2,
+        "maxRows": 100,
+        "columns": [
+          {
+            "id": "code",
+            "label": "Codice",
+            "kind": "text",
+            "maxLength": 20
+          },
+          {
+            "id": "reason",
+            "label": "Motivo o decisione",
+            "kind": "text",
+            "maxLength": 300
+          }
+        ],
+        "key": ["code"]
+      },
+      {
+        "id": "completed_items",
+        "type": "work_item_selection",
+        "label": "Elementi che presenti come completati",
+        "required": false,
+        "step": 2,
+        "multiple": true
+      }
+    ],
+    "prerequisites": [
+      {
+        "kind": "source",
+        "sourceKinds": ["ado", "jira"],
+        "level": "required"
+      },
+      {
+        "kind": "evidence",
+        "documentKinds": ["contract_deliverables", "contract"],
+        "level": "if_present"
+      },
+      {
+        "kind": "source",
+        "sourceKinds": ["netsuite_dwsi"],
+        "level": "if_present"
+      }
+    ],
+    "sections": [
+      {
+        "id": "summary",
+        "title": "Sintesi del periodo {{period}}",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "text_slot",
+            "id": "summary_text",
+            "instructions": "Riassumi il periodo per il cliente: cosa è stato consegnato e cosa no rispetto al contratto, l'avanzamento come rapporto fra elementi chiusi e totali, i blocchi attivi. Ogni dato con la sua fonte.",
+            "natures": ["fact", "inference"],
+            "maxChars": 1200
+          }
+        ]
+      },
+      {
+        "id": "features",
+        "title": "Avanzamento per feature nel periodo {{period}}",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "scope_by_feature",
+            "title": "Elementi per feature",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "iterations": [
+                  {
+                    "parameter": "pi_iteration"
+                  }
+                ],
+                "dates": {
+                  "field": "changed",
+                  "period": {
+                    "parameter": "period"
+                  }
+                }
+              },
+              "groupBy": "parent"
+            },
+            "key": ["feature"],
+            "columns": [
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "Elementi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "closed_by_feature",
+            "title": "Chiusi per feature",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "states": [
+                  {
+                    "parameter": "closed_states"
+                  }
+                ],
+                "iterations": [
+                  {
+                    "parameter": "pi_iteration"
+                  }
+                ],
+                "dates": {
+                  "field": "changed",
+                  "period": {
+                    "parameter": "period"
+                  }
+                }
+              },
+              "groupBy": "parent"
+            },
+            "key": ["feature"],
+            "columns": [
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "closed",
+                "title": "Chiusi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "scope_total",
+            "label": "Elementi nel perimetro",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "scope_by_feature",
+                "column": "items"
+              }
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "closed_total",
+            "label": "Elementi chiusi",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "closed_by_feature",
+                "column": "closed"
+              }
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "closed_share",
+            "label": "Avanzamento (chiusi su totali)",
+            "compute": {
+              "op": "ratio",
+              "left": {
+                "value": "closed_total"
+              },
+              "right": {
+                "value": "scope_total"
+              }
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_table",
+            "id": "completed_items",
+            "title": "Elementi presentati come completati",
+            "query": {
+              "kind": "parameter",
+              "parameter": "completed_items"
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              },
+              {
+                "id": "summary",
+                "title": "Titolo",
+                "from": {
+                  "kind": "field",
+                  "field": "summary"
+                },
+                "category": "other"
+              },
+              {
+                "id": "state",
+                "title": "Stato nel tracker",
+                "from": {
+                  "kind": "field",
+                  "field": "state"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "contract",
+        "title": "Consegnato e non consegnato",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "contract_deliverables",
+            "title": "Deliverable del contratto",
+            "query": {
+              "kind": "parameter",
+              "parameter": "deliverables"
+            },
+            "key": ["code"],
+            "columns": [
+              {
+                "id": "code",
+                "title": "Codice",
+                "from": {
+                  "kind": "field",
+                  "field": "code"
+                },
+                "category": "other"
+              },
+              {
+                "id": "title",
+                "title": "Deliverable",
+                "from": {
+                  "kind": "field",
+                  "field": "title"
+                },
+                "category": "other"
+              },
+              {
+                "id": "due",
+                "title": "Scadenza",
+                "from": {
+                  "kind": "field",
+                  "field": "due"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "delivered",
+            "title": "Consegnati",
+            "query": {
+              "kind": "parameter",
+              "parameter": "delivered"
+            },
+            "key": ["code"],
+            "columns": [
+              {
+                "id": "code",
+                "title": "Codice",
+                "from": {
+                  "kind": "field",
+                  "field": "code"
+                },
+                "category": "other"
+              },
+              {
+                "id": "date",
+                "title": "Data di consegna",
+                "from": {
+                  "kind": "field",
+                  "field": "date"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "not_delivered",
+            "title": "Non consegnati o rinviati",
+            "query": {
+              "kind": "parameter",
+              "parameter": "not_delivered"
+            },
+            "key": ["code"],
+            "columns": [
+              {
+                "id": "code",
+                "title": "Codice",
+                "from": {
+                  "kind": "field",
+                  "field": "code"
+                },
+                "category": "other"
+              },
+              {
+                "id": "reason",
+                "title": "Motivo o decisione",
+                "from": {
+                  "kind": "field",
+                  "field": "reason"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "scope",
+        "title": "Variazioni di scope",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "text_slot",
+            "id": "scope_text",
+            "instructions": "Elenca lo scope aggiunto o tolto rispetto al contratto del periodo, ciascuno con la sua fonte. Lo decide il contratto, non l'etichetta di un documento precedente; se due fonti non concordano scrivilo, senza scegliere.",
+            "natures": ["fact", "inference"],
+            "maxChars": 1000
+          }
+        ]
+      },
+      {
+        "id": "team",
+        "title": "Consuntivo del team",
+        "required": false,
+        "version": "internal",
+        "removable": true,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "hours",
+            "title": "Ore approvate nel periodo",
+            "query": {
+              "kind": "system_rows",
+              "view": "v_timesheet_all",
+              "dates": {
+                "column": "timesheetdate",
+                "period": {
+                  "parameter": "period"
+                }
+              }
+            },
+            "columns": [
+              {
+                "id": "employee",
+                "title": "Persona",
+                "from": {
+                  "kind": "field",
+                  "field": "employee"
+                },
+                "category": "personal"
+              },
+              {
+                "id": "date",
+                "title": "Giorno",
+                "from": {
+                  "kind": "field",
+                  "field": "timesheetdate"
+                },
+                "category": "hours"
+              },
+              {
+                "id": "duration",
+                "title": "Ore",
+                "from": {
+                  "kind": "field",
+                  "field": "duration"
+                },
+                "category": "hours"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "hours_total",
+            "label": "Ore del periodo",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "hours",
+                "column": "duration"
+              }
+            },
+            "category": "hours"
+          }
+        ]
+      },
+      {
+        "id": "risks",
+        "title": "Rischi e azioni aperte",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_list",
+            "id": "risks_list",
+            "title": "Rischi",
+            "query": {
+              "kind": "facts",
+              "factKind": "risk",
+              "audience": "client"
+            },
+            "columns": [
+              {
+                "id": "statement",
+                "title": "Rischio",
+                "from": {
+                  "kind": "field",
+                  "field": "statement"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_list",
+            "id": "actions_list",
+            "title": "Azioni aperte",
+            "query": {
+              "kind": "facts",
+              "factKind": "action",
+              "audience": "client"
+            },
+            "columns": [
+              {
+                "id": "statement",
+                "title": "Azione",
+                "from": {
+                  "kind": "field",
+                  "field": "statement"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "text_slot",
+            "id": "risks_text",
+            "instructions": "Commenta rischi, blocchi attivi e azioni aperte: chi, cosa, entro quando solo se una fonte lo dice.",
+            "natures": ["fact", "inference", "suggestion"],
+            "maxChars": 1200
+          }
+        ]
+      },
+      {
+        "id": "verification",
+        "title": "Verifica dei completati",
+        "required": true,
+        "version": "internal",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "closed_items",
+            "title": "Elementi chiusi nel tracker",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "states": [
+                  {
+                    "parameter": "closed_states"
+                  }
+                ],
+                "iterations": [
+                  {
+                    "parameter": "pi_iteration"
+                  }
+                ],
+                "dates": {
+                  "field": "closed",
+                  "period": {
+                    "parameter": "period"
+                  }
+                }
+              }
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              },
+              {
+                "id": "state",
+                "title": "Stato",
+                "from": {
+                  "kind": "field",
+                  "field": "state"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [
+      "Niente giornate, costi, stime interne o importi nella versione per il cliente: non è un SAL economico.",
+      "L'avanzamento è il rapporto fra elementi chiusi nel periodo e elementi del periodo, come nella tabella: non scriverne altri e non usare la storia intera del tracker.",
+      "Un deliverable è consegnato solo se è fra i consegnati della tabella; altrimenti è fra i non consegnati con il suo motivo.",
+      "Le azioni aperte hanno responsabile e scadenza solo se una fonte li dichiara."
+    ],
+    "checks": [
+      {
+        "id": "completed_only_if_closed",
+        "kind": "member_of",
+        "label": "«completato» solo se chiuso nel tracker",
+        "message": "Un elemento presentato come completato non è nello stato di chiusura del tracker.",
+        "column": {
+          "block": "completed_items",
+          "column": "id"
+        },
+        "in": {
+          "block": "closed_items",
+          "column": "id"
+        }
+      },
+      {
+        "id": "deliverables_covered",
+        "kind": "coverage",
+        "label": "ogni deliverable del contratto consegnato o no",
+        "message": "Un deliverable del contratto non è né fra i consegnati né fra i non consegnati, o è in tutti e due.",
+        "universe": {
+          "block": "contract_deliverables",
+          "column": "code"
+        },
+        "coveredBy": [
+          {
+            "block": "delivered",
+            "column": "code"
+          },
+          {
+            "block": "not_delivered",
+            "column": "code"
+          }
+        ],
+        "allowUnassigned": false,
+        "exclusive": true
+      },
+      {
+        "id": "delivered_in_contract",
+        "kind": "member_of",
+        "label": "consegnati del contratto",
+        "message": "Un deliverable consegnato non è fra i deliverable del contratto.",
+        "column": {
+          "block": "delivered",
+          "column": "code"
+        },
+        "in": {
+          "block": "contract_deliverables",
+          "column": "code"
+        }
+      },
+      {
+        "id": "not_delivered_in_contract",
+        "kind": "member_of",
+        "label": "non consegnati del contratto",
+        "message": "Un deliverable non consegnato non è fra i deliverable del contratto.",
+        "column": {
+          "block": "not_delivered",
+          "column": "code"
+        },
+        "in": {
+          "block": "contract_deliverables",
+          "column": "code"
+        }
+      },
+      {
+        "id": "delivered_in_period",
+        "kind": "date_within_period",
+        "label": "consegne nel periodo",
+        "message": "Una consegna ha una data fuori dal periodo di chiusura.",
+        "column": {
+          "block": "delivered",
+          "column": "date"
+        },
+        "period": "period"
+      },
+      {
+        "id": "scope_base_as_declared",
+        "kind": "equals_previous",
+        "label": "base dell'avanzamento invariata rispetto al dichiarato",
+        "message": "Il numero di elementi su cui si calcola l'avanzamento è cambiato rispetto a quanto dichiarato al cliente nella chiusura precedente: spiegalo fra le variazioni di scope.",
+        "current": {
+          "block": "scope_total"
+        },
+        "previous": {
+          "block": "scope_total"
+        }
+      },
+      {
+        "id": "summary_bounded",
+        "kind": "bounded_text",
+        "label": "sintesi senza dati interni",
+        "message": "La sintesi è troppo lunga o nomina dati interni.",
+        "slot": "summary_text",
+        "forbiddenPhrases": ["giornate uomo", "tariffa", "margine", "stima interna"],
+        "connectorsWithoutData": true
+      },
+      {
+        "id": "closed_within_scope",
+        "kind": "sum_at_most",
+        "label": "chiusi non oltre gli elementi del periodo",
+        "message": "Gli elementi chiusi sono più degli elementi del periodo: l'avanzamento supererebbe il 100%.",
+        "column": {
+          "block": "closed_by_feature",
+          "column": "closed"
+        },
+        "atMost": {
+          "value": "scope_total"
+        }
+      }
+    ],
+    "redTeamRules": [
+      "Nessun «nessun blocco» o «nessun problema» se standup, verbali o tracker segnalano blocchi attivi.",
+      "Un deliverable che il cliente ha già dichiarato completo in un altro verbale non risulta completo a una data diversa senza dirlo.",
+      "Nessuna valutazione sulle persone.",
+      "La sintesi chiama «completato» un elemento o una feature solo se è fra gli elementi presentati come completati, che il tracker dà chiusi."
+    ],
+    "extraInternalCategories": [],
+    "render": {
+      "formats": ["md", "pptx"],
+      "template": null,
+      "sections": [],
+      "namedCells": []
+    },
+    "examples": [
+      {
+        "title": "Chiusura di una fase con quattro deliverable",
+        "summary": "Due deliverable consegnati, due rinviati con il loro motivo; avanzamento per feature dal tracker."
+      }
+    ]
+  }
+}

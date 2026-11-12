@@ -1,0 +1,871 @@
+{
+  "changeSummary": "Prima versione: richiesta di SAL economico per l'amministrazione del cliente, dal modulo dell'ordine, con fatture del DWSI e mail di accompagnamento.",
+  "recipe": {
+    "schema": "octobrief.recipe/1",
+    "slug": "sal-economico",
+    "version": "1.0.0",
+    "title": "SAL economico",
+    "purpose": "Prepara la richiesta di SAL (stato di avanzamento lavori) di un ordine d'acquisto per l'amministrazione del cliente: posizioni, richieste, avanzamento per posizione e la bozza della mail che la accompagna.",
+    "audience": "client",
+    "lang": "it",
+    "parameters": [
+      {
+        "id": "period",
+        "type": "period",
+        "label": "Periodo del SAL",
+        "required": true,
+        "step": 1
+      },
+      {
+        "id": "order_doc",
+        "type": "evidence_selection",
+        "label": "Ordine d'acquisto",
+        "help": "Il documento da cui copi numero, data, totale e posizioni dell'ordine.",
+        "required": true,
+        "step": 1,
+        "documentKinds": ["purchase_order"],
+        "multiple": false
+      },
+      {
+        "id": "order_number",
+        "type": "text",
+        "label": "Numero dell'ordine",
+        "help": "Come è scritto nell'ordine, carattere per carattere.",
+        "required": true,
+        "step": 1,
+        "maxLength": 60
+      },
+      {
+        "id": "order_date",
+        "type": "date",
+        "label": "Data dell'ordine",
+        "required": true,
+        "step": 1
+      },
+      {
+        "id": "order_total",
+        "type": "number",
+        "label": "Totale dell'ordine",
+        "required": true,
+        "step": 1,
+        "integer": false,
+        "min": 0
+      },
+      {
+        "id": "positions",
+        "type": "rows",
+        "label": "Posizioni dell'ordine e avanzamento",
+        "help": "Una riga per posizione dell'ordine, copiata dall'ordine: le percentuali sono cumulative, la richiesta è il numero della richiesta in cui va la posizione.",
+        "required": true,
+        "step": 2,
+        "maxRows": 100,
+        "columns": [
+          {
+            "id": "position",
+            "label": "Posizione",
+            "kind": "text",
+            "maxLength": 20
+          },
+          {
+            "id": "item",
+            "label": "Descrizione (come nell'ordine)",
+            "kind": "text",
+            "maxLength": 200
+          },
+          {
+            "id": "amount",
+            "label": "Importo della posizione",
+            "kind": "number",
+            "integer": false,
+            "min": 0
+          },
+          {
+            "id": "request",
+            "label": "Richiesta",
+            "kind": "number",
+            "integer": true,
+            "min": 1,
+            "copied": false
+          },
+          {
+            "id": "previous_pct",
+            "label": "% precedente",
+            "kind": "number",
+            "integer": false,
+            "min": 0,
+            "max": 100,
+            "copied": false
+          },
+          {
+            "id": "current_pct",
+            "label": "% attuale",
+            "kind": "number",
+            "integer": false,
+            "min": 0,
+            "max": 100,
+            "copied": false
+          }
+        ],
+        "evidence": "order_doc",
+        "key": ["position"]
+      },
+      {
+        "id": "requests",
+        "type": "rows",
+        "label": "Richieste di questo SAL",
+        "help": "Il numero di ogni richiesta (il successivo all'ultima già emessa) e il suo importo.",
+        "required": true,
+        "step": 2,
+        "maxRows": 10,
+        "columns": [
+          {
+            "id": "number",
+            "label": "Numero della richiesta",
+            "kind": "number",
+            "integer": true,
+            "min": 1
+          },
+          {
+            "id": "amount",
+            "label": "Importo richiesto",
+            "kind": "number",
+            "integer": false,
+            "min": 0
+          }
+        ],
+        "key": ["number"]
+      },
+      {
+        "id": "invoice_docs",
+        "type": "evidence_selection",
+        "label": "Fatture emesse",
+        "help": "Le fatture dell'ordine che citi: scegli i documenti, anche se non sono classificati come fatture.",
+        "required": false,
+        "step": 3,
+        "multiple": true
+      },
+      {
+        "id": "cited_invoices",
+        "type": "rows",
+        "label": "Fatture citate",
+        "help": "Numero, data e importo di ogni fattura, come nel documento.",
+        "required": false,
+        "step": 3,
+        "maxRows": 50,
+        "columns": [
+          {
+            "id": "number",
+            "label": "Numero della fattura",
+            "kind": "text",
+            "maxLength": 40
+          },
+          {
+            "id": "date",
+            "label": "Data della fattura",
+            "kind": "date"
+          },
+          {
+            "id": "amount",
+            "label": "Importo della fattura",
+            "kind": "number",
+            "integer": false,
+            "min": 0
+          }
+        ],
+        "evidence": "invoice_docs",
+        "key": ["number"]
+      }
+    ],
+    "prerequisites": [
+      {
+        "kind": "evidence",
+        "documentKinds": ["purchase_order"],
+        "level": "required"
+      },
+      {
+        "kind": "source",
+        "sourceKinds": ["netsuite_dwsi"],
+        "level": "if_present"
+      },
+      {
+        "kind": "evidence",
+        "documentKinds": ["invoice"],
+        "level": "if_present"
+      }
+    ],
+    "sections": [
+      {
+        "id": "order",
+        "title": "Dati dell'ordine",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_value",
+            "id": "order_number",
+            "label": "Numero dell'ordine",
+            "compute": {
+              "op": "parameter",
+              "parameter": "order_number"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "order_date",
+            "label": "Data dell'ordine",
+            "compute": {
+              "op": "parameter",
+              "parameter": "order_date"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "order_total",
+            "label": "Totale dell'ordine",
+            "compute": {
+              "op": "parameter",
+              "parameter": "order_total"
+            },
+            "category": "contract_amounts"
+          }
+        ]
+      },
+      {
+        "id": "positions",
+        "title": "Posizioni dell'ordine",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "positions",
+            "title": "Posizioni",
+            "query": {
+              "kind": "parameter",
+              "parameter": "positions"
+            },
+            "key": ["position"],
+            "columns": [
+              {
+                "id": "position",
+                "title": "Posizione",
+                "from": {
+                  "kind": "field",
+                  "field": "position"
+                },
+                "category": "other"
+              },
+              {
+                "id": "item",
+                "title": "Descrizione",
+                "from": {
+                  "kind": "field",
+                  "field": "item"
+                },
+                "category": "other"
+              },
+              {
+                "id": "amount",
+                "title": "Importo",
+                "from": {
+                  "kind": "field",
+                  "field": "amount"
+                },
+                "category": "contract_amounts"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "positions_total",
+            "label": "Somma delle posizioni",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "positions",
+                "column": "amount"
+              }
+            },
+            "category": "contract_amounts"
+          }
+        ]
+      },
+      {
+        "id": "requests",
+        "title": "Richieste di SAL del periodo {{period}}",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_value",
+            "id": "request_period",
+            "label": "Periodo",
+            "compute": {
+              "op": "parameter",
+              "parameter": "period"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_table",
+            "id": "requests",
+            "title": "Richieste",
+            "query": {
+              "kind": "parameter",
+              "parameter": "requests"
+            },
+            "key": ["number"],
+            "columns": [
+              {
+                "id": "number",
+                "title": "Numero",
+                "from": {
+                  "kind": "field",
+                  "field": "number"
+                },
+                "category": "other"
+              },
+              {
+                "id": "amount",
+                "title": "Importo richiesto",
+                "from": {
+                  "kind": "field",
+                  "field": "amount"
+                },
+                "category": "contract_amounts"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "request_total",
+            "label": "Totale richiesto con questo SAL",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "requests",
+                "column": "amount"
+              }
+            },
+            "category": "contract_amounts"
+          },
+          {
+            "kind": "data_value",
+            "id": "residual",
+            "label": "Residuo da fatturare prima di questo SAL",
+            "compute": {
+              "op": "difference",
+              "left": {
+                "value": "order_total"
+              },
+              "right": {
+                "value": "invoiced_total"
+              }
+            },
+            "category": "contract_amounts"
+          },
+          {
+            "kind": "data_value",
+            "id": "remaining_after",
+            "label": "Residuo dopo questo SAL",
+            "compute": {
+              "op": "difference",
+              "left": {
+                "value": "residual"
+              },
+              "right": {
+                "value": "request_total"
+              }
+            },
+            "category": "contract_amounts"
+          }
+        ]
+      },
+      {
+        "id": "invoices",
+        "title": "Fatture emesse",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "invoices",
+            "title": "Fatture dell'ordine nel DWSI",
+            "query": {
+              "kind": "system_rows",
+              "view": "v_invoice_all",
+              "where": [
+                {
+                  "column": "salesorder",
+                  "equals": {
+                    "parameter": "order_number"
+                  }
+                }
+              ]
+            },
+            "key": ["number"],
+            "columns": [
+              {
+                "id": "number",
+                "title": "Numero",
+                "from": {
+                  "kind": "field",
+                  "field": "invoiceid"
+                },
+                "category": "other"
+              },
+              {
+                "id": "date",
+                "title": "Data",
+                "from": {
+                  "kind": "field",
+                  "field": "invoicedate"
+                },
+                "category": "other"
+              },
+              {
+                "id": "amount",
+                "title": "Importo fatturato",
+                "from": {
+                  "kind": "field",
+                  "field": "amount"
+                },
+                "category": "invoiced_amounts"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "invoiced_total",
+            "label": "Già fatturato",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "invoices",
+                "column": "amount"
+              }
+            },
+            "category": "invoiced_amounts"
+          },
+          {
+            "kind": "data_table",
+            "id": "cited_invoices",
+            "title": "Fatture citate dai documenti",
+            "query": {
+              "kind": "parameter",
+              "parameter": "cited_invoices"
+            },
+            "key": ["number"],
+            "columns": [
+              {
+                "id": "number",
+                "title": "Numero",
+                "from": {
+                  "kind": "field",
+                  "field": "number"
+                },
+                "category": "other"
+              },
+              {
+                "id": "date",
+                "title": "Data",
+                "from": {
+                  "kind": "field",
+                  "field": "date"
+                },
+                "category": "other"
+              },
+              {
+                "id": "amount",
+                "title": "Importo nel documento",
+                "from": {
+                  "kind": "field",
+                  "field": "amount"
+                },
+                "category": "invoiced_amounts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "progress",
+        "title": "Avanzamento per posizione",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "progress",
+            "title": "Avanzamento",
+            "query": {
+              "kind": "parameter",
+              "parameter": "positions"
+            },
+            "key": ["position"],
+            "columns": [
+              {
+                "id": "position",
+                "title": "Posizione",
+                "from": {
+                  "kind": "field",
+                  "field": "position"
+                },
+                "category": "other"
+              },
+              {
+                "id": "request",
+                "title": "Richiesta",
+                "from": {
+                  "kind": "field",
+                  "field": "request"
+                },
+                "category": "other"
+              },
+              {
+                "id": "previous_pct",
+                "title": "% precedente",
+                "from": {
+                  "kind": "field",
+                  "field": "previous_pct"
+                },
+                "category": "other"
+              },
+              {
+                "id": "current_pct",
+                "title": "% attuale",
+                "from": {
+                  "kind": "field",
+                  "field": "current_pct"
+                },
+                "category": "other"
+              },
+              {
+                "id": "period_pct",
+                "title": "% del periodo",
+                "from": {
+                  "kind": "difference",
+                  "left": "current_pct",
+                  "right": "previous_pct"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mail",
+        "title": "Bozza della mail di accompagnamento",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "text_slot",
+            "id": "mail_text",
+            "instructions": "Scrivi la mail che accompagna la richiesta di SAL all'amministrazione del cliente: elenca ogni richiesta con il suo numero e il suo importo come nella tabella delle richieste, citandola; cita una fattura solo con numero, data e importo della tabella delle fatture, citando la sua riga di quella tabella e mai il documento o il sistema da cui viene. Nessuna giornata, costo, margine o tariffa. Chiudi con il solo saluto, senza annunciare passi, attese o impegni.",
+            "natures": ["fact"],
+            "maxChars": 1500
+          }
+        ]
+      },
+      {
+        "id": "sources",
+        "title": "Documenti di riferimento",
+        "required": true,
+        "version": "internal",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_list",
+            "id": "order_documents",
+            "title": "Ordine d'acquisto scelto",
+            "query": {
+              "kind": "parameter",
+              "parameter": "order_doc"
+            },
+            "columns": [
+              {
+                "id": "title",
+                "title": "Documento",
+                "from": {
+                  "kind": "field",
+                  "field": "title"
+                },
+                "category": "personal"
+              },
+              {
+                "id": "date",
+                "title": "Data",
+                "from": {
+                  "kind": "field",
+                  "field": "date"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_list",
+            "id": "invoice_documents",
+            "title": "Fatture scelte",
+            "query": {
+              "kind": "parameter",
+              "parameter": "invoice_docs"
+            },
+            "columns": [
+              {
+                "id": "title",
+                "title": "Documento",
+                "from": {
+                  "kind": "field",
+                  "field": "title"
+                },
+                "category": "personal"
+              },
+              {
+                "id": "date",
+                "title": "Data",
+                "from": {
+                  "kind": "field",
+                  "field": "date"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [
+      "Ogni cifra viene dall'ordine d'acquisto scelto dal PM, attraverso le tabelle del documento: mai importi ricostruiti o stimati.",
+      "Le percentuali sono cumulative per posizione: l'attuale è il cumulato, quella del periodo è l'attuale meno la precedente, la precedente è l'attuale della richiesta prima.",
+      "Nel modulo e nella mail mai giornate, costi, margini o tariffe.",
+      "Una fattura senza numero e data nei documenti o nel DWSI è un dato assente, non una fattura in arrivo.",
+      "Se il documento della fattura e il DWSI danno importi diversi, scrivi i due importi con le loro fonti, senza sceglierne uno."
+    ],
+    "checks": [
+      {
+        "id": "positions_sum",
+        "kind": "sum_equals",
+        "label": "somma delle posizioni",
+        "message": "La somma delle posizioni non è uguale al totale dell'ordine: controlla le posizioni copiate dall'ordine.",
+        "column": {
+          "block": "positions",
+          "column": "amount"
+        },
+        "equals": {
+          "value": "order_total"
+        }
+      },
+      {
+        "id": "requests_within_order",
+        "kind": "sum_at_most",
+        "label": "somma delle richieste entro l'ordine",
+        "message": "Le richieste di questo SAL, con quelle già dichiarate al cliente, superano il totale dell'ordine.",
+        "column": {
+          "block": "requests",
+          "column": "amount"
+        },
+        "atMost": {
+          "value": "order_total"
+        },
+        "withDeclared": true
+      },
+      {
+        "id": "period_pct",
+        "kind": "difference_equals",
+        "label": "percentuale del periodo",
+        "message": "Su una posizione la percentuale del periodo non è l'attuale meno la precedente.",
+        "block": "progress",
+        "result": "period_pct",
+        "minuend": "current_pct",
+        "subtrahend": "previous_pct"
+      },
+      {
+        "id": "previous_pct_as_declared",
+        "kind": "equals_previous",
+        "label": "percentuale precedente uguale alla richiesta prima",
+        "message": "La percentuale precedente di una posizione non è l'attuale dichiarata al cliente con la richiesta prima.",
+        "current": {
+          "block": "progress",
+          "column": "previous_pct"
+        },
+        "previous": {
+          "block": "progress",
+          "column": "current_pct"
+        }
+      },
+      {
+        "id": "request_number_new",
+        "kind": "unique",
+        "label": "numero della richiesta non già emesso",
+        "message": "Il numero della richiesta è già stato emesso al cliente, o compare due volte.",
+        "column": {
+          "block": "requests",
+          "column": "number"
+        },
+        "againstDeclared": true
+      },
+      {
+        "id": "position_request_known",
+        "kind": "member_of",
+        "label": "richiesta di ogni posizione",
+        "message": "Una posizione va in una richiesta che non è fra le richieste di questo SAL.",
+        "column": {
+          "block": "progress",
+          "column": "request"
+        },
+        "in": {
+          "block": "requests",
+          "column": "number"
+        }
+      },
+      {
+        "id": "cited_invoices_exist",
+        "kind": "member_of",
+        "label": "fatture citate esistenti",
+        "message": "Una fattura citata non risulta fra le fatture dell'ordine nel DWSI (o il DWSI non è disponibile).",
+        "column": {
+          "block": "cited_invoices",
+          "column": "number"
+        },
+        "in": {
+          "block": "invoices",
+          "column": "number"
+        }
+      },
+      {
+        "id": "invoices_agree",
+        "kind": "agree_by_key",
+        "label": "fatture uguali nel documento e nel DWSI",
+        "message": "Il documento della fattura e il DWSI danno importi diversi per la stessa fattura: le due fonti restano in disaccordo, decidi tu quale vale.",
+        "left": {
+          "block": "cited_invoices",
+          "key": "number",
+          "value": "amount"
+        },
+        "right": {
+          "block": "invoices",
+          "key": "number",
+          "value": "amount"
+        }
+      },
+      {
+        "id": "closing_complete",
+        "kind": "all_equal_when",
+        "label": "chiusura al completo senza residui",
+        "message": "Questo SAL porta l'ordine al completo, ma una posizione non è al 100%.",
+        "when": {
+          "value": {
+            "value": "remaining_after"
+          },
+          "equals": 0
+        },
+        "column": {
+          "block": "progress",
+          "column": "current_pct"
+        },
+        "equals": 100
+      },
+      {
+        "id": "mail_bounded",
+        "kind": "bounded_text",
+        "label": "mail breve e senza impegni",
+        "message": "La mail è troppo lunga, annuncia attese o impegni, o nomina dati interni.",
+        "slot": "mail_text",
+        "forbiddenPhrases": [
+          "restiamo in attesa",
+          "in attesa di un vostro riscontro",
+          "tariffa",
+          "margine",
+          "giornate uomo"
+        ],
+        "connectorsWithoutData": true
+      }
+    ],
+    "redTeamRules": [
+      "Nel modulo e nella mail non compaiono giornate stimate, costi, margini o tariffe.",
+      "Numero, data e oggetto dell'ordine sono identici, carattere per carattere, a quelli del documento dell'ordine.",
+      "Le condizioni di pagamento dell'ordine sono compatibili con la sequenza di richieste proposta.",
+      "La mail non sceglie fra due importi della stessa fattura che le fonti danno diversi."
+    ],
+    "extraInternalCategories": [],
+    "render": {
+      "formats": ["md", "xlsx"],
+      "template": "modulo-sal",
+      "sections": [],
+      "namedCells": [
+        {
+          "name": "order_number",
+          "block": "order_number"
+        },
+        {
+          "name": "order_date",
+          "block": "order_date"
+        },
+        {
+          "name": "order_total",
+          "block": "order_total"
+        },
+        {
+          "name": "request_number",
+          "block": "requests",
+          "column": "number"
+        },
+        {
+          "name": "request_period",
+          "block": "request_period"
+        },
+        {
+          "name": "request_amount",
+          "block": "requests",
+          "column": "amount"
+        },
+        {
+          "name": "remaining_amount",
+          "block": "remaining_after"
+        },
+        {
+          "name": "position_item",
+          "block": "positions",
+          "column": "item"
+        },
+        {
+          "name": "position_amount",
+          "block": "positions",
+          "column": "amount"
+        },
+        {
+          "name": "position_previous_pct",
+          "block": "progress",
+          "column": "previous_pct"
+        },
+        {
+          "name": "position_current_pct",
+          "block": "progress",
+          "column": "current_pct"
+        },
+        {
+          "name": "position_period_pct",
+          "block": "progress",
+          "column": "period_pct"
+        }
+      ]
+    },
+    "examples": [
+      {
+        "title": "SAL di un ordine con tre posizioni",
+        "summary": "Una richiesta che porta avanti la seconda posizione; le fatture del DWSI confermano le richieste già emesse."
+      }
+    ]
+  }
+}

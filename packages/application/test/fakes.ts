@@ -484,5 +484,11 @@ export class InMemoryKnowledge implements KnowledgeStore, FactRepository {
   }
 }
 
+export {
+  FakeRenderer,
+  FakeTemplates,
+  InMemoryRuns,
+  repositoryLibrary,
+} from './deliverable-fakes.ts'
 export { InMemoryQuestions, readingOf } from './question-fakes.ts'
 export { FakeFeeds, FakeVault, InMemorySources } from './source-fakes.ts'

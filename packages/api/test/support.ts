@@ -10,10 +10,12 @@ import {
   InMemoryLoginAttempts,
   InMemoryProjects,
   InMemoryQuestions,
+  InMemoryRuns,
   InMemorySessions,
   InMemorySources,
   InMemoryUsers,
   RecordingLogger,
+  repositoryLibrary,
 } from '@octobrief/application/testing'
 import { createApi } from '../src/app.ts'
 import type { ApiDependencies } from '../src/dependencies.ts'
@@ -38,6 +40,8 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
     documents,
     facts: new InMemoryKnowledge(documents),
     questions: new InMemoryQuestions(documents),
+    library: repositoryLibrary(),
+    runs: new InMemoryRuns(documents),
     sources,
     items: sources,
     feeds: new FakeFeeds(),

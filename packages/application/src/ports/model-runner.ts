@@ -1,4 +1,4 @@
-import type { BackendId, ProjectId } from '@octobrief/domain'
+import type { BackendId, ProjectId, SessionLimits } from '@octobrief/domain'
 
 export type JsonSchema = Record<string, unknown>
 
@@ -82,6 +82,16 @@ export interface ModelRunner {
   readonly embedding?: EmbeddingModel & { backend: BackendId }
   /** Vectors of texts; present exactly when `embedding` is. */
   embed?(req: EmbedRequest, signal?: AbortSignal): Promise<EmbedResponse>
+  /**
+   * What bounds one session on the backend (its generations, its length, the time of a call),
+   * when it holds a conversation as a session: a question reads only as long as it allows.
+   */
+  readonly session?: SessionLimits
+  /**
+   * Runs `fn` holding the backend for every call made in it, when the backend serves a limited
+   * number of calls at a time: a slot's reading and answer are not interleaved with others.
+   */
+  exclusive?<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T>
   /**
    * Output tokens of a structured answer (a question, a slot of a recipe, a review) on this
    * backend, when the Admin set them; `MAX_ANSWER_TOKENS` otherwise.

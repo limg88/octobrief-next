@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PeopleMatcher, Pseudonymizer } from '../src/index.ts'
+import { PeopleMatcher, Pseudonymizer } from '../src/recipe/index.ts'
 
 const people = [
   { displayName: 'Mario Rossi', email: 'mario.rossi@example.com' },

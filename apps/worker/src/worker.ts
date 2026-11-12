@@ -5,6 +5,9 @@ import {
   createPingHandler,
   createProcessDocumentHandler,
   createPurgeDocumentsHandler,
+  createRenderDeliverableHandler,
+  createReviseRunHandler,
+  createRunRecipeHandler,
   createScheduleSyncHandler,
   createSyncSourceHandler,
   type JobWorker,
@@ -12,6 +15,7 @@ import {
   type Logger,
   type ModelRunner,
   type ProcessingDependencies,
+  type RenderDependencies,
   type SyncDependencies,
 } from '@octobrief/application'
 import { retentionCutoff } from '@octobrief/domain'
@@ -31,6 +35,11 @@ export interface WorkerDependencies extends Omit<ProcessingDependencies, 'logger
   readonly syncIntervalMs: number
   /** What answering a question needs: the question store and the reading of a project. */
   readonly asking: Pick<AnswerDependencies<unknown>, 'questions' | 'reading'>
+  /** What making a deliverable needs: recipes, runs, the reading of a project, the renderer. */
+  readonly deliverables: Pick<
+    RenderDependencies<unknown>,
+    'runs' | 'library' | 'reading' | 'templates' | 'renderer'
+  >
   readonly now?: () => Date
 }
 
@@ -50,6 +59,13 @@ export async function startWorker(deps: WorkerDependencies): Promise<() => Promi
   await queue.work(
     'question.answer',
     createAnswerQuestionHandler({ ...deps.asking, runner: deps.runner, logger }),
+  )
+  const making = { ...deps.deliverables, runner: deps.runner, logger }
+  await queue.work('deliverable.run', createRunRecipeHandler(making))
+  await queue.work('deliverable.revise', createReviseRunHandler(making))
+  await queue.work(
+    'deliverable.render',
+    createRenderDeliverableHandler({ ...making, blobs: deps.blobs }),
   )
   const scheduleSync = createScheduleSyncHandler({ sync: deps.sources.sync, jobs: deps.jobs })
   const runSync = () => {

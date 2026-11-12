@@ -1,0 +1,22 @@
+[project]
+name = "octobrief-renderer"
+version = "0.0.0"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "UP", "S", "A", "BLE", "SIM", "RUF"]
+# Error names follow the TypeScript gate they mirror (`ZipUnreadable`, `Unreadable`).
+ignore = ["RUF001", "RUF002", "RUF003", "N818"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S310", "S603", "S607"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+# The server tests run a thread next to the forked child of a request; the service has none.
+filterwarnings = ["ignore:This process .* is multi-threaded:DeprecationWarning"]

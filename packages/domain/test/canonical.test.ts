@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canonicalText } from '../src/index.ts'
+import { canonicalText } from '../src/recipe/index.ts'
 
 describe('canonicalText', () => {
   it('removes invisible format characters that split words and numbers', () => {

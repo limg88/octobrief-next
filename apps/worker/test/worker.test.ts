@@ -2,6 +2,7 @@ import type { JobHandler, JobName, JobWorker, Logger } from '@octobrief/applicat
 import {
   FakeExtractor,
   FakeFeeds,
+  FakeTemplates,
   FakeVault,
   InMemoryBlobs,
   InMemoryDocuments,
@@ -9,9 +10,11 @@ import {
   InMemoryKnowledge,
   InMemoryProjects,
   InMemoryQuestions,
+  InMemoryRuns,
   InMemorySources,
   InMemoryUsers,
   readingOf,
+  repositoryLibrary,
 } from '@octobrief/application/testing'
 import { describe, expect, it } from 'vitest'
 import { startWorker } from '../src/worker.ts'
@@ -48,6 +51,12 @@ function setup(store: InMemoryDocuments) {
     })),
     retentionDays: 30,
     asking: { questions: new InMemoryQuestions(store), reading: readingOf([]) },
+    deliverables: {
+      runs: new InMemoryRuns(store),
+      library: repositoryLibrary(),
+      templates: new FakeTemplates(),
+      reading: readingOf([]) as never,
+    },
     syncIntervalMs: 60_000,
     sources: (() => {
       const sources = new InMemorySources(store)
@@ -71,6 +80,9 @@ describe('startWorker', () => {
       'document.compile',
       'source.sync',
       'question.answer',
+      'deliverable.run',
+      'deliverable.revise',
+      'deliverable.render',
     ])
 
     await queue.handlers.get('system.ping')?.({ requestedAt: '2026-11-11T10:00:00.000Z' }, 'job-1')

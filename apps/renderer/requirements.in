@@ -1,0 +1,11 @@
+# What the renderer runs with, locked with hashes in requirements.txt by:
+#   uv pip compile requirements.in --generate-hashes --exclude-newer <14 days ago>
+#     --python-version 3.13 --python-platform x86_64-manylinux_2_28 --no-header
+#     -o requirements.txt
+# and the same for requirements-dev.in. Versions published at least 14 days before.
+defusedxml==0.7.1
+jsonschema==4.26.0
+openpyxl==3.1.5
+python-docx==1.2.0
+python-pptx==1.0.2
+tzdata==2026.5

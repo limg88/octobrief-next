@@ -1,0 +1,745 @@
+{
+  "description": "Formulas of a template and what both gates answer, inside a workbook that has these sheets, names and tables (lower case).",
+  "workbook": {
+    "sheets": [
+      "foglio1",
+      "sal",
+      "il mio foglio",
+      "foglio 2",
+      "sal's",
+      "città",
+      "kpi",
+      "[1]s",
+      "\\\\evil\\s\\[a.xlsx]s",
+      "a/b"
+    ],
+    "names": ["totale", "_xlnm.print_area"],
+    "tables": ["tabella1"]
+  },
+  "cases": [
+    {
+      "formula": "",
+      "refusals": []
+    },
+    {
+      "formula": "SUM(A1:A3)",
+      "refusals": []
+    },
+    {
+      "formula": "sum($A$1:$B$2)*2",
+      "refusals": []
+    },
+    {
+      "formula": "IF(Foglio1!B2>0,\"sì\",\"no\")",
+      "refusals": []
+    },
+    {
+      "formula": "VLOOKUP(A1,Foglio1!$A$1:$C$10,2,FALSE)",
+      "refusals": []
+    },
+    {
+      "formula": "_xlfn.XLOOKUP(A1,B:B,C:C)",
+      "refusals": []
+    },
+    {
+      "formula": "_xlfn.CONCAT(\"a\",\"b\")&TEXT(TODAY(),\"dd/mm/yyyy\")",
+      "refusals": []
+    },
+    {
+      "formula": "'Il mio foglio'!$A$1+'Foglio 2'!B3",
+      "refusals": []
+    },
+    {
+      "formula": "'SAL''s'!$C$4",
+      "refusals": []
+    },
+    {
+      "formula": "Città!A1",
+      "refusals": []
+    },
+    {
+      "formula": "SUM(Foglio1:SAL!A1)",
+      "refusals": []
+    },
+    {
+      "formula": "SUM('Foglio1:SAL'!A1)",
+      "refusals": []
+    },
+    {
+      "formula": "SUM(Tabella1[[#This Row],[Colonna]])+Foglio1!A1",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[Col.1]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[#Headers],[a']b]]",
+      "refusals": []
+    },
+    {
+      "formula": "Totale*2",
+      "refusals": []
+    },
+    {
+      "formula": "Foglio1!Totale",
+      "refusals": []
+    },
+    {
+      "formula": "'SAL'!$A$1:$G$20",
+      "refusals": []
+    },
+    {
+      "formula": "SUM(1:1)+SUM($2:$3)+SUM(A:A)",
+      "refusals": []
+    },
+    {
+      "formula": "IFERROR(A1/B1,#N/A)+IF(ISERROR(A2),#DIV/0!,0)",
+      "refusals": []
+    },
+    {
+      "formula": "{1,2;3,4}",
+      "refusals": []
+    },
+    {
+      "formula": "-A1%+1.5E+3-.5^2",
+      "refusals": []
+    },
+    {
+      "formula": "\"it's\"&\"a \"\"quote\"\"\"",
+      "refusals": []
+    },
+    {
+      "formula": "A1<>B1",
+      "refusals": []
+    },
+    {
+      "formula": "TRUE*FALSE",
+      "refusals": []
+    },
+    {
+      "formula": "SUMIFS(C:C,A:A,\">0\",B:B,\"x\")",
+      "refusals": []
+    },
+    {
+      "formula": "ROUND(SUMPRODUCT(A1:A3,B1:B3)/COUNTIF(A1:A3,\"<>\"),2)",
+      "refusals": []
+    },
+    {
+      "formula": "@SUM(A1)",
+      "refusals": []
+    },
+    {
+      "formula": "\"[\"&\"a.xlsx]S!A1\"",
+      "refusals": []
+    },
+    {
+      "formula": "\"it's\"&'\\\\evil\\s\\[a.xlsx]S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "\"'\"&'\\\\evil\\s\\[a.xlsx]S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "\"a\"\"'\"&'C:\\x\\[a.xlsx]S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]Città!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]S1:S2!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]Foglio 1!A1",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "a.xlsx!Nome",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "'C:\\x\\a.xlsx'!Nome",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]!Nome",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]Sheet1!R1C1",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "'\\\\h\\s\\[a.xlsx]S'!R1C1",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "INDIRECT(\"'\\\\h\\s\\[a.xlsx]S'!A1\")",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "_xlfn.WEBSERVICE(\"http://e\")",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "FILTERXML(A1,\"//a\")",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "HYPERLINK(\"https://example.test\",\"x\")",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "1<2+WEBSERVICE(\"https://example.test\")",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[1]Sheet1!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "Table1[[#This Row],[Col]]",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'Sheet [1]'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "\"[\"&'C:\\x\\a.xlsx'!Nome",
+      "refusals": ["template_active_content", "template_external_link"]
+    },
+    {
+      "formula": "SUM([a.xlsx]S!A1)",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "N(\"[\")+[a.xlsx]S!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "=[a.xlsx]S!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[A.XLSX]s!a1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[a.xlsx]'S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "[\\\\evil\\s\\a.xlsx]S!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "Altro!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'Altro foglio'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "SUM(Foglio1:Altro!A1)",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "SUM(A1)+[",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "Tabella1[Colonna",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'Foglio1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "REGISTER.ID(\"evil.dll\",\"x\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "SQL.REQUEST(\"DSN=x\",,,\"select 1\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "RTD(\"x\",,\"y\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "CALL(\"kernel32\",\"x\",\"J\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "EXEC(\"x\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "cmd|' /C calc'!A0",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "CELL(\"filename\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "OFFSET(A1,1,1)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "INFO(\"directory\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "_xludf.FUNZIONE(A1)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "R1C1",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Pippo+1",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "\"aperta",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "A1#",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "A1!",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "SUM(A1)\u0000",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "KPI!A1",
+      "refusals": []
+    },
+    {
+      "formula": "kpi!A1",
+      "refusals": []
+    },
+    {
+      "formula": "KPI!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'KPI'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "ſum(1)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "ﬁnd(\"a\",\"b\")",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "ＳＵＭ(1)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "_XLFN.xlookup(A1,B:B,C:C)",
+      "refusals": []
+    },
+    {
+      "formula": "TABELLA1[Voce]",
+      "refusals": []
+    },
+    {
+      "formula": "#n/a",
+      "refusals": []
+    },
+    {
+      "formula": "TOTALE*2",
+      "refusals": []
+    },
+    {
+      "formula": "TOTALEK",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "'[1]S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'\\\\evil\\s\\[a.xlsx]S'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'a/b'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "'Foglio1:SAL'!A1",
+      "refusals": []
+    },
+    {
+      "formula": "'Foglio1:SAL:KPI'!A1",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "Tabella1[#All]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[#Data],[Voce]:[Importo]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[#Totals],[Importo]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[#headers],[Voce]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[Voce 1]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[Città_2]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1['#a]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[a'(b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1['],INDIRECT(\"x\")]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[a\"b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[Col(1)]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[#Alle]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[#This Row]x,[Voce]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[[Voce]]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[a!b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[a/b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[𝐀]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1['😀]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[😀]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1['",
+      "refusals": ["template_external_link"]
+    },
+    {
+      "formula": "ROW(A1)+COLUMN(A1)+ROWS(A1:A2)+COLUMNS(A1:B1)",
+      "refusals": []
+    },
+    {
+      "formula": "IF(ISNA(A1),0,1)+IF(ISERR(A1),0,1)",
+      "refusals": []
+    },
+    {
+      "formula": "LOOKUP(1,A1:A3,B1:B3)",
+      "refusals": []
+    },
+    {
+      "formula": "_xlfn._xlws.FILTER(A1:A2,1)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "_xlfn._xlws.SORT(A1:A2)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "_xlfn.UNIQUE(A1:A2)",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[#This Row],[Importo €]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[% avanzamento]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[Costo (k)]]+Tabella1[[a-b]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[a\"b]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[a,b:c]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[a]b]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[x],INDIRECT(\"a\")]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[@Voce]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[a@b]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[a#b]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[a\tb]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[ab]]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[a,b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[a'#b]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[Importo €]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[a!b]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[[Col(1)]]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1['[a']]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[a''b]",
+      "refusals": []
+    },
+    {
+      "formula": "Tabella1[INDIRECT(A1)]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1['+'W'E'B'S'E'R'V'I'C'E'('A'1')]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[a']&WEBSERVICE(A1)&'b]",
+      "refusals": ["template_active_content"]
+    },
+    {
+      "formula": "Tabella1[[a'b]]",
+      "refusals": ["template_active_content"]
+    }
+  ],
+  "names": [
+    {
+      "name": "Foglio1",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "Foglio 2",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "SAL's",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "Città",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "a.xlsx",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "_xlnm.Print_Area",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "Tabella1",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "sheet": false,
+      "defined": true
+    },
+    {
+      "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "sheet": false,
+      "defined": true
+    },
+    {
+      "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀𝐀",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "\\\\evil.example\\s\\[a.xlsx]S",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "http://evil.example/[a.xlsx]S",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "[1]S",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "a/b",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "a\\b",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "a?b",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "a*b",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "a:b",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "'S",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "S'",
+      "sheet": false,
+      "defined": false
+    },
+    {
+      "name": "S'S",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "1abc",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": ".abc",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "abc.",
+      "sheet": true,
+      "defined": true
+    },
+    {
+      "name": "a b",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "a-b",
+      "sheet": true,
+      "defined": false
+    },
+    {
+      "name": "KPI",
+      "sheet": true,
+      "defined": true
+    }
+  ]
+}

@@ -1,22 +1,29 @@
 // Composition root of the worker process.
-import type { AskReading } from '@octobrief/application'
+import type { AskReading, RunReading } from '@octobrief/application'
 import {
   answerStore,
+  citedSources,
   createConnectorFeeds,
   createConsoleLogger,
   createDocumentProcessingStore,
   createExternalItemStore,
   createFileBlobStore,
+  createFileRecipeLibrary,
+  createFileTemplateStore,
   createKnowledgeStore,
   createModelRunner,
   createPool,
   createQuestionWorkStore,
+  createRunWorkStore,
   createSecretVault,
   createSourceSyncStore,
+  httpRenderer,
   inTransaction,
   knowledgeReader,
   loadWorkerConfig,
   openPgBossQueue,
+  recipeDataReader,
+  suspiciousHits,
   trackerReader,
 } from '@octobrief/infrastructure'
 import { createIsolatedExtractor } from '@octobrief/infrastructure/extract'
@@ -45,6 +52,18 @@ const stop = await startWorker({
   extractor: createIsolatedExtractor(),
   retentionDays: config.retentionDays,
   asking: { questions: createQuestionWorkStore(pool), reading },
+  deliverables: {
+    runs: createRunWorkStore(pool),
+    library: createFileRecipeLibrary(config.recipesDir),
+    templates: createFileTemplateStore(config.templatesDir),
+    reading: {
+      ...reading,
+      data: recipeDataReader,
+      citedSources,
+      suspicious: suspiciousHits,
+    } as RunReading<unknown>,
+    ...(config.rendererUrl ? { renderer: httpRenderer(config.rendererUrl) } : {}),
+  },
   syncIntervalMs: config.syncIntervalMinutes * 60_000,
   sources: {
     sync: createSourceSyncStore(pool),

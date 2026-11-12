@@ -1,0 +1,4 @@
+# What the tests and the lint of the renderer add, only in the test image.
+-c requirements.txt
+pytest==9.1.1
+ruff==0.17.2

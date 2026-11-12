@@ -1,0 +1,197 @@
+{
+  "description": "An internal status of a synthetic project: text, list, table, value and static blocks, a section not deduced, source and internal notes.",
+  "templates": { "docx": "neutro-docx", "pptx": "neutro-pptx", "xlsx": "neutro-xlsx" },
+  "layout": {
+    "sections": [
+      { "section": "summary", "style": "Heading 1", "slideLayout": "Title and Content" },
+      { "section": "risks", "sheet": "Documento" }
+    ],
+    "namedCells": []
+  },
+  "expected": {
+    "docx": { "sections": 5, "tables": 1 },
+    "pptx": { "slides": 6, "tables": 1 },
+    "xlsx": { "tables": 1, "namedCells": 0 }
+  },
+  "document": {
+    "schema": "octobrief.document/1",
+    "recipe": { "slug": "stato-progetto", "version": "1.0.0", "title": "Stato del progetto" },
+    "audience": "internal",
+    "lang": "it",
+    "title": "Stato del progetto Aurora",
+    "header": { "dataAsOf": "2026-11-05T08:00:00.000Z", "generatedAt": "2026-11-06T09:30:00.000Z" },
+    "sections": [
+      {
+        "id": "summary",
+        "title": "Sintesi",
+        "version": "both",
+        "notDeduced": false,
+        "blocks": [
+          { "kind": "static", "id": "intro", "text": "Di seguito lo stato del progetto." },
+          {
+            "kind": "text",
+            "id": "summary_text",
+            "segments": [
+              {
+                "text": "Sono chiusi 12 elementi su 20.",
+                "nature": "fact",
+                "category": "other",
+                "sources": [1, 1],
+                "sourceCategories": ["other", "story_points"]
+              },
+              {
+                "text": " Il rilascio resta previsto per dicembre.",
+                "nature": "inference",
+                "category": "other",
+                "sources": [2],
+                "sourceCategories": ["other"]
+              }
+            ],
+            "notDeduced": false
+          },
+          {
+            "kind": "value",
+            "id": "closed",
+            "label": "Elementi chiusi",
+            "cell": {
+              "text": "12",
+              "category": "other",
+              "operandCategories": ["other"],
+              "sources": [1]
+            }
+          }
+        ]
+      },
+      {
+        "id": "progress",
+        "title": "Avanzamento per feature",
+        "version": "both",
+        "notDeduced": false,
+        "blocks": [
+          {
+            "kind": "table",
+            "id": "features",
+            "title": "Feature",
+            "columns": [
+              { "id": "feature", "title": "Feature", "category": "other" },
+              { "id": "closed", "title": "Chiusi", "category": "other" },
+              { "id": "total", "title": "Totali", "category": "other" }
+            ],
+            "rows": [
+              {
+                "key": "F-1",
+                "cells": [
+                  {
+                    "text": "Accesso",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  },
+                  {
+                    "text": "7",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  },
+                  {
+                    "text": "9",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  }
+                ]
+              },
+              {
+                "key": "F-2",
+                "cells": [
+                  {
+                    "text": "Rendiconti",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  },
+                  {
+                    "text": "5",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1, 1]
+                  },
+                  {
+                    "text": null,
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": []
+                  }
+                ]
+              }
+            ],
+            "notDeduced": false
+          },
+          {
+            "kind": "list",
+            "id": "blocked",
+            "title": "Elementi bloccati",
+            "columns": [
+              { "id": "item", "title": "Elemento", "category": "other" },
+              { "id": "state", "title": "Stato", "category": "other" }
+            ],
+            "items": [
+              {
+                "key": "W-31",
+                "cells": [
+                  {
+                    "text": "Esportazione dei rendiconti",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  },
+                  {
+                    "text": "Bloccato",
+                    "category": "other",
+                    "operandCategories": ["other"],
+                    "sources": [1]
+                  }
+                ]
+              }
+            ],
+            "notDeduced": false
+          }
+        ]
+      },
+      {
+        "id": "risks",
+        "title": "Rischi",
+        "version": "internal",
+        "notDeduced": true,
+        "blocks": [{ "kind": "text", "id": "risks_text", "segments": [], "notDeduced": true }]
+      }
+    ],
+    "sourceNotes": [
+      {
+        "n": 1,
+        "label": "Tracker del progetto, conteggi",
+        "dataAsOf": "2026-11-05T08:00:00.000Z",
+        "ref": { "kind": "work_item_counts", "sourceId": "src-tracker", "query": "by_feature" }
+      },
+      {
+        "n": 2,
+        "label": "Verbale della riunione di avanzamento",
+        "dataAsOf": null,
+        "ref": {
+          "kind": "evidence",
+          "evidenceId": "ev-7",
+          "locator": { "kind": "paragraph", "index": 3 }
+        }
+      }
+    ],
+    "internalNotes": [
+      {
+        "text": "Verificare con il team la data del rilascio.",
+        "nature": "suggestion",
+        "category": "other",
+        "sources": [],
+        "sourceCategories": []
+      }
+    ]
+  }
+}

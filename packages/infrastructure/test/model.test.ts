@@ -284,6 +284,8 @@ describe('model configuration', () => {
     DATABASE_WORKER_URL: 'postgres://w@localhost/db',
     BLOB_DIR: '/var/blobs',
     SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    RECIPES_DIR: '/srv/octobrief/recipes',
+    TEMPLATES_DIR: '/srv/octobrief/templates',
   }
   const GATEWAY = {
     LLM_BACKEND: 'llm-api',

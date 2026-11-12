@@ -13,6 +13,14 @@ const loopbackUrl = z
 
 // The key that seals the credentials of the sources, and (development only) the loopback
 // addresses of fake source systems.
+// Where the recipes and the templates of the installation are, and (optional) the isolated
+// renderer that makes Word, PowerPoint and Excel files; without it only Markdown is made.
+const deliverablesShape = {
+  RECIPES_DIR: absolutePath,
+  TEMPLATES_DIR: absolutePath,
+  RENDERER_URL: z.url().optional(),
+}
+
 const sourcesShape = {
   SECRETS_KEY: z.string().refine((value) => readSecretsKey(value) !== null, 'not a secrets key'),
   SOURCES_DEV_JIRA_URL: loopbackUrl.optional(),
@@ -22,6 +30,7 @@ const sourcesShape = {
 const webSchema = z
   .object({
     ...sourcesShape,
+    RECIPES_DIR: absolutePath,
     DATABASE_URL: postgresUrl,
     PUBLIC_URL: z.url(),
     OIDC_ISSUER: z.url(),
@@ -53,6 +62,7 @@ const modelShape = {
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   LLM_ALLOWED_BACKENDS: z.string().optional(),
   LLM_FAKE_TRANSCRIPT: absolutePath.optional(),
+  LLM_FAKE_INVENT_IN_DRAFTS: z.enum(['true', 'false']).default('false'),
   EMBEDDING_BACKEND: z.enum(['fake', 'ollama', 'llm-api', 'none']).default('fake'),
   EMBEDDING_MODEL: z.string().min(1).default(DEFAULT_EMBEDDING_MODEL),
   EMBEDDING_DIGEST: z.string().min(1).default(DEFAULT_EMBEDDING_DIGEST),
@@ -78,6 +88,7 @@ const workerSchema = z
     BLOB_DIR: absolutePath,
     RETENTION_DAYS: z.coerce.number().int().positive().default(DEFAULT_RETENTION_DAYS),
     SYNC_INTERVAL_MINUTES: z.coerce.number().int().positive().default(DEFAULT_SYNC_MINUTES),
+    ...deliverablesShape,
     ...sourcesShape,
     ...modelShape,
   })
@@ -102,6 +113,7 @@ export interface WebConfig {
   readonly adminEmails: ReadonlySet<string>
   readonly blobDir: string
   readonly sources: SourcesConfig
+  readonly recipesDir: string
 }
 
 /** Which model reads the documents and which encoder makes the vectors of their text. */
@@ -122,6 +134,8 @@ export interface ModelConfig {
   /** Backends allowed to receive project data; absent: the configured ones. */
   readonly allowedBackends?: readonly string[]
   readonly fakeTranscriptPath?: string
+  /** Demo only: the fake model puts an unsupported figure in the first text of a first draft. */
+  readonly fakeInventsInDrafts?: boolean
 }
 
 export interface WorkerConfig {
@@ -129,6 +143,10 @@ export interface WorkerConfig {
   readonly blobDir: string
   readonly retentionDays: number
   readonly syncIntervalMinutes: number
+  readonly recipesDir: string
+  readonly templatesDir: string
+  /** The isolated renderer of binary files; absent: only Markdown files are made. */
+  readonly rendererUrl?: string
   readonly sources: SourcesConfig
   readonly model: ModelConfig
 }
@@ -183,6 +201,7 @@ export function loadWebConfig(env: NodeJS.ProcessEnv = process.env): WebConfig {
     adminEmails: emailList(parsed.ADMIN_EMAILS),
     blobDir: parsed.BLOB_DIR,
     sources: sourcesConfig(parsed),
+    recipesDir: parsed.RECIPES_DIR,
   }
 }
 
@@ -220,6 +239,7 @@ function modelConfig(env: ModelEnv): ModelConfig {
     embedding: embeddingConfig(env),
     ...(env.LLM_ALLOWED_BACKENDS ? { allowedBackends: list(env.LLM_ALLOWED_BACKENDS) } : {}),
     ...(env.LLM_FAKE_TRANSCRIPT ? { fakeTranscriptPath: env.LLM_FAKE_TRANSCRIPT } : {}),
+    ...(env.LLM_FAKE_INVENT_IN_DRAFTS === 'true' ? { fakeInventsInDrafts: true } : {}),
   }
 }
 
@@ -230,6 +250,9 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv = process.env): WorkerCo
     blobDir: parsed.BLOB_DIR,
     retentionDays: parsed.RETENTION_DAYS,
     syncIntervalMinutes: parsed.SYNC_INTERVAL_MINUTES,
+    recipesDir: parsed.RECIPES_DIR,
+    templatesDir: parsed.TEMPLATES_DIR,
+    ...(parsed.RENDERER_URL ? { rendererUrl: parsed.RENDERER_URL } : {}),
     sources: sourcesConfig(parsed),
     model: modelConfig(parsed),
   }

@@ -26,6 +26,8 @@ add_env_key DATABASE_OWNER_URL "postgres://octobrief_owner:${owner_pw}@127.0.0.1
 add_env_key DATABASE_URL "postgres://octobrief_app:${app_pw}@127.0.0.1:5450/octobrief"
 add_env_key DATABASE_WORKER_URL "postgres://octobrief_worker:${worker_pw}@127.0.0.1:5450/octobrief"
 add_env_key WEB_PORT "3310"
+add_env_key RECIPES_DIR "$PWD/recipes"
+add_env_key TEMPLATES_DIR "$PWD/templates"
 add_env_key SECRETS_KEY "$(openssl rand -base64 32)"
 # Local login against the fake OpenID Connect issuer (tools/fake-oidc). For Entra ID set
 # OIDC_ISSUER=https://login.microsoftonline.com/<tenant>/v2.0 and drop OIDC_ALLOW_INSECURE_ISSUER.

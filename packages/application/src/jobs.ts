@@ -7,6 +7,13 @@ export const JOB_SCHEMAS = {
   'document.compile': z.object({ documentId: z.uuid() }),
   'source.sync': z.object({ sourceId: z.uuid() }),
   'question.answer': z.object({ questionId: z.uuid() }),
+  'deliverable.run': z.object({ runId: z.uuid() }),
+  'deliverable.revise': z.object({
+    runId: z.uuid(),
+    slots: z.array(z.string().min(1).max(200)).min(1).max(50),
+    request: z.string().min(1).max(2000),
+  }),
+  'deliverable.render': z.object({ runId: z.uuid() }),
 } as const
 
 export type JobName = keyof typeof JOB_SCHEMAS

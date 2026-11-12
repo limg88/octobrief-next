@@ -1,0 +1,999 @@
+{
+  "changeSummary": "Gli story point sono solo interni: la colonna Story point esce dalla tabella per feature della versione per il cliente e resta nella versione interna, nella sezione «Perimetro e attribuzioni». Conta per tipo e raggruppa sotto la feature. Nuovo parametro facoltativo «Tipi di elemento da contare» (come li scrive il tracker): se il PM lo salta si contano tutti i tipi; i Task e i Sub-task non si contano mai. Nuova tabella «Elementi per tipo» nella panoramica. L'avanzamento per feature risale la catena dei padri fino alla feature (un Task sotto un PBI conta sotto la feature del PBI), non si ferma al padre diretto.",
+  "recipe": {
+    "schema": "octobrief.recipe/1",
+    "slug": "deliverable-sprint",
+    "version": "1.2.0",
+    "title": "Deliverable Sprint",
+    "purpose": "Presenta al cliente l'avanzamento di uno sprint: panoramica, avanzamento per feature, bug e CR, prossimi passi; ogni conteggio viene dal tracker.",
+    "audience": "client",
+    "lang": "it",
+    "parameters": [
+      {
+        "id": "period",
+        "type": "period",
+        "label": "Periodo dello sprint",
+        "required": true,
+        "step": 1
+      },
+      {
+        "id": "sprint",
+        "type": "text",
+        "label": "Sprint",
+        "help": "Il nome dello sprint come lo scrive il tracker.",
+        "required": true,
+        "step": 1,
+        "maxLength": 100
+      },
+      {
+        "id": "closed_states",
+        "type": "rows",
+        "label": "Stati di chiusura nel tracker",
+        "help": "Gli stati che nel tracker vogliono dire chiuso, uno per riga, come li scrive il tracker.",
+        "required": true,
+        "step": 1,
+        "maxRows": 10,
+        "key": ["state"],
+        "columns": [
+          {
+            "id": "state",
+            "label": "Stato",
+            "kind": "text",
+            "maxLength": 60
+          }
+        ]
+      },
+      {
+        "id": "counted_types",
+        "type": "rows",
+        "label": "Tipi di elemento da contare",
+        "help": "I tipi da contare, uno per riga, come li scrive il tracker (per esempio Product Backlog Item, Bug). I Task e i Sub-task non si contano mai. Se lo salti si contano tutti gli altri tipi.",
+        "required": false,
+        "step": 1,
+        "maxRows": 10,
+        "key": ["type"],
+        "columns": [
+          {
+            "id": "type",
+            "label": "Tipo",
+            "kind": "text",
+            "maxLength": 60
+          }
+        ]
+      },
+      {
+        "id": "bug_type",
+        "type": "text",
+        "label": "Tipo dei bug nel tracker",
+        "required": true,
+        "step": 2,
+        "maxLength": 60
+      },
+      {
+        "id": "cr_type",
+        "type": "text",
+        "label": "Tipo delle richieste di modifica (CR) nel tracker",
+        "required": true,
+        "step": 2,
+        "maxLength": 60
+      },
+      {
+        "id": "excluded_items",
+        "type": "work_item_selection",
+        "label": "Elementi da escludere dal perimetro",
+        "required": false,
+        "step": 2,
+        "multiple": true
+      },
+      {
+        "id": "attributions",
+        "type": "rows",
+        "label": "Attribuzioni decise da te",
+        "help": "Per un elemento senza feature nel tracker, la riga (feature) a cui lo attribuisci.",
+        "required": false,
+        "step": 2,
+        "maxRows": 200,
+        "columns": [
+          {
+            "id": "item",
+            "label": "Elemento",
+            "kind": "text",
+            "maxLength": 40
+          },
+          {
+            "id": "feature",
+            "label": "Feature",
+            "kind": "text",
+            "maxLength": 100
+          }
+        ],
+        "key": ["item"]
+      }
+    ],
+    "prerequisites": [
+      {
+        "kind": "source",
+        "sourceKinds": ["ado", "jira"],
+        "level": "required"
+      }
+    ],
+    "sections": [
+      {
+        "id": "cover",
+        "title": "Copertina",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "static",
+            "id": "cover_text",
+            "text": "Avanzamento dello sprint."
+          },
+          {
+            "kind": "data_value",
+            "id": "sprint_name",
+            "label": "Sprint",
+            "compute": {
+              "op": "parameter",
+              "parameter": "sprint"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "sprint_period",
+            "label": "Periodo",
+            "compute": {
+              "op": "parameter",
+              "parameter": "period"
+            },
+            "category": "other"
+          }
+        ]
+      },
+      {
+        "id": "overview",
+        "title": "Panoramica dello sprint",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "sprint_by_state",
+            "title": "Elementi per stato",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              },
+              "groupBy": "state",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["state"],
+            "columns": [
+              {
+                "id": "state",
+                "title": "Stato",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "Elementi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "sprint_by_type",
+            "title": "Elementi per tipo",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              },
+              "groupBy": "type",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                }
+              }
+            },
+            "key": ["type"],
+            "columns": [
+              {
+                "id": "type",
+                "title": "Tipo",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "Elementi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "items_total",
+            "label": "Elementi nello sprint",
+            "compute": {
+              "op": "count",
+              "block": "counted_items"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "closed_total",
+            "label": "Elementi chiusi",
+            "compute": {
+              "op": "count",
+              "block": "sprint_closed"
+            },
+            "category": "other"
+          },
+          {
+            "kind": "data_value",
+            "id": "progress",
+            "label": "Avanzamento (chiusi su totali)",
+            "compute": {
+              "op": "ratio",
+              "left": {
+                "value": "closed_total"
+              },
+              "right": {
+                "value": "items_total"
+              }
+            },
+            "category": "other"
+          },
+          {
+            "kind": "text_slot",
+            "id": "overview_text",
+            "instructions": "Presenta lo sprint al cliente: avanzamento come rapporto fra chiusi e totali, scope aggiunto o tolto, blocchi attivi. Ogni numero è un valore delle tabelle, con la sua fonte.",
+            "natures": ["fact", "inference"],
+            "maxChars": 1000
+          }
+        ]
+      },
+      {
+        "id": "features",
+        "title": "Avanzamento per feature",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "by_feature",
+            "title": "Elementi per feature",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              },
+              "groupBy": "feature",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["feature"],
+            "columns": [
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "Elementi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "closed_by_feature",
+            "title": "Chiusi per feature",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"],
+                "states": [
+                  {
+                    "parameter": "closed_states"
+                  }
+                ]
+              },
+              "groupBy": "feature",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["feature"],
+            "columns": [
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "closed",
+                "title": "Chiusi",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bugs",
+        "title": "Bug e CR",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "bugs_by_state",
+            "title": "Bug per stato",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "bug_type"
+                  }
+                ]
+              },
+              "groupBy": "state",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["state"],
+            "columns": [
+              {
+                "id": "state",
+                "title": "Stato",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "Bug",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "crs_by_state",
+            "title": "CR per stato",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "cr_type"
+                  }
+                ]
+              },
+              "groupBy": "state",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["state"],
+            "columns": [
+              {
+                "id": "state",
+                "title": "Stato",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "items",
+                "title": "CR",
+                "from": {
+                  "kind": "field",
+                  "field": "count"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "team",
+        "title": "Team e consuntivo",
+        "required": false,
+        "version": "internal",
+        "removable": true,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "hours",
+            "title": "Ore approvate nello sprint",
+            "query": {
+              "kind": "system_rows",
+              "view": "v_timesheet_all",
+              "dates": {
+                "column": "timesheetdate",
+                "period": {
+                  "parameter": "period"
+                }
+              }
+            },
+            "columns": [
+              {
+                "id": "employee",
+                "title": "Persona",
+                "from": {
+                  "kind": "field",
+                  "field": "employee"
+                },
+                "category": "personal"
+              },
+              {
+                "id": "date",
+                "title": "Giorno",
+                "from": {
+                  "kind": "field",
+                  "field": "timesheetdate"
+                },
+                "category": "hours"
+              },
+              {
+                "id": "duration",
+                "title": "Ore",
+                "from": {
+                  "kind": "field",
+                  "field": "duration"
+                },
+                "category": "hours"
+              }
+            ]
+          },
+          {
+            "kind": "data_value",
+            "id": "hours_total",
+            "label": "Ore dello sprint",
+            "compute": {
+              "op": "sum",
+              "column": {
+                "block": "hours",
+                "column": "duration"
+              }
+            },
+            "category": "hours"
+          }
+        ]
+      },
+      {
+        "id": "next",
+        "title": "Prossimi passi",
+        "required": true,
+        "version": "both",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "text_slot",
+            "id": "next_text",
+            "instructions": "Elenca i prossimi passi concordati, ciascuno con la sua fonte; responsabili e date solo se una fonte li dichiara.",
+            "natures": ["fact", "suggestion"],
+            "maxChars": 800
+          }
+        ]
+      },
+      {
+        "id": "perimeter",
+        "title": "Perimetro e attribuzioni",
+        "required": true,
+        "version": "internal",
+        "removable": false,
+        "blocks": [
+          {
+            "kind": "data_table",
+            "id": "points_by_feature",
+            "title": "Story point per feature",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              },
+              "groupBy": "feature",
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["feature"],
+            "columns": [
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "key"
+                },
+                "category": "other"
+              },
+              {
+                "id": "points",
+                "title": "Story point",
+                "from": {
+                  "kind": "field",
+                  "field": "story_points"
+                },
+                "category": "story_points"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "sprint_items",
+            "title": "Elementi dello sprint",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              }
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              },
+              {
+                "id": "type",
+                "title": "Tipo",
+                "from": {
+                  "kind": "field",
+                  "field": "type"
+                },
+                "category": "other"
+              },
+              {
+                "id": "state",
+                "title": "Stato",
+                "from": {
+                  "kind": "field",
+                  "field": "state"
+                },
+                "category": "other"
+              },
+              {
+                "id": "feature",
+                "title": "Feature nel tracker",
+                "from": {
+                  "kind": "field",
+                  "field": "parent"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "counted_items",
+            "title": "Elementi contati (senza gli esclusi)",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"]
+              },
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                }
+              }
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "sprint_closed",
+            "title": "Elementi chiusi dello sprint",
+            "query": {
+              "kind": "tracker",
+              "filter": {
+                "sprints": [
+                  {
+                    "parameter": "sprint"
+                  }
+                ],
+                "types": [
+                  {
+                    "parameter": "counted_types"
+                  }
+                ],
+                "excludedTypes": ["Task", "Sub-task", "Subtask"],
+                "states": [
+                  {
+                    "parameter": "closed_states"
+                  }
+                ]
+              },
+              "decisions": {
+                "excluded": {
+                  "parameter": "excluded_items"
+                },
+                "attributions": {
+                  "parameter": "attributions",
+                  "item": "item",
+                  "parent": "feature"
+                }
+              }
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "excluded",
+            "title": "Esclusi da te",
+            "query": {
+              "kind": "parameter",
+              "parameter": "excluded_items"
+            },
+            "key": ["id"],
+            "columns": [
+              {
+                "id": "id",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "id"
+                },
+                "category": "other"
+              },
+              {
+                "id": "summary",
+                "title": "Titolo",
+                "from": {
+                  "kind": "field",
+                  "field": "summary"
+                },
+                "category": "other"
+              }
+            ]
+          },
+          {
+            "kind": "data_table",
+            "id": "attributed",
+            "title": "Attribuiti da te",
+            "query": {
+              "kind": "parameter",
+              "parameter": "attributions"
+            },
+            "key": ["item"],
+            "columns": [
+              {
+                "id": "item",
+                "title": "Elemento",
+                "from": {
+                  "kind": "field",
+                  "field": "item"
+                },
+                "category": "other"
+              },
+              {
+                "id": "feature",
+                "title": "Feature",
+                "from": {
+                  "kind": "field",
+                  "field": "feature"
+                },
+                "category": "other"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [
+      "Si contano solo i tipi di elemento della tabella «Elementi per tipo»: i Task e i Sub-task non si contano.",
+      "Le attribuzioni degli elementi alle feature vengono dal tracker, risalendo i padri fino alla feature, o dal PM: non attribuire tu un elemento a una riga e non sommare a mano.",
+      "Gli elementi senza feature restano «da attribuire» al PM: elencali nelle note interne con il loro id, senza metterli in una riga.",
+      "«Completato» solo se l'elemento è nello stato di chiusura del tracker.",
+      "Nessuna stima interna, ora per persona o costo nella versione per il cliente."
+    ],
+    "checks": [
+      {
+        "id": "items_counted_once",
+        "kind": "unique",
+        "label": "nessun elemento contato due volte",
+        "message": "Un elemento compare due volte nel perimetro dello sprint.",
+        "column": {
+          "block": "sprint_items",
+          "column": "id"
+        },
+        "againstDeclared": false
+      },
+      {
+        "id": "features_counted_once",
+        "kind": "unique",
+        "label": "una riga per feature",
+        "message": "Una feature compare in due righe dell'avanzamento.",
+        "column": {
+          "block": "by_feature",
+          "column": "feature"
+        },
+        "againstDeclared": false
+      },
+      {
+        "id": "feature_counts_total",
+        "kind": "sum_equals",
+        "label": "conteggi per feature uguali al totale",
+        "message": "La somma degli elementi per feature non è il totale degli elementi dello sprint.",
+        "column": {
+          "block": "by_feature",
+          "column": "items"
+        },
+        "equals": {
+          "value": "items_total"
+        }
+      },
+      {
+        "id": "perimeter_covered",
+        "kind": "coverage",
+        "label": "ogni elemento attribuito, escluso o da attribuire",
+        "message": "Un elemento dello sprint è sia attribuito da te sia escluso.",
+        "universe": {
+          "block": "sprint_items",
+          "column": "id"
+        },
+        "coveredBy": [
+          {
+            "block": "attributed",
+            "column": "item"
+          },
+          {
+            "block": "excluded",
+            "column": "id"
+          }
+        ],
+        "allowUnassigned": true,
+        "exclusive": true
+      },
+      {
+        "id": "attributions_in_perimeter",
+        "kind": "member_of",
+        "label": "attribuzioni solo su elementi dello sprint",
+        "message": "Hai attribuito un elemento che non è nello sprint.",
+        "column": {
+          "block": "attributed",
+          "column": "item"
+        },
+        "in": {
+          "block": "sprint_items",
+          "column": "id"
+        }
+      },
+      {
+        "id": "overview_bounded",
+        "kind": "bounded_text",
+        "label": "panoramica senza dati interni",
+        "message": "La panoramica è troppo lunga o nomina dati interni.",
+        "slot": "overview_text",
+        "forbiddenPhrases": ["giornate uomo", "tariffa", "margine", "stima interna"],
+        "connectorsWithoutData": true
+      }
+    ],
+    "redTeamRules": [
+      "Nessun «nessun blocco» se standup, verbali o tracker segnalano blocchi attivi.",
+      "Ogni numero di elementi nel testo è un valore delle tabelle: nessun conteggio fatto a mano.",
+      "Nessun elemento è presentato in una feature diversa da quella del tracker o dell'attribuzione del PM."
+    ],
+    "extraInternalCategories": [],
+    "render": {
+      "formats": ["md", "pptx"],
+      "template": null,
+      "sections": [],
+      "namedCells": []
+    },
+    "examples": [
+      {
+        "title": "Sprint con tre feature, due bug e una CR",
+        "summary": "Un elemento senza feature resta da attribuire; un bug bloccato è fra i blocchi attivi."
+      }
+    ]
+  }
+}

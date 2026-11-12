@@ -73,9 +73,6 @@
     "forbidden": "Solo il responsabile o un amministratore può aggiungere membri.",
     "onlyOwners": "Solo il responsabile del progetto o un amministratore può aggiungere membri."
   },
-  "placeholder": {
-    "deliverables": "I deliverable (SAL, mail al cliente…) arrivano con l'incremento 5."
-  },
   "errors": {
     "generic": "Qualcosa è andato storto. Riprova.",
     "sessionExpired": "Sessione scaduta: accedi di nuovo."
@@ -282,6 +279,76 @@
       "absence_with_data": "segnalazione di assenza che riporta dati",
       "absence_with_name": "segnalazione di assenza che nomina una persona",
       "absence_with_mixed_script": "segnalazione di assenza con caratteri di alfabeti diversi"
+    }
+  },
+  "deliverables": {
+    "title": "Deliverable",
+    "subtitle": "Documenti preparati da una ricetta: i dati li raccoglie il codice, i testi li scrive il modello, i controlli decidono cosa si può approvare.",
+    "catalog": "Ricette",
+    "runs": "Documenti del progetto",
+    "noRuns": "Nessun documento ancora.",
+    "choose": "Scegli una ricetta per preparare un documento, oppure un documento da rivedere.",
+    "prepare": "Prepara il documento",
+    "cancel": "Annulla",
+    "from": "dal",
+    "to": "al",
+    "addRow": "Aggiungi riga",
+    "removeRow": "Togli l'ultima riga",
+    "unsupportedParameter": "Questo parametro non si può ancora compilare da qui.",
+    "noRows": "Nessuna riga.",
+    "notes": "Fonti",
+    "revision": "revisione {n}",
+    "summary": "{checks, plural, one {# controllo} other {# controlli}} · {open, plural, =0 {nessuna anomalia aperta} one {# anomalia aperta} other {# anomalie aperte}} · {accepted, plural, =0 {nessuna accettata} one {# accettata} other {# accettate}}",
+    "anomalies": "Anomalie",
+    "warnings": "Avvisi",
+    "files": "File",
+    "approve": "Approva",
+    "notApprovable": "Si può approvare quando non restano anomalie aperte.",
+    "accept": "Accetta con questa motivazione",
+    "requestChange": "Chiedi modifica",
+    "changeQueued": "Riscrittura avviata",
+    "changePlaceholder": "Cosa va cambiato, oppure perché l'accetti",
+    "reasonPlaceholder": "Perché l'accetti (almeno una frase)",
+    "reasonFor": "Motivazione o richiesta per: {text}",
+    "reasonTooShort": "Serve una motivazione di almeno una frase, oppure l'anomalia non si può accettare.",
+    "failed": "La preparazione non è riuscita ({code}).",
+    "revisionNotKept": "L'ultima modifica chiesta non è stata tenuta ({code}): il documento è rimasto com'era.",
+    "renderFailed": "I file non sono stati prodotti ({code}): puoi approvare di nuovo.",
+    "status": {
+      "queued": "In coda",
+      "running": "In preparazione",
+      "ready": "Da rivedere",
+      "failed": "Non riuscito",
+      "discarded": "Scartato"
+    },
+    "phase": {
+      "gathering": "Raccolgo i dati…",
+      "writing": "Scrivo i testi…",
+      "checking": "Controllo il documento…",
+      "revising": "Riscrivo i testi richiesti…"
+    },
+    "approval": {
+      "approving": "Approvato: preparo i file…",
+      "approved": "Approvato",
+      "render_failed": "Approvato, file non prodotti"
+    },
+    "findingKind": {
+      "anomaly": "Anomalia",
+      "warning": "Avviso"
+    },
+    "findingClass": {
+      "data": "dati",
+      "form": "forma",
+      "structure": "struttura"
+    },
+    "findingStatus": {
+      "open": "aperta",
+      "accepted": "accettata",
+      "decided": "decisa"
+    },
+    "audience": {
+      "internal": "uso interno",
+      "client": "per il cliente"
     }
   },
   "documentStatus": {

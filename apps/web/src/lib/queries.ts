@@ -18,6 +18,9 @@ import type {
   ProjectDto,
   QuestionDto,
   QuestionSummaryDto,
+  RecipeDto,
+  RunDto,
+  RunViewDto,
   SourceDto,
 } from './api-types'
 
@@ -290,6 +293,81 @@ export function useDeleteQuestion(slug: string) {
       apiRequest<void>(`${questionsPath(slug)}/${id}`, { method: 'DELETE', csrfToken }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: questionsKey(slug) }),
   })
+}
+
+const runsKey = (slug: string) => ['projects', slug, 'runs'] as const
+const runsPath = (slug: string) => `/projects/${encodeURIComponent(slug)}/runs`
+/** Whether a run is still being worked on in the background. */
+const inProgress = (run: RunDto) =>
+  run.status === 'queued' || run.status === 'running' || run.approval === 'approving'
+
+export function useRecipes() {
+  return useQuery({
+    queryKey: ['recipes'] as const,
+    queryFn: () => apiRequest<{ recipes: RecipeDto[] }>('/recipes').then((r) => r.recipes),
+  })
+}
+
+export function useRuns(slug: string) {
+  return useQuery({
+    queryKey: runsKey(slug),
+    queryFn: () => apiRequest<{ runs: RunDto[] }>(runsPath(slug)).then((r) => r.runs),
+    refetchInterval: (query) => (query.state.data?.some(inProgress) ? PENDING_POLL_MS : false),
+  })
+}
+
+export function useRun(slug: string, id: string) {
+  return useQuery({
+    queryKey: [...runsKey(slug), id],
+    queryFn: () => apiRequest<RunViewDto>(`${runsPath(slug)}/${id}`),
+    refetchInterval: (query) =>
+      query.state.data && inProgress(query.state.data.run) ? PENDING_POLL_MS : false,
+  })
+}
+
+function useRunMutation<I, O>(slug: string, call: (input: I, csrfToken: string) => Promise<O>) {
+  const { csrfToken } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: I) => call(input, csrfToken),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: runsKey(slug) }),
+  })
+}
+
+export function useStartRun(slug: string) {
+  return useRunMutation(
+    slug,
+    (input: { recipeSlug: string; parameters: Record<string, unknown> }, csrfToken) =>
+      apiRequest<RunDto>(runsPath(slug), { method: 'POST', body: input, csrfToken }),
+  )
+}
+
+export function useAcceptFinding(slug: string, id: string) {
+  return useRunMutation(
+    slug,
+    (input: { code: string; refKey: string; reason: string }, csrfToken) =>
+      apiRequest<RunViewDto>(`${runsPath(slug)}/${id}/acceptances`, {
+        method: 'POST',
+        body: input,
+        csrfToken,
+      }),
+  )
+}
+
+export function useRequestChange(slug: string, id: string) {
+  return useRunMutation(slug, (input: { slots: string[]; request: string }, csrfToken) =>
+    apiRequest<void>(`${runsPath(slug)}/${id}/changes`, {
+      method: 'POST',
+      body: input,
+      csrfToken,
+    }),
+  )
+}
+
+export function useApproveRun(slug: string, id: string) {
+  return useRunMutation(slug, (_input: undefined, csrfToken) =>
+    apiRequest<void>(`${runsPath(slug)}/${id}/approval`, { method: 'POST', csrfToken }),
+  )
 }
 
 export async function signOut(): Promise<void> {

@@ -10,3 +10,4 @@ Ogni incremento della roadmap si chiude con una demo eseguibile in pochi minuti.
 | 03 | Conoscenza: fatti con citazioni verificate, pseudonimizzazione, contraddizioni, vettori, RLS | `KEEP=1 bash demo/03-conoscenza/run.sh` | [COPIONE](03-conoscenza/COPIONE.md) |
 | 04 | Fonti e alimentatori: ingest con token, feeder (file, cartella), Jira finto letto dal worker, credenziali cifrate, freschezza dei dati | `KEEP=1 bash demo/04-fonti/run.sh` | [COPIONE](04-fonti/COPIONE.md) |
 | 05 | Chiedi: ricerca ibrida, risposta verificata frase per frase, contraddizioni, freschezza, avanzamento in tempo reale, storico | `KEEP=1 bash demo/05-chiedi/run.sh` | [COPIONE](05-chiedi/COPIONE.md) |
+| 06 | Deliverable: SAL economico e Mail al cliente, dai dati alla bozza controllata, modifica, accettazione motivata, approvazione e file (Excel dal renderer isolato) | `KEEP=1 bash demo/06-deliverable/run.sh` | [COPIONE](06-deliverable/COPIONE.md) |

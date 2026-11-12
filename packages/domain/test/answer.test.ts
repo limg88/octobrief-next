@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ANSWER_LIMITS, modelAnswerSchema, parseModelAnswer } from '../src/index.ts'
+import { ANSWER_LIMITS, modelAnswerSchema, parseModelAnswer } from '../src/recipe/index.ts'
 
 const valid = () => ({
   lang: 'it',

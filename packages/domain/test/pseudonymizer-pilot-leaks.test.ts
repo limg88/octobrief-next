@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PeopleMatcher, Pseudonymizer, placeholderCounts } from '../src/index.ts'
+import { PeopleMatcher, Pseudonymizer, placeholderCounts } from '../src/recipe/index.ts'
 
 // The leaks seen on the pilot (STOP S4), rebuilt with invented people, companies and meetings:
 // a transcript with first names and pet names, a Teams and a Webex invitation, a signature with a

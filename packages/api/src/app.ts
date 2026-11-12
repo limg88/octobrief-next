@@ -3,6 +3,7 @@ import type { ApiDependencies } from './dependencies.ts'
 import type { ApiEnv } from './env.ts'
 import { handleError } from './errors.ts'
 import { registerAuthRoutes } from './routes/auth.ts'
+import { registerDeliverableRoutes } from './routes/deliverables.ts'
 import { registerDocumentRoutes } from './routes/documents.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerKnowledgeRoutes } from './routes/knowledge.ts'
@@ -31,6 +32,7 @@ export function createApi(deps: ApiDependencies) {
   registerKnowledgeRoutes(app, deps)
   registerSourceRoutes(app, deps)
   registerQuestionRoutes(app, deps)
+  registerDeliverableRoutes(app, deps)
   registerSystemRoutes(app, deps)
   app.doc31('/openapi.json', {
     openapi: '3.1.0',

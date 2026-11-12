@@ -8,7 +8,10 @@ export const LLM_API_BACKEND = 'llm-api'
 
 function chatAdapter(config: ModelConfig): ModelRunner {
   if (config.chat.backend === 'fake') {
-    return fakeRunner({ transcriptPath: config.fakeTranscriptPath })
+    return fakeRunner({
+      transcriptPath: config.fakeTranscriptPath,
+      inventInDrafts: config.fakeInventsInDrafts,
+    })
   }
   const { embedding } = config
   return llmApiRunner({
@@ -32,7 +35,10 @@ function separateEmbedder(config: ModelConfig): Embedder | null {
     return ollamaEmbedder({ baseUrl: embedding.url, model: embedding.model })
   }
   if (embedding.backend === 'fake' && config.chat.backend !== 'fake') {
-    const fake = fakeRunner({ transcriptPath: config.fakeTranscriptPath })
+    const fake = fakeRunner({
+      transcriptPath: config.fakeTranscriptPath,
+      inventInDrafts: config.fakeInventsInDrafts,
+    })
     return fake.embed && fake.embedding ? { embedding: fake.embedding, embed: fake.embed } : null
   }
   return null

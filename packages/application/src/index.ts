@@ -21,6 +21,23 @@ export type {
 } from './ports/auth-stores.ts'
 export type { BlobStore } from './ports/blob-store.ts'
 export type {
+  ApprovalState,
+  DeliverableFile,
+  LibraryRecipe,
+  NewDeliverableFile,
+  NewRevision,
+  RecipeLibrary,
+  Renderer,
+  RunDetails,
+  RunRecord,
+  RunRepository,
+  RunRevision,
+  RunWorkStore,
+  Template,
+  TemplateStore,
+} from './ports/deliverable-stores.ts'
+export { APPROVAL_STATES, RendererUnavailable } from './ports/deliverable-stores.ts'
+export type {
   DocumentProcessingStore,
   DocumentRepository,
   DocumentToProcess,
@@ -66,6 +83,9 @@ export type {
 } from './ports/source-stores.ts'
 export { FeedError } from './ports/source-stores.ts'
 export type { TextExtractor } from './ports/text-extractor.ts'
+export * from './recipe/edit-recipe.ts'
+export * from './recipe/gather.ts'
+export * from './recipe/run.ts'
 export type { AuthDependencies } from './use-cases/auth.ts'
 export {
   beginLogin,
@@ -77,6 +97,28 @@ export {
   SESSION_TTL_MS,
 } from './use-cases/auth.ts'
 export { checkHealth, PROBE_TIMEOUT_MS } from './use-cases/check-health.ts'
+export type {
+  DeliverableDependencies,
+  FindingView,
+  RenderDependencies,
+  RunReading,
+  RunView,
+  RunWorkDependencies,
+} from './use-cases/deliverables.ts'
+export {
+  acceptFinding,
+  approveRun,
+  createRenderDeliverableHandler,
+  createReviseRunHandler,
+  createRunRecipeHandler,
+  downloadFile,
+  getRun,
+  listRecipes,
+  listRuns,
+  MAX_CHANGE_REQUEST_LENGTH,
+  requestChange,
+  startRun,
+} from './use-cases/deliverables.ts'
 export type {
   DocumentDependencies,
   ProcessingDependencies,

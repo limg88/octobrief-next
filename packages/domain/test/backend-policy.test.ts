@@ -4,7 +4,7 @@ import {
   assertBackendAllowed,
   DomainError,
   namesNeverForReal,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 // Which backends the Admin may admit for real data (unit): every one but Groq, under any name of
 // the backend, of its provider or of a model mapped to it.

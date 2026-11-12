@@ -18,7 +18,7 @@ import {
   workItemOf,
   workItemReads,
   workItemRow,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 const ADO = 'a0000000-0000-4000-8000-000000000001' as SourceId
 const JIRA = 'b0000000-0000-4000-8000-000000000002' as SourceId

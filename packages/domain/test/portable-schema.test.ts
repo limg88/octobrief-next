@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PORTABLE_SCHEMA_KEYWORDS, portableSchema } from '../src/index.ts'
+import { PORTABLE_SCHEMA_KEYWORDS, portableSchema } from '../src/recipe/index.ts'
 
 describe('portableSchema', () => {
   it('keeps only types, properties, required, items, enums, unions and closed objects', () => {

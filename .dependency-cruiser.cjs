@@ -6,9 +6,13 @@ module.exports = {
   forbidden: [
     {
       name: 'domain-is-pure',
-      comment: 'domain depends on nothing but itself (no npm packages, no node built-ins).',
+      comment:
+        'domain depends on nothing but itself and zod; only its two hashing modules use node:crypto.',
       severity: 'error',
-      from: { path: '^packages/domain/src' },
+      from: {
+        path: '^packages/domain/src',
+        pathNot: '^packages/domain/src/(recipe/hash|pseudonym)\\.ts$',
+      },
       to: { pathNot: '^packages/domain/src' },
     },
     {
@@ -54,8 +58,10 @@ module.exports = {
     },
     {
       name: 'no-circular',
+      comment:
+        'no import cycles, except inside the recipe and gate rules ported as a whole from octobrief-next (their modules share types and message catalogs).',
       severity: 'error',
-      from: {},
+      from: { pathNot: '^packages/domain/src/(recipe|gate)/' },
       to: { circular: true },
     },
   ],

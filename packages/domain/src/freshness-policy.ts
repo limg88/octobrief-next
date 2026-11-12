@@ -1,17 +1,21 @@
 import type { DocumentKind } from './classification.ts'
 import type { DateSource } from './document-date.ts'
 import type { FreshnessPolicy } from './freshness.ts'
+import type { SourceKind as RecipeSourceKind } from './recipe/source-kinds.ts'
 import type { SourceKind as ConnectedSourceKind } from './source.ts'
 
-/** Where a document comes from: one of the sources of the project, or the manual upload. */
-export type SourceKind = ConnectedSourceKind | 'manual_upload'
+/**
+ * Where a document comes from: a source of the project, or (as recipes name them) one of the
+ * portable kinds, the manual upload among them.
+ */
+export type SourceKind = ConnectedSourceKind | RecipeSourceKind
 
 /** Who gave the date of a document: the PM, the source system, or nobody (the acquisition). */
 export const ORIGIN_SOURCES = ['pm', 'acquisition', 'system'] as const
 export type OriginSource = (typeof ORIGIN_SOURCES)[number]
 
 /** Connectors that carry the live data of a system; Teams, mail and SharePoint carry documents. */
-const SYSTEM_SOURCE_KINDS: readonly SourceKind[] = ['ado', 'jira', 'dwsi']
+const SYSTEM_SOURCE_KINDS: readonly SourceKind[] = ['ado', 'jira', 'dwsi', 'netsuite_dwsi']
 /** Kinds of document that are an export of a system, whoever uploaded them. */
 const SYSTEM_DOCUMENT_KINDS: readonly DocumentKind[] = [
   'backlog_export',

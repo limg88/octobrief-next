@@ -18,5 +18,60 @@ services:
       timeout: 3s
       retries: 20
 
+  # The renderer of Word, PowerPoint and Excel files. Started only when asked for
+  # (`--profile renderer`): on the internal network `render`, which has no way out. No secret,
+  # no volume, no database; a user that is not root on a read-only filesystem, with caps on
+  # memory, CPU and processes.
+  renderer:
+    profiles: [renderer]
+    build:
+      context: .
+      dockerfile: apps/renderer/Dockerfile
+      target: runtime
+    image: octobrief-new-renderer:local
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 64
+    networks: [render]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8080), 2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # The entrance for a worker outside the compose network (development): published on the
+  # loopback only, it forwards to the renderer and nowhere else. A worker inside the compose
+  # network uses http://renderer:8080 as RENDERER_URL.
+  renderer-gateway:
+    profiles: [renderer]
+    image: octobrief-new-renderer:local
+    command: ["python", "-m", "renderer.gateway"]
+    environment:
+      RENDERER_UPSTREAM: renderer:8080
+    read_only: true
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    cpus: 0.25
+    pids_limit: 16
+    networks: [render, default]
+    ports:
+      # 5451 so it can run next to the octobrief-next renderer (5441).
+      - "127.0.0.1:${RENDERER_PORT:-5451}:8080"
+    depends_on:
+      renderer:
+        condition: service_healthy
+
+networks:
+  render:
+    internal: true
+
 volumes:
   pgdata:

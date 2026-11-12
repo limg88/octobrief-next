@@ -18,7 +18,7 @@ import {
   systemLeftUndated,
   type VerifiedAnswer,
   verifyAnswer,
-} from '../src/index.ts'
+} from '../src/recipe/index.ts'
 
 const NOW = new Date('2026-11-05T12:00:00Z')
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000)
