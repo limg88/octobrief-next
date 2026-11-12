@@ -59,6 +59,7 @@ export type {
 } from './port.ts'
 export { CONNECTOR_KINDS, MAX_LISTED_IDS, MAX_REMOVED_PER_BATCH } from './port.ts'
 export * from './private-hosts.ts'
+export * from './reader.ts'
 export {
   checkRule,
   type HttpRule,

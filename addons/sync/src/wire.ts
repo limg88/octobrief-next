@@ -106,3 +106,43 @@ export function inCalls(delivery: WireDelivery, size: number): WireDelivery[] {
   })
   return calls
 }
+
+const date = (value: string | null | undefined): Date | null => {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+/** What a provider printed, as the delivery it stands for; an unreadable date is no date. */
+export function fromWire(wire: WireDelivery): Delivery {
+  const item = (i: WireItem) => ({
+    externalId: i.externalId,
+    version: i.version,
+    title: i.title,
+    originAt: date(i.originAt),
+    url: i.url ?? null,
+    people: i.people ?? [],
+  })
+  return {
+    dataAsOf: date(wire.dataAsOf),
+    documents: (wire.documents ?? []).map((d) => ({
+      ...item(d),
+      mediaType: d.mediaType,
+      bytes:
+        d.text !== undefined
+          ? new TextEncoder().encode(d.text)
+          : new Uint8Array(Buffer.from(d.contentBase64 ?? '', 'base64')),
+      ...(d.kind ? { systemKind: d.kind } : {}),
+      ...(date(d.fileModifiedAt) ? { fileModifiedAt: date(d.fileModifiedAt) as Date } : {}),
+    })),
+    records: (wire.records ?? []).map((r) => ({ ...item(r), record: r.record })),
+    rows: (wire.rows ?? []).map((view) => ({
+      view: view.view,
+      perimeter: view.perimeter,
+      rows: view.rows,
+      extractedAt: date(view.extractedAt) ?? new Date(0),
+      sourceSyncedAt: date(view.sourceSyncedAt),
+    })),
+    removed: wire.removed ?? [],
+  }
+}

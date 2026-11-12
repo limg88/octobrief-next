@@ -99,7 +99,7 @@ call "$paola" POST /projects "{\"name\":\"${remote_name}\"}" >/dev/null
 remote="$(call "$paola" GET /projects | node -pe "JSON.parse(require('fs').readFileSync(0)).projects.find(p=>p.name==='${remote_name}').slug")"
 created="$(call "$paola" POST "/projects/$remote/sources" '{"kind":"jira","name":"Jira (inviato dal PC)","feed":"push"}')"
 expect "$(echo "$created" | field source.feed)" "push" "fonte Jira alimentata dal PC: il token si vede una volta sola"
-OCTOBRIEF_FEEDER_TOKEN="$(echo "$created" | field ingestToken)" node apps/feeder/src/cli.ts folder \
+OCTOBRIEF_FEEDER_TOKEN="$(echo "$created" | field ingestToken)" node addons/sync/src/cli.ts folder \
   --server "$base" --source "$(echo "$created" | field source.id)" --path "$folder" --system jira | sed 's/^/  /'
 remote_id="$(call "$paola" GET "/projects/$remote" | field id)"
 expect "$(worker_sql "SELECT count(*) FROM tracker_items WHERE project_id = '$remote_id'")" "5" "5 attività arrivate via HTTPS, senza che il server veda la cartella"

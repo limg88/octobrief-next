@@ -1,6 +1,6 @@
 // Clean architecture boundaries: dependencies point inward only.
 //   domain <- application <- (infrastructure | api) <- apps (composition roots)
-//   domain <- connectors <- (infrastructure | apps/feeder): read-only adapters to source systems
+//   domain <- connectors <- (infrastructure | addons/sync): read-only adapters to source systems
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -30,11 +30,12 @@ module.exports = {
       to: { path: '^(packages/(application|infrastructure|api)|apps)/' },
     },
     {
-      name: 'feeder-stays-light',
-      comment: 'the feeder runs on a PM computer: no server code, only connectors and the domain.',
+      name: 'sync-addon-stays-light',
+      comment:
+        'the sync add-on runs on a PM computer: no server code, only connectors and the domain.',
       severity: 'error',
-      from: { path: '^apps/feeder/src' },
-      to: { path: '^(packages/(application|infrastructure|api)|apps/(web|worker))/' },
+      from: { path: '^addons/sync/src' },
+      to: { path: '^(packages/(application|infrastructure|api)|apps)/' },
     },
     {
       name: 'api-does-not-know-infrastructure',
@@ -53,7 +54,7 @@ module.exports = {
       name: 'tools-stay-out-of-production',
       comment: 'development tools (fake issuer, generators) are never imported by shipped code.',
       severity: 'error',
-      from: { path: '^(packages|apps)/[^/]+/src' },
+      from: { path: '^(packages|apps|addons)/[^/]+/src' },
       to: { path: '^tools/' },
     },
     {

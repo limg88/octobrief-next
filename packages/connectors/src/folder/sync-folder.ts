@@ -48,6 +48,11 @@ export const SYNC_SUBFOLDERS: Readonly<Record<SourceKind, string>> = {
 const isDocumentKind = (kind: string | undefined): kind is string =>
   kind !== undefined && (DOCUMENT_KINDS as readonly string[]).includes(kind)
 
+const isFolderText = (mediaType: string | undefined): mediaType is string =>
+  mediaType !== undefined &&
+  mediaType.startsWith('text/') &&
+  Object.values(FOLDER_MEDIA_TYPES).includes(mediaType)
+
 async function* walk(dir: string, depth: number): AsyncGenerator<string> {
   const entries = await readdir(dir, { withFileTypes: true })
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
@@ -152,7 +157,8 @@ export async function readFolderBatch(options: FolderBatchOptions): Promise<Fold
         externalId: file.externalId,
         version: file.version,
         title: file.title,
-        mediaType: 'text/markdown',
+        // Only a kind of text a folder is read for: a header cannot make a text pass for a binary.
+        mediaType: isFolderText(file.mediaType) ? file.mediaType : 'text/markdown',
         bytes: new TextEncoder().encode(file.body),
         originAt: file.originAt,
         url: file.url,

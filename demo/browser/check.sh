@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs a demo with KEEP=1, follows the browser part of its COPIONE in a real browser (Playwright),
 # then stops what the demo left on. Needs `pnpm exec playwright install chromium` once.
-# Usage: bash demo/browser/check.sh <NN> [<NN> …]     (01–12; no argument = all)
+# Usage: bash demo/browser/check.sh <NN> [<NN> …]     (01–13; no argument = all)
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 mkdir -p .tmp/browser
@@ -35,6 +35,7 @@ check() {
       ;;
     10) node demo/browser/deliverables.ts "$(address "$log" deliverables)" "Rischi e opportunità" "Conoscenza di progetto" ;;
     12) node demo/browser/12.ts "$(address "$log" sources)" ;;
+    13) node demo/browser/13.ts "$(address "$log" sources)" ;;
     11) node demo/browser/11.ts "https://localhost:8443/projects/$(grep -o 'progetto aurora-[0-9]*' "$log" | head -1 | cut -d' ' -f2)" ;;
     *) echo "  nessuna parte nel browser" ;;
   esac || failed=1
@@ -46,6 +47,6 @@ check() {
   fi
 }
 
-[ $# -gt 0 ] || set -- 01 02 03 04 05 06 07 08 09 10 11 12
+[ $# -gt 0 ] || set -- 01 02 03 04 05 06 07 08 09 10 11 12 13
 for n in "$@"; do check "$n"; done
 exit "$failed"

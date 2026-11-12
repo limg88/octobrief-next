@@ -200,7 +200,7 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.1)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
 
-  apps/feeder:
+  addons/sync:
     dependencies:
       '@octobrief/connectors':
         specifier: workspace:*
@@ -208,6 +208,9 @@ importers:
       '@octobrief/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
   apps/web:
     dependencies:

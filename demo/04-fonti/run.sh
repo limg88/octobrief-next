@@ -13,7 +13,7 @@ suffix="$(date +%H%M%S)"
 project_name="Borea ${suffix}"
 export LLM_FAKE_TRANSCRIPT="$PWD/.tmp/demo-04-modello.jsonl"
 
-feeder() { node apps/feeder/src/cli.ts "$@" --server "$base"; }
+feeder() { node addons/sync/src/cli.ts "$@" --server "$base"; }
 sources() { call "$paola" GET "/projects/$slug/sources"; }
 documents() { call "$paola" GET "/projects/$slug/documents"; }
 worker_sql() {

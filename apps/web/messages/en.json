@@ -151,7 +151,7 @@
     "account": "Account email",
     "secret": "Read-only token",
     "tokenTitle": "Feeder token: copy it now, it will not be shown again.",
-    "tokenNote": "On the PM's computer: OCTOBRIEF_FEEDER_TOKEN=… node apps/feeder/src/cli.ts … (see demo/04-fonti).",
+    "tokenNote": "On the PM's computer: OCTOBRIEF_FEEDER_TOKEN=… node addons/sync/src/cli.ts … (see demo/04-fonti).",
     "tokenDismiss": "I copied it",
     "kinds": {
       "m365": "Microsoft 365 (feeder)",

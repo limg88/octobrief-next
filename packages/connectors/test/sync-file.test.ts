@@ -27,6 +27,7 @@ const document: SyncFile = {
   originAt: null,
   url: null,
   systemKind: 'email',
+  mediaType: 'text/csv',
   people: [{ displayName: 'Paola Prova' }],
   body: 'Da: Paola Prova\n\n---\nIl budget resta di 890.000 euro.\n',
 }

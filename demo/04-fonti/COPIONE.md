@@ -46,15 +46,15 @@ Il token arriva dalla pagina Fonti e va passato in `OCTOBRIEF_FEEDER_TOKEN` (mai
 
 ```bash
 # Microsoft 365 tramite Claude e il connettore M365 del PM (sola lettura)
-node apps/feeder/src/cli.ts m365 --server https://<octobrief> --source <id fonte> \
+node addons/sync/src/cli.ts m365 --server https://<octobrief> --source <id fonte> \
   --query "progetto Borea" --days 7
 
 # NetSuite DWSI con credenziali in sola lettura (la connessione resta su questo PC)
-DWSI_PASSWORD=… node apps/feeder/src/cli.ts dwsi --server https://<octobrief> --source <id fonte> \
+DWSI_PASSWORD=… node addons/sync/src/cli.ts dwsi --server https://<octobrief> --source <id fonte> \
   --host <host> --database <db> --user <utente> --codes PRJ000123 --owner <email del PM> --tls plaintext
 
 # Una cartella (per esempio una libreria SharePoint sincronizzata)
-node apps/feeder/src/cli.ts folder --server https://<octobrief> --source <id fonte> --path ~/Progetti/Borea
+node addons/sync/src/cli.ts folder --server https://<octobrief> --source <id fonte> --path ~/Progetti/Borea
 ```
 
 Questi tre modi sono coperti da test con sistemi finti, ma `m365` e `dwsi` **non sono stati provati contro i sistemi reali**.

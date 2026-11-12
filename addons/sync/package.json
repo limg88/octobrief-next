@@ -1,0 +1,19 @@
+{
+  "name": "@octobrief/sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/cli.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@octobrief/connectors": "workspace:*",
+    "@octobrief/domain": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "description": "Octobrief sync add-on: keeps a folder of Markdown files up to date from Jira, Azure DevOps, Microsoft 365 and NetSuite, and sends it to Octobrief.",
+  "bin": {
+    "octobrief-sync": "./src/cli.ts"
+  }
+}

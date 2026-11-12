@@ -95,22 +95,32 @@ describe('a synchronized folder', () => {
     await put('m365/mail/uno.md', mail('m-1'))
     await put('m365/mail/senza-testo.md', mail('m-2', ' \n'))
     await put('m365/mail/tipo-ignoto.md', mail('m-3', 'Testo.\n', 'email'))
+    await put('m365/mail/tabella.md', {
+      ...mail('m-4', 'a,b\n1,2\n'),
+      mediaType: 'text/csv',
+    } as SyncFile)
+    await put('m365/mail/finto-pdf.md', {
+      ...mail('m-5', 'x\n'),
+      mediaType: 'application/pdf',
+    } as SyncFile)
     const batch = await readFolderBatch({
       dir: join(root, 'm365'),
       sync: { root, system: 'm365' },
       offset: 0,
     })
-    expect(batch.documents.map((d) => [d.externalId, d.systemKind])).toEqual([
-      ['m-3', undefined],
-      ['m-1', 'transcript'],
+    expect(batch.documents.map((d) => [d.externalId, d.systemKind, d.mediaType])).toEqual([
+      ['m-5', 'transcript', 'text/markdown'],
+      ['m-4', 'transcript', 'text/csv'],
+      ['m-3', undefined, 'text/markdown'],
+      ['m-1', 'transcript', 'text/markdown'],
     ])
-    expect(batch.documents[1]).toMatchObject({
+    expect(batch.documents[3]).toMatchObject({
       externalId: 'm-1',
       title: 'Attività m-1',
       systemKind: 'transcript',
       people: [{ displayName: 'Carla Cliente', untrusted: true }],
     })
-    expect(new TextDecoder().decode(batch.documents[1]?.bytes)).toBe('Testo della mail.\n')
+    expect(new TextDecoder().decode(batch.documents[3]?.bytes)).toBe('Testo della mail.\n')
     // No state yet: nothing is gone, the freshness is not known.
     expect(batch).toMatchObject({ removed: [], dataAsOf: null })
   })

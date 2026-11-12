@@ -40,6 +40,8 @@ export interface SyncDocumentFile extends SyncFileBase {
   readonly url: string | null
   /** The kind the source declares for a document made from the system's data. */
   readonly systemKind?: string | undefined
+  /** What the text is when it is not Markdown (`text/csv`, `text/vtt`…). */
+  readonly mediaType?: string | undefined
   readonly people: readonly ItemPerson[]
 }
 
@@ -86,6 +88,7 @@ function headerOf(file: SyncFile): Array<[string, unknown]> {
     ['url', item.url],
   )
   if (file.type === 'document' && file.systemKind) head.push(['kind', file.systemKind])
+  if (file.type === 'document' && file.mediaType) head.push(['mediaType', file.mediaType])
   head.push(['people', item.people])
   if (file.type === 'record') head.push(['record', file.record.record])
   return head
@@ -203,5 +206,12 @@ export function parseSyncFile(content: string): SyncFile | null {
   }
   if (header.type !== 'document') return null
   const systemKind = text(header.kind)
-  return { ...base, type: 'document', ...item, ...(systemKind ? { systemKind } : {}) }
+  const mediaType = text(header.mediaType)
+  return {
+    ...base,
+    type: 'document',
+    ...item,
+    ...(systemKind ? { systemKind } : {}),
+    ...(mediaType ? { mediaType } : {}),
+  }
 }

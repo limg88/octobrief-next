@@ -2,10 +2,15 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    projects: ['packages/*', 'apps/worker', 'apps/feeder', 'apps/web', 'tools/*'],
+    projects: ['packages/*', 'apps/worker', 'addons/*', 'apps/web', 'tools/*'],
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}', 'tools/*/src/**/*.ts'],
+      include: [
+        'packages/*/src/**/*.ts',
+        'apps/*/src/**/*.{ts,tsx}',
+        'addons/*/src/**/*.ts',
+        'tools/*/src/**/*.ts',
+      ],
       // Composition roots and framework wiring (main.ts, cli.ts, Next routes, proxy, i18n config,
       // fonts) are exercised by the demos; components/ui holds vendored shadcn primitives.
       exclude: [

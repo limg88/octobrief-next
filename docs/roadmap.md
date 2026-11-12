@@ -93,7 +93,7 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 6 | completato (12/11/2026), demo `demo/07-verbale`, `demo/08-stima-costi`, `demo/09-analisi-bug`, `demo/10-rischi-opportunita` |
 | 7 | completato (12/11/2026), demo `demo/11-deploy`, runbook `docs/runbook.md` |
 | 8a | completato (12/11/2026), demo `demo/12-cartella-sincronizzata` |
-| 8b, 8c | in corso: addon di sincronizzazione (`addons/sync`) |
+| 8b, 8c | completati (12/11/2026), demo `demo/13-addon-sync`, guida `docs/sync.md` |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -166,7 +166,7 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Persone nominate dalle fonti** (mittenti, partecipanti, assegnatari): salvate per progetto e nascoste a ogni modello, come i membri.
 - **Dati strutturati**: le attività dei tracker (`tracker_items`) e le righe del warehouse (`system_rows`) sono salvate come dati, non come documenti. Le useranno Chiedi e i deliverable.
 - **Pacchetto `packages/connectors`** (portato da NX): connettori Jira, ADO e DWSI, client HTTP sicuro (percorsi ammessi, nessun redirect, nessun indirizzo privato). I connettori Graph e cartella-Mac di NX non sono stati portati.
-- **Alimentatore** (`apps/feeder`), quattro modi di leggere:
+- **Alimentatore** (`apps/feeder`, dall'incremento 8b dentro `addons/sync`), quattro modi di leggere:
   - `folder`: una cartella del PC, anche una libreria SharePoint sincronizzata;
   - `file`: una consegna già scritta in JSON;
   - `m365`: lancia Claude con il connettore Microsoft 365 del PM e una richiesta di sola lettura, e consegna il JSON che Claude stampa;
@@ -254,4 +254,14 @@ Serve a importare progetti reali che hanno Jira, Azure DevOps, Microsoft 365 (tr
 - **Un tipo di documento non riconosciuto** nell'intestazione viene ignorato: decide la classificazione di Octobrief.
 - **Coda delle letture**: una sola lettura *in attesa* per fonte (policy `short` di pg-boss) invece del limite di una al minuto. Prima «Leggi ora» premuto entro un minuto da una lettura non faceva nulla pur dicendo «Lettura avviata».
 - **Deploy**: `deploy/compose.sync.yml` monta in sola lettura la cartella dell'host per chi tiene le cartelle sul server.
+
+### Scelte prese durante gli incrementi 8b e 8c
+- **Un solo pacchetto** `addons/sync` (`@octobrief/sync`, versione propria e `CHANGELOG.md`): l'alimentatore di `apps/feeder` è confluito lì, così «leggere dal PC» ha un solo programma. 8b e 8c sono stati chiusi insieme, con una sola demo.
+- **L'addon resta leggero**: usa solo `domain` e `connectors` (regola `sync-addon-stays-light` di dependency-cruiser). La lettura di Jira e Azure DevOps (`createConnectorReader`) è stata spostata da `infrastructure` a `connectors`, e la usano sia il worker sia l'addon.
+- **Data di inizio senza toccare i connettori**: è il cursore che il connettore avrebbe salvato dopo aver letto tutto fino a quel giorno. Una data precedente a quella già usata fa ripartire da lì; una successiva non cambia nulla.
+- **DWSI**: la data di inizio vale solo per i timesheet. Ordini, fatture e ricavi si leggono sempre interi: i residui e i totali del SAL economico ne hanno bisogno.
+- **Microsoft 365 tramite Claude**: una chiamata per settimana e per sezione (posta, Teams, file), solo strumenti di lettura (`allowedTools`); Claude risponde in JSON e i file li scrive l'addon. Una finestra con più di 50 elementi viene divisa in due. Il cursore avanza solo quando una finestra è scritta per intero.
+- **Segreti**: la configurazione contiene solo i nomi delle variabili; i valori stanno in un file `.env` privato, fuori dal repository.
+- **Corretto durante la demo**: l'indirizzo di sviluppo di Azure DevOps non metteva l'organizzazione nel percorso (non era mai stato provato con il server finto).
+- **Non verificato dal vivo**: Jira, Azure DevOps, DWSI e Microsoft 365 reali, e il nome degli strumenti del connettore Microsoft 365 per `claude -p`.
 

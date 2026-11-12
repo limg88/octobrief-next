@@ -151,7 +151,7 @@
     "account": "Email dell'account",
     "secret": "Token in sola lettura",
     "tokenTitle": "Token dell'alimentatore: copialo ora, non verrà più mostrato.",
-    "tokenNote": "Sul PC del PM: OCTOBRIEF_FEEDER_TOKEN=… node apps/feeder/src/cli.ts … (vedi demo/04-fonti).",
+    "tokenNote": "Sul PC del PM: OCTOBRIEF_FEEDER_TOKEN=… node addons/sync/src/cli.ts … (vedi demo/04-fonti).",
     "tokenDismiss": "L'ho copiato",
     "kinds": {
       "m365": "Microsoft 365 (alimentatore)",

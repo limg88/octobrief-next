@@ -34,6 +34,8 @@ tools/
   fake-oidc/       issuer OpenID Connect finto per sviluppo, test e demo (mai in produzione)
   synthetic/       generatore di documenti sintetici per le demo (`node tools/synthetic/src/cli.ts <cartella>`)
 demo/              una demo per ogni incremento (run.sh + COPIONE.md)
+addons/
+  sync/            addon di sincronizzazione, versionato a parte: fonti → cartella di file Markdown → Octobrief (vedi docs/sync.md)
 deploy/            installazione on-prem: immagine, compose di produzione, Caddy, backup e ripristino (vedi docs/runbook.md)
 ```
 Le dipendenze puntano solo verso l'interno:
