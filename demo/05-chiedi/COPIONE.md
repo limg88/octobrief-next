@@ -37,7 +37,7 @@ Con il marcatore `#inventa` nella domanda il modello finto aggiunge alla prima f
 9. Apri l'indirizzo stampato alla fine (`…/projects/borea-…/ask`) e accedi come **Paola Prova**.
    A destra c'è lo storico delle 4 domande; al centro l'ultima risposta.
 10. Apri la prima domanda sul budget: ogni frase ha l'etichetta **Fatto**, la freschezza (**Datato**, con «esiste una versione più recente» sul SAL vecchio) e le fonti con file, posizione e data. Sotto, il riquadro **Fonti in contraddizione** e il conto dei controlli.
-11. Scrivi «Quali rischi segnala il fornitore?» e premi **Chiedi**: compaiono «In coda…», «Sto leggendo…», «Sto verificando…» e poi la risposta.
+11. Scrivi «Quali rischi segnala il fornitore?» e premi **Chiedi**: compaiono «In coda…», «Sto leggendo…», «Sto verificando…» e poi la risposta (con il modello finto le fasi durano un istante).
 
 Per fermare tutto: il comando `kill` stampato alla fine della parte automatica.
 

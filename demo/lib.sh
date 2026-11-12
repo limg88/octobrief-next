@@ -28,6 +28,12 @@ prepare_database() {
 # unless KEEP=1.
 start_dev() {
   log="$1"
+  # A stack left on from an earlier demo would answer in place of this one, with its old code.
+  if curl -s -o /dev/null "$base/api/health" 2>/dev/null; then
+    fail "La porta di $base è già in uso: ferma lo stack precedente (il kill stampato alla fine di quella demo)"
+  fi
+  # A build cache left by a stack that was killed can make the browser reload without end.
+  rm -rf apps/web/.next
   set -m
   pnpm dev >"$log" 2>&1 &
   dev_pid=$!
@@ -46,6 +52,9 @@ login() {
   rm -f "$2"
   curl -s -c "$2" -b "$2" -L -o /dev/null "$base/api/auth/login?login_hint=$1&return_to=/"
   curl -sf -b "$2" "$base/api/me" >/dev/null || fail "Accesso di $1 non riuscito"
+  # The scripts describe the Italian interface: a language left on English by an earlier demo
+  # (demo 01 switches it) would not match them.
+  call "$2" PATCH /me '{"locale":"it"}' >/dev/null
 }
 
 csrf() { curl -s -b "$1" "$base/api/me" | field csrfToken; }
@@ -61,7 +70,8 @@ call() {
 finish() {
   printf '\n\033[1;32m✔ %s\033[0m\n' "$1"
   if [ "${KEEP:-0}" = "1" ]; then
-    echo "Web, worker e issuer finto restano accesi. Apri $base — per fermare: kill -- -$dev_pid"
+    # $extra_pids: other processes a demo leaves on for the browser part (a fake Jira).
+    echo "Web, worker e issuer finto restano accesi. Apri $base — per fermare: kill -- -$dev_pid ${extra_pids:-}"
   fi
 }
 

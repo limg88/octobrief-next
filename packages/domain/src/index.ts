@@ -82,7 +82,12 @@ export * from './pseudonymizer.ts'
 export * from './question.ts'
 export * from './read-log.ts'
 export * from './relative-dates.ts'
-export { isCalendarDate, romeDateString, romeMidnight } from './rome-time.ts'
+export {
+  isCalendarDate,
+  PRODUCT_TIME_ZONE,
+  romeDateString,
+  romeMidnight,
+} from './rome-time.ts'
 export * from './search.ts'
 export * from './session-limits.ts'
 export * from './source.ts'

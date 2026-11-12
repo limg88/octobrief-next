@@ -41,9 +41,9 @@ Apri l'indirizzo stampato alla fine dello script, nella forma `http://127.0.0.1:
     - *atteso*: il messaggio «… caricato», poi lo stato passa da «In elaborazione» a «Pronto» senza ricaricare la pagina;
     - ricaricando lo stesso file compare l'errore «Il progetto contiene già questo file».
 11. **Correggi e controlla**:
-    - cambia il tipo di un documento dal menu «Tipo»: l'avviso «da confermare» sparisce;
+    - sul verbale l'avviso «da confermare» è accanto ai destinatari: scegli «Cliente» dal menu e l'avviso sparisce (vale lo stesso per il tipo, quando è il tipo a essere incerto);
     - premi l'icona a forma di occhio («Vedi testo»): si apre il testo estratto, con la posizione di ogni brano (`righe 1–3`, `§ 1`…).
-12. **Elimina**: premi il cestino e conferma. *Atteso*: «… eliminato», e la riga sparisce dalla tabella.
+12. **Elimina**: premi il cestino e conferma nella finestra del browser. *Atteso*: «… eliminato», e la riga sparisce dalla tabella.
 
 **Per chiudere**: esegui il `kill -- -<PID>` stampato dallo script.
 

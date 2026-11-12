@@ -16,3 +16,7 @@ Ogni incremento della roadmap si chiude con una demo eseguibile in pochi minuti.
 | 09 | Analisi bug e CR: dashboard sui dati del tracker (Jira finto), Excel | `KEEP=1 bash demo/09-analisi-bug/run.sh` | [COPIONE](09-analisi-bug/COPIONE.md) |
 | 10 | Rischi e opportunità: una ricetta nuova scritta come file, elenchi dai fatti della memoria, Word | `KEEP=1 bash demo/10-rischi-opportunita/run.sh` | [COPIONE](10-rischi-opportunita/COPIONE.md) |
 | 11 | Deploy on-prem: installazione di produzione da zero (Caddy, HTTPS, database senza porte), backup, perdita dei dati e ripristino | `KEEP=1 bash demo/11-deploy/run.sh` | [COPIONE](11-deploy/COPIONE.md) |
+
+## Controllo da browser
+
+`bash demo/browser/check.sh [NN …]` esegue una demo con `KEEP=1`, segue in un browser vero (Playwright) i passi «Nel browser» del suo copione e poi ferma tutto. Senza argomenti le esegue tutte (circa 15 minuti). La prima volta serve `pnpm exec playwright install chromium`.

@@ -79,7 +79,9 @@ ok "posta.json (una mail e una riunione sintetiche) e una cartella con 2 file"
 
 step "3/9 Avvio di web, worker e issuer finto; Paola crea il progetto"
 start_dev .tmp/demo-04.log
-trap 'kill "$jira_pid" 2>/dev/null || true; [ "${KEEP:-0}" = "1" ] || kill -- -"$dev_pid" 2>/dev/null || true' EXIT
+# With KEEP=1 the fake Jira stays on too: «Leggi ora» in the browser needs it.
+extra_pids="$jira_pid"
+trap '[ "${KEEP:-0}" = "1" ] || { kill "$jira_pid" 2>/dev/null || true; kill -- -"$dev_pid" 2>/dev/null || true; }' EXIT
 login paola "$paola"
 login marco "$marco"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null

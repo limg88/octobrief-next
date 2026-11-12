@@ -316,12 +316,46 @@ export function useRuns(slug: string) {
   })
 }
 
+/** How long the page keeps looking for a revision the PM asked for. */
+export const REVISION_WAIT_MS = 120_000
+
+/** What the page was showing when a change was asked: a run stays `ready` while it is revised. */
+export interface AwaitedRevision {
+  readonly revision: number
+  readonly revisionError: string | null
+  readonly until: number
+}
+
+const awaitedRevisionKey = (slug: string, id: string) =>
+  ['projects', slug, 'awaited-revision', id] as const
+
+/** Whether the revision asked for has not arrived yet: neither a new one nor a refusal. */
+export function awaitsRevision(
+  view: Pick<RunViewDto, 'revision'> & { run: Pick<RunDto, 'revisionError'> },
+  awaited: AwaitedRevision | undefined,
+  now: number,
+): boolean {
+  return (
+    awaited !== undefined &&
+    now < awaited.until &&
+    view.revision === awaited.revision &&
+    view.run.revisionError === awaited.revisionError
+  )
+}
+
 export function useRun(slug: string, id: string) {
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: [...runsKey(slug), id],
     queryFn: () => apiRequest<RunViewDto>(`${runsPath(slug)}/${id}`),
-    refetchInterval: (query) =>
-      query.state.data && inProgress(query.state.data.run) ? PENDING_POLL_MS : false,
+    refetchInterval: (query) => {
+      const view = query.state.data
+      if (!view) return false
+      const awaited = queryClient.getQueryData<AwaitedRevision>(awaitedRevisionKey(slug, id))
+      return inProgress(view.run) || awaitsRevision(view, awaited, Date.now())
+        ? PENDING_POLL_MS
+        : false
+    },
   })
 }
 
@@ -355,13 +389,22 @@ export function useAcceptFinding(slug: string, id: string) {
 }
 
 export function useRequestChange(slug: string, id: string) {
-  return useRunMutation(slug, (input: { slots: string[]; request: string }, csrfToken) =>
-    apiRequest<void>(`${runsPath(slug)}/${id}/changes`, {
+  const queryClient = useQueryClient()
+  return useRunMutation(slug, async (input: { slots: string[]; request: string }, csrfToken) => {
+    const shown = queryClient.getQueryData<RunViewDto>([...runsKey(slug), id])
+    await apiRequest<void>(`${runsPath(slug)}/${id}/changes`, {
       method: 'POST',
       body: input,
       csrfToken,
-    }),
-  )
+    })
+    if (shown) {
+      queryClient.setQueryData<AwaitedRevision>(awaitedRevisionKey(slug, id), {
+        revision: shown.revision,
+        revisionError: shown.run.revisionError,
+        until: Date.now() + REVISION_WAIT_MS,
+      })
+    }
+  })
 }
 
 export function useApproveRun(slug: string, id: string) {

@@ -34,6 +34,11 @@ describe('apiRequest', () => {
     expect(calls[0]?.init.method).toBe('GET')
   })
 
+  it('returns nothing for an accepted request without a body (202)', async () => {
+    const { impl } = recordingFetch(new Response(null, { status: 202 }))
+    expect(await apiRequest('/x', { method: 'POST', csrfToken: 't' }, impl)).toBeUndefined()
+  })
+
   it('throws ApiError with code and field', async () => {
     const { impl } = recordingFetch(
       Response.json({ error: 'invalid', field: 'name' }, { status: 400 }),

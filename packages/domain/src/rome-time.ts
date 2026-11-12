@@ -1,7 +1,10 @@
 // Calendar dates in this product are days in Italy: stored as midnight Europe/Rome.
 
+/** The time zone dates are stored in and shown in, wherever the server and the browser are. */
+export const PRODUCT_TIME_ZONE = 'Europe/Rome'
+
 const ROME = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Europe/Rome',
+  timeZone: PRODUCT_TIME_ZONE,
   hourCycle: 'h23',
   year: 'numeric',
   month: 'numeric',
@@ -51,7 +54,7 @@ export function romeMidnight(year: number, month: number, day: number): Date {
 }
 
 const DAY = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Europe/Rome',
+  timeZone: PRODUCT_TIME_ZONE,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

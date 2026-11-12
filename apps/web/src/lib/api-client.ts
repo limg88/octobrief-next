@@ -59,5 +59,7 @@ export async function apiRequest<T>(
     ...(options.body !== undefined ? { body: form ?? JSON.stringify(options.body) } : {}),
   })
   if (!res.ok) throw await errorOf(res)
-  return (res.status === NO_CONTENT ? undefined : await res.json()) as T
+  // An accepted request (202) has no body either: nothing to parse.
+  const text = res.status === NO_CONTENT ? '' : await res.text()
+  return (text === '' ? undefined : JSON.parse(text)) as T
 }

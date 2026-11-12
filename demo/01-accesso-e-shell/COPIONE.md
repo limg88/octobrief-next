@@ -43,10 +43,10 @@ Con `KEEP=1`, web, worker e issuer finto restano accesi per la parte nel browser
 | # | Cosa fare | Cosa si vede |
 |---|---|---|
 | 8 | Apri `http://127.0.0.1:3310` e premi **Accedi con Microsoft** | La pagina «Accesso di prova» dell'issuer finto: scegli **Paola Prova** |
-| 9 | Nella pagina **Progetti** premi **Nuovo progetto**, scrivi "Migrazione ERP" e il cliente "Beta Sintetica", poi conferma | Il messaggio «Progetto creato» e la Panoramica con Paola come *Responsabile* |
+| 9 | Nella pagina **Progetti** premi **Nuovo progetto**, scrivi "Migrazione ERP" e il cliente "Beta Sintetica", poi conferma | Il messaggio «Progetto «Migrazione ERP» creato» e la Panoramica con Paola come *Responsabile* |
 | 10 | Aggiungi `marco.esempio@example.test` nel riquadro **Membri** | Marco compare nell'elenco come *Membro* |
-| 11 | Premi **⌘K** (Ctrl+K su Windows), scrivi "memo" e premi Invio. Poi premi **G** e subito dopo **C** | Prima la sezione Memoria, poi Chiedi. Sono pagine segnaposto che indicano in quale incremento arriveranno |
-| 12 | Premi ⌘K e scegli **Switch to English**; poi ⌘K e **Toggle light/dark theme**; infine dal menu utente in basso a sinistra scegli **Sign out** | L'interfaccia passa all'inglese e poi al tema chiaro. Il logout riporta al login |
+| 11 | Premi **⌘K** (Ctrl+K su Windows), scrivi "memo" e premi Invio. Poi premi **G** e subito dopo **C** | Prima la sezione Memoria, poi Chiedi |
+| 12 | Premi ⌘K e scegli **Switch to English**; poi ⌘K e **Toggle light/dark theme**; poi ⌘K e **Passa all'italiano**; infine dal menu utente in basso a sinistra scegli **Esci** | L'interfaccia passa all'inglese, poi al tema chiaro, poi torna in italiano (la lingua resta salvata nel profilo). Il logout riporta al login |
 
 ## Qualità (fuori dalla demo)
 ```bash
