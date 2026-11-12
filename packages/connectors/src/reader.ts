@@ -9,6 +9,7 @@ import { createSafeHttp } from './safe-http.ts'
 import { SecretValue } from './secret-value.ts'
 
 const PROJECT_OPTION_PREFIX = 'project:'
+const AREA_OPTION_PREFIX = 'area:'
 /** The code when the scope the PM gave matches nothing the credential can see. */
 const NOTHING_TO_READ = 'source_not_configured'
 
@@ -129,7 +130,10 @@ export function createConnectorReader(options: ConnectorReaderOptions = {}): Con
         if (!project) throw new ConnectorError(NOTHING_TO_READ)
         const projectId = project.id.slice(PROJECT_OPTION_PREFIX.length)
         config = connectors[kind].parseConfig({ ...(rawConfig as object), projectId })
-        entries = await optionsFor(config)
+        // The whole project is its root areas: naming every node would make a query too long.
+        entries = (await optionsFor(config)).filter(
+          (entry) => entry.id.startsWith(AREA_OPTION_PREFIX) && entry.parentId === undefined,
+        )
       } else if (scope.length > 0) {
         entries = entries.filter((entry) => inScope(entry, scope))
       }

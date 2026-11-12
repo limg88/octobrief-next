@@ -80,7 +80,8 @@ export function dwsiProvider(options: DwsiOptions): Provider {
         }
       } catch (error) {
         if (error instanceof ConnectorError) {
-          throw new FeederError('provider_failed', `warehouse: ${error.code}`)
+          const reason = error.reason ? ` (${error.reason})` : ''
+          throw new FeederError('provider_failed', `warehouse: ${error.code}${reason}`)
         }
         throw error
       }

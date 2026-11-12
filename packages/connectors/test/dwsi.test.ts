@@ -132,8 +132,13 @@ describe('the DWSI configuration', () => {
     })
   })
 
+  it('accepts a private IPv4 address as the host', () => {
+    const raw = { host: '10.0.0.5', database: 'dwsi', user: 'ro', projectCodes: ['PRJ000101'] }
+    expect(dwsiConnector.parseConfig(raw)).toMatchObject({ host: '10.0.0.5' })
+  })
+
   it.each([
-    ['an IP address', { host: '10.0.0.5' }],
+    ['a public IP address', { host: '93.184.216.34' }],
     ['a port in the host', { host: 'dwsi.corp.example:5432' }],
     ['a bad port', { port: 70_000 }],
     ['a database name with a quote', { database: 'dw"si' }],

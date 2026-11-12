@@ -71,6 +71,27 @@ describe('the network guard', () => {
     }
   })
 
+  it('connects to a private IPv4 address the Admin listed, without resolving it', async () => {
+    const listed = { host: '10.20.0.7', databaseTls: 'plaintext' as const, caPem: null }
+    const blocked: BlockedCall[] = []
+    const net = createNetGuard({
+      privateHosts: [listed, { ...listed, host: '93.184.216.34' }],
+      onBlocked: async (call) => {
+        blocked.push(call)
+      },
+      resolve: async () => {
+        throw new Error('no resolution expected')
+      },
+    })
+    expect(await net.vet('10.20.0.7', 5432, 'POSTGRES')).toEqual({
+      addresses: [{ address: '10.20.0.7', family: 4 }],
+      privateHost: listed,
+    })
+    // Listed by a caller that skipped the parsing of the list: a public address is still refused.
+    expect(await codeOf(net.vet('93.184.216.34', 5432, 'POSTGRES'))).toBe('call_blocked')
+    expect(blocked).toHaveLength(1)
+  })
+
   it('refuses when any address is not allowed, loopback included outside the tests', async () => {
     const { net, blocked } = guard([
       { address: '10.20.0.7', family: 4 },

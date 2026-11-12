@@ -606,7 +606,7 @@ describe('pull', () => {
     })
     expect(outcomes.map((o) => [o.system, o.written, o.error])).toEqual([
       ['jira', 1, 'source_unreachable'],
-      ['ado', 0, 'provider_failed'],
+      ['ado', 0, 'provider_failed: x'],
       ['dwsi', 0, 'sync_failed'],
       ['m365', 1, null],
     ])

@@ -59,8 +59,16 @@ describe('the private hosts the Admin allows', () => {
     expect(parsePrivateHosts([])).toEqual([])
   })
 
+  it('accept a private IPv4 address in place of a name', () => {
+    expect(parsePrivateHosts([entry('10.0.0.5', { databaseTls: 'plaintext' })])).toEqual([
+      { host: '10.0.0.5', databaseTls: 'plaintext', caPem: null },
+    ])
+  })
+
   it.each([
-    ['an IP address', '10.0.0.5'],
+    ['a public IP address', '93.184.216.34'],
+    ['a loopback address', '127.0.0.1'],
+    ['a link-local address', '169.254.169.254'],
     ['an IPv6 address', 'fd00::1'],
     ['a bracketed IPv6 address', '[fd00::1]'],
     ['a port', 'dwsi.internal:5432'],

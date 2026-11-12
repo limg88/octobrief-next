@@ -110,7 +110,8 @@ addon pull --once --config "$config" --since 2026-08-01 | sed 's/^/  /'
 expect "$(count_files jira 'bor-*.md')" "4" "con --since 2026-08-01 arriva anche BOR-4"
 
 step "8/9 In modo periodico: ogni N minuti, finché non lo si ferma"
-addon pull --config "$config" --every 1 >"$work/periodico.log" 2>&1 &
+# Node itself in the background: killing the subshell of a function would leave it running.
+node addons/sync/src/cli.ts pull --config "$config" --every 1 >"$work/periodico.log" 2>&1 &
 periodic=$!
 for _ in $(seq 1 40); do grep -q 'm365:' "$work/periodico.log" && break; sleep 0.5; done
 { kill "$periodic" && wait "$periodic"; } 2>/dev/null || true

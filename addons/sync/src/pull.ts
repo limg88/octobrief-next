@@ -28,8 +28,12 @@ export interface SystemOutcome extends WriteOutcome {
   readonly error: string | null
 }
 
-const codeOf = (error: unknown): string =>
-  error instanceof ConnectorError || error instanceof FeederError ? error.code : UNEXPECTED_FAILURE
+/** The code of a failure and, when a provider says which step failed, that step: never a value. */
+function codeOf(error: unknown): string {
+  if (error instanceof ConnectorError) return error.code
+  if (error instanceof FeederError) return `${error.code}: ${error.message}`
+  return UNEXPECTED_FAILURE
+}
 
 /**
  * Where a run starts. A start day earlier than the one the cursor was built from starts again

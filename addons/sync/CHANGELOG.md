@@ -2,6 +2,12 @@
 
 L'addon ha una versione propria, indipendente da quella di Octobrief. Il formato dei file che scrive è versionato a parte (`octobrief: 1` nell'intestazione).
 
+## 0.1.1 — 2026-11-12
+
+- Azure DevOps: un progetto con molte aree e iterazioni non fallisce più con `source_http_error`; il perimetro è la radice delle aree.
+- NetSuite/DWSI: `host` può essere un indirizzo IPv4 di rete privata.
+- Una fonte non riuscita dice anche quale passo è fallito (`provider_failed: warehouse: …`).
+
 ## 0.1.0 — 2026-11-12
 
 Prima versione.

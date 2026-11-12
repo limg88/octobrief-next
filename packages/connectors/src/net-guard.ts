@@ -53,14 +53,23 @@ export function createNetGuard(options: NetGuardOptions): NetGuard {
         host: `${hostname}:${port}`,
         path: '',
       }
-      if (isIP(hostname.replace(/^\[|\]$/g, '')) !== 0 || hostname.length === 0) {
+      const literal = isIP(hostname.replace(/^\[|\]$/g, '')) !== 0
+      const privateHost = listed.get(hostname) ?? null
+      // An address is never a host to call, but the private IPv4 one the list names itself.
+      if (hostname.length === 0 || (literal && privateHost === null)) {
         await options.onBlocked(call)
         throw new ConnectorError('call_blocked')
       }
-      const privateHost = listed.get(hostname) ?? null
       if (privateHost === null) {
         await options.onBlocked({ ...call, reason: 'host_not_allowed' })
         throw new ConnectorError('call_blocked')
+      }
+      if (literal) {
+        if (classifyAddress(hostname) !== 'private') {
+          await options.onBlocked(call)
+          throw new ConnectorError('call_blocked')
+        }
+        return { addresses: [{ address: hostname, family: 4 }], privateHost }
       }
       let addresses: ResolvedAddress[]
       try {

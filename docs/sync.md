@@ -29,7 +29,7 @@ ENV
 |---|---|---|
 | Jira Cloud | token API dell'account (id.atlassian.com → Sicurezza → Token API) | `site` è il nome prima di `.atlassian.net`; `projects` le chiavi dei progetti |
 | Azure DevOps | PAT con soli permessi di lettura su Work Items | segna il giorno di scadenza in `patExpiresOn` |
-| NetSuite / DWSI | utente in sola lettura del database | senza TLS: `"tls": "plaintext"`, solo in VPN |
+| NetSuite / DWSI | utente in sola lettura del database | senza TLS: `"tls": "plaintext"`, solo in VPN; `host` è un nome o un indirizzo IPv4 di rete privata |
 | Microsoft 365 | Claude Code installato, con il connettore Microsoft 365 collegato al tuo account | vedi il punto 3 |
 
 ## 2. Controlla prima di leggere

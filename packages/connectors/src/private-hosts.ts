@@ -1,5 +1,7 @@
 import { createHash, X509Certificate } from 'node:crypto'
+import { isIPv4 } from 'node:net'
 import { DomainError } from '@octobrief/domain'
+import { classifyAddress } from './addresses.ts'
 
 /**
  * How a connection to a database on a private host is secured:
@@ -122,6 +124,11 @@ export function privateHostName(raw: unknown): string {
   if (typeof raw !== 'string') throw invalid()
   const host = raw.toLowerCase()
   if (host.length === 0 || host.length > 253) throw invalid()
+  // An address instead of a name only when it is an IPv4 one of a private network.
+  if (isIPv4(host)) {
+    if (classifyAddress(host) !== 'private') throw invalid()
+    return host
+  }
   const labels = host.split('.')
   // At least two labels, each a DNS label; an all-numeric name would read as an IPv4 address.
   if (labels.length < 2 || !labels.every((l) => LABEL.test(l))) throw invalid()
