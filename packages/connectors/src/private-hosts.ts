@@ -1,5 +1,4 @@
 import { createHash, X509Certificate } from 'node:crypto'
-import { isIPv4 } from 'node:net'
 import { DomainError } from '@octobrief/domain'
 import { classifyAddress } from './addresses.ts'
 
@@ -31,6 +30,8 @@ export const MAX_PRIVATE_HOSTS = 50
 export const MAX_CA_LENGTH = 16_384
 export const MAX_CA_CERTIFICATES = 5
 const KNOWN_FIELDS = new Set(['host', 'databaseTls', 'caPem'])
+/** Four numbers with dots: read as an address, and classified as one, never as a name. */
+const IPV4_SHAPED = /^\d{1,3}(?:\.\d{1,3}){3}$/
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/
 const PEM_BLOCK =
   '-----BEGIN CERTIFICATE-----\\r?\\n([A-Za-z0-9+/=\\r\\n]+)-----END CERTIFICATE-----'
@@ -125,7 +126,7 @@ export function privateHostName(raw: unknown): string {
   const host = raw.toLowerCase()
   if (host.length === 0 || host.length > 253) throw invalid()
   // An address instead of a name only when it is an IPv4 one of a private network.
-  if (isIPv4(host)) {
+  if (IPV4_SHAPED.test(host)) {
     if (classifyAddress(host) !== 'private') throw invalid()
     return host
   }
