@@ -236,6 +236,10 @@ export function createDocumentProcessingStore(pool: pg.Pool): DocumentProcessing
          SELECT d.project_id, n.name, true
            FROM documents d, unnest($2::text[]) AS n(name)
           WHERE d.id = $1
+            -- A person the project already knows (with an email, from a feed) is not added again.
+            AND NOT EXISTS (
+              SELECT 1 FROM project_people p
+               WHERE p.project_id = d.project_id AND lower(p.display_name) = lower(n.name))
          ON CONFLICT (project_id, display_name, email) DO NOTHING`,
         [documentId, names],
       )

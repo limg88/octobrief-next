@@ -332,8 +332,26 @@ export function createExternalItemStore(
     },
 
     async savePeople(target, people) {
-      await run(target, (client) =>
-        client.query(
+      const names = people.map((p) => p.displayName)
+      const emails = people.map((p) => p.email ?? '')
+      await run(target, async (client) => {
+        // A name first read in a document (no email) becomes this person, not a second one.
+        await client.query(
+          `UPDATE project_people pp
+              SET email = p.email
+             FROM (SELECT DISTINCT ON (lower(display_name)) display_name, email
+                     FROM unnest($2::text[], $3::text[]) AS p(display_name, email)
+                    WHERE email <> ''
+                    ORDER BY lower(display_name), email) p
+            WHERE pp.project_id = $1 AND pp.email = ''
+              AND lower(pp.display_name) = lower(p.display_name)
+              AND NOT EXISTS (
+                SELECT 1 FROM project_people known
+                 WHERE known.project_id = $1 AND known.email <> ''
+                   AND lower(known.display_name) = lower(p.display_name))`,
+          [target.projectId, names, emails],
+        )
+        await client.query(
           `INSERT INTO project_people (project_id, display_name, email, untrusted)
            SELECT DISTINCT ON (p.display_name, p.email) $1, p.display_name, p.email, p.untrusted
              FROM unnest($2::text[], $3::text[], $4::boolean[])
@@ -341,14 +359,9 @@ export function createExternalItemStore(
             ORDER BY p.display_name, p.email, p.untrusted
            ON CONFLICT (project_id, display_name, email) DO UPDATE
              SET untrusted = project_people.untrusted AND excluded.untrusted`,
-          [
-            target.projectId,
-            people.map((p) => p.displayName),
-            people.map((p) => p.email ?? ''),
-            people.map((p) => p.untrusted === true),
-          ],
-        ),
-      )
+          [target.projectId, names, emails, people.map((p) => p.untrusted === true)],
+        )
+      })
     },
 
     async delivered(target, dataAsOf, error) {

@@ -179,11 +179,23 @@ describe.skipIf(!hasDatabase)('sources on Postgres (integration)', () => {
     await createDocumentProcessingStore(workerPool).rememberPeople(documentId, [
       'Luca Inventato',
       'Mario Rossi',
+      'Carla Cliente',
     ])
+    // Carla is already known with her email: the document does not add her a second time.
+    const people = await createKnowledgeStore(workerPool).people(projectId)
+    expect(people.filter((person) => person.displayName === 'Carla Cliente')).toHaveLength(1)
     expect(await createKnowledgeStore(workerPool).people(projectId)).toContainEqual({
       displayName: 'Luca Inventato',
       trust: 'untrusted',
     })
+    // The other way round: Luca, first read in a document, later arrives from a feed with an email.
+    await fed.savePeople(target, [
+      { displayName: 'Luca Inventato', email: 'luca@cliente.example', untrusted: true },
+    ])
+    const after = await createKnowledgeStore(workerPool).people(projectId)
+    expect(after.filter((person) => person.displayName === 'Luca Inventato')).toEqual([
+      { displayName: 'Luca Inventato', email: 'luca@cliente.example', trust: 'untrusted' },
+    ])
     await fed.delivered(target, new Date('2026-11-12T08:00:00Z'), null)
     await fed.delivered(target, null, 'source_unavailable')
     expect((await sources.list(owner.id, projectId))[0]).toMatchObject({
