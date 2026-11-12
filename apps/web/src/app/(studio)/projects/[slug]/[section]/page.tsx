@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { SECTION_ICONS } from '@/components/shell/icons'
 import { isSection } from '@/components/shell/navigation'
 
-const PLACEHOLDERS: ReadonlySet<string> = new Set(['ask', 'deliverables'])
+const PLACEHOLDERS: ReadonlySet<string> = new Set(['deliverables'])
 
 /** Sections that arrive with later increments: a placeholder that says when. */
 export default async function SectionPage({ params }: { params: Promise<{ section: string }> }) {

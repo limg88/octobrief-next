@@ -74,7 +74,6 @@
     "onlyOwners": "Solo il responsabile del progetto o un amministratore può aggiungere membri."
   },
   "placeholder": {
-    "ask": "Le domande alla memoria di progetto arrivano con l'incremento 4.",
     "deliverables": "I deliverable (SAL, mail al cliente…) arrivano con l'incremento 5."
   },
   "errors": {
@@ -196,6 +195,93 @@
       "write_scope_refused": "Il token può scrivere: serve un token in sola lettura.",
       "conflict": "Il progetto ha già una fonte con questo nome.",
       "forbidden": "Solo il responsabile o un amministratore può collegare fonti."
+    }
+  },
+  "ask": {
+    "title": "Chiedi",
+    "subtitle": "Domande sul progetto: ogni frase della risposta è verificata sulle fonti lette.",
+    "question": "La tua domanda",
+    "placeholder": "Per esempio: qual è il budget complessivo? Quali rischi sono aperti?",
+    "send": "Chiedi",
+    "history": "Le tue domande",
+    "noHistory": "Nessuna domanda ancora.",
+    "remove": "Rimuovi dallo storico: {text}",
+    "nothing": "Nessuna risposta dalle fonti disponibili.",
+    "absences": "Cosa manca",
+    "checks": "{total, plural, one {# controllo} other {# controlli}} · {anomalies, plural, =0 {nessuna anomalia} one {# anomalia} other {# anomalie}}",
+    "phase": {
+      "queued": "In coda…",
+      "reading": "Sto leggendo documenti e fatti del progetto…",
+      "checking": "Sto verificando ogni frase sulle fonti…",
+      "done": "Pronta",
+      "failed": "Non riuscita"
+    },
+    "errors": {
+      "generic": "La risposta non è riuscita. Riprova.",
+      "ask_model_output_invalid": "Il modello non ha risposto nella forma attesa. Riprova.",
+      "model_unavailable": "Il modello non è raggiungibile. Riprova fra poco.",
+      "model_timeout": "Il modello non ha risposto in tempo. Riprova.",
+      "model_busy": "Il modello è occupato. Riprova fra poco.",
+      "model_not_allowed": "Il modello configurato non è ammesso per i dati di progetto."
+    }
+  },
+  "trust": {
+    "fact": "fatto",
+    "workItem": "attività {id}",
+    "counts": "conteggi",
+    "noDate": "data non nota",
+    "unknownSource": "fonte non riconosciuta",
+    "pmAsserted": "indicato da te",
+    "contested": "in contraddizione",
+    "contradictions": "Fonti in contraddizione",
+    "unverified": {
+      "not_read": "non letta",
+      "unknown_source": "fonte sconosciuta",
+      "numbers_not_in_source": "i numeri non sono nella fonte"
+    },
+    "suspended": {
+      "generic": "Valore sospeso dai controlli.",
+      "without_source": "Frase sospesa: nessuna fonte verificata la sostiene.",
+      "stale_data": "Frase sospesa: i dati della fonte sono troppo vecchi.",
+      "unknown_freshness": "Frase sospesa: non si sa a quando sono aggiornati i dati."
+    },
+    "nature": {
+      "fact": "Fatto",
+      "inference": "Deduzione",
+      "suggestion": "Suggerimento"
+    },
+    "freshness": {
+      "level": {
+        "fresh": "Aggiornato",
+        "dated": "Datato",
+        "warning": "Da ricontrollare",
+        "stale": "Vecchio",
+        "unknown": "Freschezza ignota"
+      },
+      "note": {
+        "to_recheck": "ricontrolla la fonte",
+        "stale": "fonte vecchia",
+        "superseded": "esiste una versione più recente"
+      }
+    },
+    "anomalies": "Anomalie rilevate dai controlli",
+    "anomaly": {
+      "lang_mismatch": "risposta in una lingua diversa da quella chiesta",
+      "without_source": "frase senza una fonte verificata",
+      "stale_data": "dati troppo vecchi",
+      "future_source_date": "fonte con data nel futuro",
+      "unknown_source_freshness": "freschezza della fonte ignota",
+      "mixed_script": "testo con caratteri di alfabeti diversi",
+      "contradiction_unverified_side": "contraddizione con un lato non verificato",
+      "contradiction_stale_side": "contraddizione con un lato troppo vecchio",
+      "contradiction_with_data": "contraddizione che riporta dati non verificati",
+      "contradiction_with_name": "contraddizione che nomina una persona",
+      "contradiction_with_mixed_script": "contraddizione con caratteri di alfabeti diversi",
+      "same_document_contradiction": "contraddizione dentro lo stesso documento",
+      "contested_source": "fonte in contraddizione con un'altra",
+      "absence_with_data": "segnalazione di assenza che riporta dati",
+      "absence_with_name": "segnalazione di assenza che nomina una persona",
+      "absence_with_mixed_script": "segnalazione di assenza con caratteri di alfabeti diversi"
     }
   },
   "documentStatus": {

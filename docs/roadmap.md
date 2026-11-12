@@ -88,7 +88,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 2a | completato (11/11/2026), demo `demo/02-documenti` |
 | 2b | completato (12/11/2026), demo `demo/03-conoscenza` |
 | 3 | completato (12/11/2026), demo `demo/04-fonti` |
-| 4 | da fare |
+| 4 | completato (12/11/2026), demo `demo/05-chiedi` |
+| 5 | da fare |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -168,3 +169,17 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
   - `dwsi`: legge il warehouse con il connettore NX; la connessione (anche non cifrata) resta sul PC del PM.
 - **Non provato dal vivo**: `m365` (serve un seat Claude con il connettore), `dwsi` (serve il warehouse), Jira e ADO reali. Sono coperti da test con sistemi finti.
 - **Data di un file letto da una cartella**: la data di modifica del file è solo un indizio debole; vince la data scritta nel nome o nel contenuto.
+
+### Scelte prese durante l'incremento 4
+- **Il modello legge, il codice decide** (portato da NX):
+  - il modello ha strumenti di sola lettura (cerca, leggi un documento, elenca i documenti, leggi un fatto, interroga i tracker), per al più 7 turni;
+  - poi risponde in un formato fisso: frasi con natura (fatto, deduzione, suggerimento) e fonti, contraddizioni, assenze;
+  - il codice confronta ogni citazione con ciò che gli strumenti hanno davvero restituito e sospende le frasi non sostenute.
+- **Ricerca ibrida**: testo (PostgreSQL full-text in italiano, basta una parola della domanda) più vettori (pgvector), fusi per posizione (reciprocal rank fusion). Senza codificatore la ricerca è solo testuale.
+- **La risposta si prepara nel worker**, non nella richiesta web: la domanda viene salvata, messa in coda e seguita con eventi dal server (`/questions/{id}/events`). Un errore resta sulla domanda con un codice; la persona la ripropone.
+- **Storico privato**: ognuno vede solo le proprie domande, anche fra membri dello stesso progetto (policy RLS).
+- **Freschezza**: soglie predefinite uguali per tutti i progetti. Un documento con una versione più recente dello stesso tipo viene segnalato come superato.
+- **Tracker**: lo strumento `query_tracker` di NX è collegato alle attività salvate da Jira e ADO, senza storico nel tempo (solo l'ultima versione di ogni attività).
+- **Non portati da NX**: limiti di sessione per backend e soglie di freschezza per progetto.
+- **E2E**: `pnpm e2e` (Playwright + axe) copre login, creazione progetto, caricamento, «Cosa ho capito» e Chiedi; in CI gira in un job dedicato.
+- **Modello finto**: cerca una volta con la domanda e risponde citando i brani e i fatti che ne condividono le parole. Con `#inventa` aggiunge un numero mai letto, per mostrare il controllo.

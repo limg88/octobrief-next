@@ -8,6 +8,7 @@ import type {
   JobQueue,
   Logger,
   ProjectRepository,
+  QuestionRepository,
   SecretVault,
   SourceFeeds,
   SourceRepository,
@@ -20,6 +21,7 @@ export interface ApiDependencies extends AuthDependencies {
   readonly projects: ProjectRepository
   readonly documents: DocumentRepository
   readonly facts: FactRepository
+  readonly questions: QuestionRepository
   readonly sources: SourceRepository
   /** Stores a feeder's delivery as the person who connected its source. */
   readonly items: ExternalItemStore

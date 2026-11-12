@@ -1,4 +1,6 @@
 import {
+  type AnswerDependencies,
+  createAnswerQuestionHandler,
   createCompileDocumentHandler,
   createPingHandler,
   createProcessDocumentHandler,
@@ -27,6 +29,8 @@ export interface WorkerDependencies extends Omit<ProcessingDependencies, 'logger
   /** What reading Jira and Azure DevOps needs, and how often it happens. */
   readonly sources: Omit<SyncDependencies, 'blobs' | 'jobs' | 'logger'>
   readonly syncIntervalMs: number
+  /** What answering a question needs: the question store and the reading of a project. */
+  readonly asking: Pick<AnswerDependencies<unknown>, 'questions' | 'reading'>
   readonly now?: () => Date
 }
 
@@ -42,6 +46,10 @@ export async function startWorker(deps: WorkerDependencies): Promise<() => Promi
   await queue.work(
     'source.sync',
     createSyncSourceHandler({ ...deps.sources, blobs: deps.blobs, jobs: deps.jobs, logger }),
+  )
+  await queue.work(
+    'question.answer',
+    createAnswerQuestionHandler({ ...deps.asking, runner: deps.runner, logger }),
   )
   const scheduleSync = createScheduleSyncHandler({ sync: deps.sources.sync, jobs: deps.jobs })
   const runSync = () => {

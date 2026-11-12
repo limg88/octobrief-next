@@ -44,8 +44,15 @@ export interface KnowledgeStore {
   people(projectId: string): Promise<KnownPerson[]>
   /** One vector per chunk, in document order, with the encoder that made them. */
   saveEmbeddings(documentId: string, encoder: EmbeddingModel, vectors: number[][]): Promise<void>
-  /** Applies the changes and marks the document compiled, all or nothing. */
-  saveKnowledge(documentId: string, changes: readonly KnowledgeChange[]): Promise<void>
+  /**
+   * Applies the changes and marks the document compiled, all or nothing. `suspicious`: its text
+   * holds sentences shaped like instructions (shown with a warning, never followed).
+   */
+  saveKnowledge(
+    documentId: string,
+    changes: readonly KnowledgeChange[],
+    suspicious: boolean,
+  ): Promise<void>
   /** `code` is a stable error code, never a message of the model. */
   markKnowledgeFailed(documentId: string, code: string): Promise<void>
 }

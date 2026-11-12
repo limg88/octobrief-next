@@ -14,7 +14,6 @@ import {
   type Fact,
   type FactKind,
   type FactState,
-  type KnownPerson,
   type Locator,
   locatorKey,
   rehydrateFact,
@@ -22,6 +21,7 @@ import {
   type Uncertain,
 } from '@octobrief/domain'
 import type pg from 'pg'
+import { projectPeople } from './ask-store.ts'
 import { asViewer, inTransaction } from './transaction.ts'
 
 interface FactRow {
@@ -212,37 +212,7 @@ export function createKnowledgeStore(pool: pg.Pool): KnowledgeStore {
       return rows.map(toFact)
     },
 
-    async people(projectId) {
-      const members = await pool.query<{ display_name: string; email: string | null }>(
-        `SELECT u.display_name, u.email
-           FROM project_members m JOIN users u ON u.id = m.user_id
-          WHERE m.project_id = $1 ORDER BY u.display_name, u.id`,
-        [projectId],
-      )
-      const project = await pool.query<{ client: string | null }>(
-        'SELECT client FROM projects WHERE id = $1',
-        [projectId],
-      )
-      const people: KnownPerson[] = members.rows.map((row) => ({
-        displayName: row.display_name,
-        ...(row.email ? { email: row.email } : {}),
-      }))
-      const client = project.rows[0]?.client
-      if (client) people.push({ displayName: client, kind: 'organization' })
-      const named = await pool.query<{ display_name: string; email: string; untrusted: boolean }>(
-        `SELECT display_name, email, untrusted FROM project_people
-          WHERE project_id = $1 ORDER BY display_name, email`,
-        [projectId],
-      )
-      for (const row of named.rows) {
-        people.push({
-          displayName: row.display_name,
-          ...(row.email ? { email: row.email } : {}),
-          trust: row.untrusted ? 'untrusted' : 'seen',
-        })
-      }
-      return people
-    },
+    people: (projectId) => projectPeople(pool, projectId),
 
     async saveEmbeddings(documentId, encoder, vectors) {
       await pool.query(
@@ -253,14 +223,15 @@ export function createKnowledgeStore(pool: pg.Pool): KnowledgeStore {
       )
     },
 
-    async saveKnowledge(documentId, changes) {
+    async saveKnowledge(documentId, changes, suspicious) {
       await inTransaction(pool, async (client) => {
         for (const change of changes) await applyChange(client, change)
         await client.query(
           `UPDATE documents
-              SET knowledge_status = 'ready', knowledge_error = NULL, compiled_at = now()
+              SET knowledge_status = 'ready', knowledge_error = NULL, compiled_at = now(),
+                  suspicious = $2
             WHERE id = $1`,
-          [documentId],
+          [documentId, suspicious],
         )
       })
     },

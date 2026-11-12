@@ -20,4 +20,6 @@ export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
   'document.compile': { retryLimit: 2, retryDelay: 30, expireInSeconds: 1800 },
   // A failed read is recorded on the source; the next scheduled run tries again.
   'source.sync': { retryLimit: 0, retryDelay: 1, expireInSeconds: 1800 },
+  // A failed answer is recorded on the question: the PM asks again.
+  'question.answer': { retryLimit: 0, retryDelay: 1, expireInSeconds: 900 },
 }

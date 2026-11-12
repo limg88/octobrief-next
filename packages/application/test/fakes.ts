@@ -428,7 +428,9 @@ export class InMemoryKnowledge implements KnowledgeStore, FactRepository {
     const at = this.stored.findIndex((fact) => fact.id === factId)
     if (at >= 0) this.stored[at] = change(this.stored[at] as Fact)
   }
-  async saveKnowledge(documentId: string, changes: readonly KnowledgeChange[]) {
+  readonly suspicious = new Set<string>()
+  async saveKnowledge(documentId: string, changes: readonly KnowledgeChange[], suspicious = false) {
+    if (suspicious) this.suspicious.add(documentId)
     for (const change of changes) {
       if (change.kind === 'insert') this.stored.push(change.fact)
       if (change.kind === 'add_sources') {
@@ -482,4 +484,5 @@ export class InMemoryKnowledge implements KnowledgeStore, FactRepository {
   }
 }
 
+export { InMemoryQuestions, readingOf } from './question-fakes.ts'
 export { FakeFeeds, FakeVault, InMemorySources } from './source-fakes.ts'

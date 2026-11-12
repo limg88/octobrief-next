@@ -1,5 +1,7 @@
 // Composition root of the worker process.
+import type { AskReading } from '@octobrief/application'
 import {
+  answerStore,
   createConnectorFeeds,
   createConsoleLogger,
   createDocumentProcessingStore,
@@ -8,10 +10,14 @@ import {
   createKnowledgeStore,
   createModelRunner,
   createPool,
+  createQuestionWorkStore,
   createSecretVault,
   createSourceSyncStore,
+  inTransaction,
+  knowledgeReader,
   loadWorkerConfig,
   openPgBossQueue,
+  trackerReader,
 } from '@octobrief/infrastructure'
 import { createIsolatedExtractor } from '@octobrief/infrastructure/extract'
 import { startWorker } from './worker.ts'
@@ -21,6 +27,13 @@ const config = loadWorkerConfig()
 const queue = await openPgBossQueue(config.databaseUrl, { supervise: true, logger })
 const pool = createPool(config.databaseUrl, 'octobrief-worker')
 const knowledge = createKnowledgeStore(pool)
+// Every read of a question runs in a short transaction of its own, always naming the project.
+const reading: AskReading<unknown> = {
+  reader: knowledgeReader,
+  store: answerStore,
+  tracker: trackerReader,
+  withTx: (fn) => inTransaction(pool, fn),
+} as AskReading<unknown>
 const stop = await startWorker({
   queue,
   jobs: queue,
@@ -31,6 +44,7 @@ const stop = await startWorker({
   blobs: createFileBlobStore(config.blobDir),
   extractor: createIsolatedExtractor(),
   retentionDays: config.retentionDays,
+  asking: { questions: createQuestionWorkStore(pool), reading },
   syncIntervalMs: config.syncIntervalMinutes * 60_000,
   sources: {
     sync: createSourceSyncStore(pool),

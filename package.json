@@ -17,10 +17,13 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build": "pnpm --filter @octobrief/web build",
+    "e2e": "playwright test -c e2e/playwright.config.ts",
     "demo:00": "bash demo/00-fondamenta/run.sh"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "^1.64.1",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
     "@vitest/coverage-v8": "5.0.5",

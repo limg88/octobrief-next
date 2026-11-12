@@ -4,22 +4,8 @@ import { isLocator, type Locator, locatorKey } from './extraction.ts'
 import type { EvidenceId, FactId, ProjectId } from './ids.ts'
 import { newId, parseId } from './ids.ts'
 import { type Lang, vocabulary } from './language/index.ts'
+import { factSourceRemoved, type IsRemoved } from './source-removals.ts'
 import { looksLikeInstruction } from './suspicious.ts'
-
-/** Whether a piece of evidence was removed at its source (and did not come back). */
-export type IsRemoved = (id: EvidenceId) => boolean
-
-/** A fact whose sources were all removed at their source; one the PM stated is its own source. */
-export function factSourceRemoved(
-  fact: Pick<Fact, 'pmAsserted' | 'sources'>,
-  isRemoved: IsRemoved,
-): boolean {
-  return (
-    !fact.pmAsserted &&
-    fact.sources.length > 0 &&
-    fact.sources.every((source) => isRemoved(source.evidenceId))
-  )
-}
 
 export const FACT_KINDS = [
   'person',

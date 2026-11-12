@@ -154,7 +154,7 @@ describe.skipIf(!hasDatabase)('knowledge on Postgres (integration)', () => {
     })
     expect(await knowledge.compilable(id)).not.toBeNull()
 
-    await knowledge.saveKnowledge(id, [{ kind: 'insert', fact: fact(id, '120.000 euro') }])
+    await knowledge.saveKnowledge(id, [{ kind: 'insert', fact: fact(id, '120.000 euro') }], false)
     expect(await knowledge.compilable(id)).toBeNull()
     expect(await knowledge.compilable(randomUUID())).toBeNull()
     expect(await facts.progress(owner.id, projectId)).toEqual({
@@ -211,26 +211,32 @@ describe.skipIf(!hasDatabase)('knowledge on Postgres (integration)', () => {
       },
       { kind: 'contest', factId: original.id, fact: rival },
     ]
-    await knowledge.saveKnowledge(second, changes)
+    await knowledge.saveKnowledge(second, changes, false)
     let stored = await knowledge.facts(projectId)
     expect(stored.map((f) => [f.value, f.state, f.sources.length])).toEqual([
       ['120.000 euro', 'contested', 2],
       ['135.000 euro', 'contested', 1],
     ])
 
-    await knowledge.saveKnowledge(third, [
-      {
-        kind: 'replace',
-        factId: rival.id,
-        proposed: {
-          kind: 'economics',
-          key: rival.key,
-          statement: 'Il budget è 140.000 euro.',
-          value: '140.000 euro',
-          sources: [{ evidenceId: third as EvidenceId, locator: page, excerpt: 'Budget: 140.000' }],
+    await knowledge.saveKnowledge(
+      third,
+      [
+        {
+          kind: 'replace',
+          factId: rival.id,
+          proposed: {
+            kind: 'economics',
+            key: rival.key,
+            statement: 'Il budget è 140.000 euro.',
+            value: '140.000 euro',
+            sources: [
+              { evidenceId: third as EvidenceId, locator: page, excerpt: 'Budget: 140.000' },
+            ],
+          },
         },
-      },
-    ])
+      ],
+      false,
+    )
     stored = await knowledge.facts(projectId)
     expect(stored[1]).toMatchObject({
       value: '140.000 euro',

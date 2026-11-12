@@ -1,6 +1,13 @@
 'use client'
-import type { Audience, DocumentKind, Locale } from '@octobrief/domain'
+import {
+  type Audience,
+  type DocumentKind,
+  isTerminalPhase,
+  type Locale,
+  type QuestionPhase,
+} from '@octobrief/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useSession } from '@/components/shell/session-context'
 import { apiRequest } from './api-client'
 import type {
@@ -9,6 +16,8 @@ import type {
   KnowledgeDto,
   MemberDto,
   ProjectDto,
+  QuestionDto,
+  QuestionSummaryDto,
   SourceDto,
 } from './api-types'
 
@@ -205,6 +214,82 @@ export function useSyncSource(slug: string) {
   return useSourceMutation(slug, (id: string, csrfToken) =>
     apiRequest<void>(`${sourcesPath(slug)}/${id}/sync`, { method: 'POST', csrfToken }),
   )
+}
+
+const questionsKey = (slug: string) => ['projects', slug, 'questions'] as const
+const questionsPath = (slug: string) => `/projects/${encodeURIComponent(slug)}/questions`
+
+export function useQuestions(slug: string) {
+  return useQuery({
+    queryKey: questionsKey(slug),
+    queryFn: () =>
+      apiRequest<{ questions: QuestionSummaryDto[] }>(questionsPath(slug)).then((r) => r.questions),
+  })
+}
+
+export function useQuestion(slug: string, id: string) {
+  return useQuery({
+    queryKey: [...questionsKey(slug), id],
+    queryFn: () => apiRequest<QuestionDto>(`${questionsPath(slug)}/${id}`),
+  })
+}
+
+/**
+ * The phase of a question while it is being answered, from the server's event stream; null
+ * until the first event. When the question settles, its answer and the history are read again.
+ */
+export function useQuestionProgress(
+  slug: string,
+  id: string,
+  known: QuestionPhase | undefined,
+): QuestionPhase | null {
+  const queryClient = useQueryClient()
+  const [phase, setPhase] = useState<QuestionPhase | null>(null)
+  const settled = known !== undefined && isTerminalPhase(known)
+  useEffect(() => {
+    if (known === undefined || settled) return
+    const events = new EventSource(`/api${questionsPath(slug)}/${id}/events`)
+    events.addEventListener('phase', (event) => {
+      const next = (JSON.parse((event as MessageEvent<string>).data) as { phase: QuestionPhase })
+        .phase
+      setPhase(next)
+      if (isTerminalPhase(next)) {
+        events.close()
+        void queryClient.invalidateQueries({ queryKey: questionsKey(slug) })
+      }
+    })
+    // A dropped stream is not retried forever: the answer is read once more instead.
+    events.onerror = () => {
+      events.close()
+      void queryClient.invalidateQueries({ queryKey: questionsKey(slug) })
+    }
+    return () => events.close()
+  }, [slug, id, known, settled, queryClient])
+  return settled ? null : phase
+}
+
+export function useAskQuestion(slug: string) {
+  const { csrfToken } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (text: string) =>
+      apiRequest<QuestionSummaryDto>(questionsPath(slug), {
+        method: 'POST',
+        body: { text },
+        csrfToken,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: questionsKey(slug) }),
+  })
+}
+
+export function useDeleteQuestion(slug: string) {
+  const { csrfToken } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<void>(`${questionsPath(slug)}/${id}`, { method: 'DELETE', csrfToken }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: questionsKey(slug) }),
+  })
 }
 
 export async function signOut(): Promise<void> {

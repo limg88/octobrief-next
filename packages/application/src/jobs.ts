@@ -6,6 +6,7 @@ export const JOB_SCHEMAS = {
   'document.process': z.object({ documentId: z.uuid() }),
   'document.compile': z.object({ documentId: z.uuid() }),
   'source.sync': z.object({ sourceId: z.uuid() }),
+  'question.answer': z.object({ questionId: z.uuid() }),
 } as const
 
 export type JobName = keyof typeof JOB_SCHEMAS

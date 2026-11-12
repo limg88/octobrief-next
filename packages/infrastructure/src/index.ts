@@ -7,6 +7,7 @@ export { configuredBackends, createModelRunner } from './model/create-model-runn
 export { fakeEmbedding, fakeRunner } from './model/fake-runner.ts'
 export type { OidcSettings } from './oidc/openid-identity-provider.ts'
 export { createOidcIdentityProvider } from './oidc/openid-identity-provider.ts'
+export { answerStore, knowledgeReader, trackerReader } from './postgres/ask-store.ts'
 export {
   createDocumentProcessingStore,
   createDocumentRepository,
@@ -14,12 +15,14 @@ export {
 export { createFactRepository, createKnowledgeStore } from './postgres/knowledge-store.ts'
 export { createDatabaseProbe, createPool } from './postgres/pool.ts'
 export { createProjectRepository } from './postgres/project-repository.ts'
+export { createQuestionRepository, createQuestionWorkStore } from './postgres/question-store.ts'
 export { createLoginAttemptStore, createSessionStore } from './postgres/session-store.ts'
 export {
   createExternalItemStore,
   createSourceRepository,
   createSourceSyncStore,
 } from './postgres/source-repository.ts'
+export { inTransaction } from './postgres/transaction.ts'
 export { createUserRepository } from './postgres/user-repository.ts'
 export { installQueue } from './queue/install-queue.ts'
 export type { PgBossQueue, PgBossQueueOptions } from './queue/pg-boss-queue.ts'

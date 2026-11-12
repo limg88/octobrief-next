@@ -1,3 +1,7 @@
+export * from './ask/ask.ts'
+export * from './ask/tool-loop.ts'
+export * from './ask/tools.ts'
+export * from './ask/tracker-tool.ts'
 export type { ApplicationErrorCode } from './errors.ts'
 export { APPLICATION_ERROR_CODES, ApplicationError } from './errors.ts'
 export type { JobData, JobName } from './jobs.ts'
@@ -39,6 +43,12 @@ export { KNOWLEDGE_STATUSES } from './ports/knowledge-store.ts'
 export type { Logger } from './ports/logger.ts'
 export * from './ports/model-runner.ts'
 export type { ProjectRepository, ProjectWithRole } from './ports/project-repository.ts'
+export type {
+  Question,
+  QuestionRepository,
+  QuestionToAnswer,
+  QuestionWorkStore,
+} from './ports/question-stores.ts'
 export type {
   ExternalItemStore,
   FeedBatch,
@@ -99,6 +109,22 @@ export {
   listMembers,
   listProjects,
 } from './use-cases/projects.ts'
+export type {
+  AnswerDependencies,
+  AskReading,
+  QuestionDependencies,
+} from './use-cases/questions.ts'
+export {
+  askQuestion,
+  createAnswerQuestionHandler,
+  deleteQuestion,
+  getQuestion,
+  listQuestions,
+  QUESTION_HISTORY_LIMIT,
+  QUESTION_POLL_MS,
+  QUESTION_WATCH_MS,
+  watchQuestion,
+} from './use-cases/questions.ts'
 export { sanitizeReturnTo } from './use-cases/return-to.ts'
 export type {
   DeliveryOutcome,

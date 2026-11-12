@@ -144,8 +144,8 @@ async function proposalsOf(
   runner: ModelRunner,
   document: DocumentToCompile,
   chunks: readonly CompileChunk[],
+  flagged: boolean,
 ): Promise<{ proposals: ProposedFact[]; calls: number; dropped: number }> {
-  const flagged = detectSuspicious(chunks, COMPILE_LANG).length > 0
   const proposals: ProposedFact[] = []
   let calls = 0
   let dropped = 0
@@ -217,7 +217,13 @@ export function createCompileDocumentHandler(deps: CompileDependencies) {
     if (!document) return
     try {
       const chunks = document.chunks.map((chunk, ord) => ({ ...chunk, ord }))
-      const { proposals, calls, dropped } = await proposalsOf(deps.runner, document, chunks)
+      const flagged = detectSuspicious(chunks, COMPILE_LANG).length > 0
+      const { proposals, calls, dropped } = await proposalsOf(
+        deps.runner,
+        document,
+        chunks,
+        flagged,
+      )
       const existing = await deps.knowledge.facts(document.projectId)
       const { changes, rejected } = mergeProposals(existing, proposals, {
         projectId: document.projectId as ProjectId,
@@ -225,7 +231,7 @@ export function createCompileDocumentHandler(deps: CompileDependencies) {
         lang: COMPILE_LANG,
       })
       const embedded = await embedChunks(deps, document)
-      await deps.knowledge.saveKnowledge(document.id, changes)
+      await deps.knowledge.saveKnowledge(document.id, changes, flagged)
       deps.logger.info('document compiled', {
         documentId,
         calls,

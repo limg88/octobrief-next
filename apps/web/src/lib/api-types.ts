@@ -8,9 +8,11 @@ import type {
   Locale,
   Locator,
   MemberRole,
+  QuestionPhase,
   SourceKind,
   Uncertain,
   UserRole,
+  VerifiedAnswer,
 } from '@octobrief/domain'
 
 // Shapes of the JSON responses, as documented in /api/openapi.json.
@@ -58,6 +60,32 @@ export interface DocumentDto {
   uploadedAt: string
   sourceName: string | null
   originAt: string | null
+}
+
+/** A value as JSON carries it: dates become ISO strings. */
+type Jsonify<T> = T extends string | number | boolean | null | undefined
+  ? T
+  : T extends Date
+    ? string
+    : T extends readonly (infer U)[]
+      ? Jsonify<U>[]
+      : { [K in keyof T]: Jsonify<T[K]> }
+
+export type AnswerDto = Jsonify<VerifiedAnswer>
+export type AnswerSegmentDto = AnswerDto['segments'][number]
+export type AnswerSourceDto = AnswerSegmentDto['sources'][number]
+
+export interface QuestionSummaryDto {
+  id: string
+  text: string
+  phase: QuestionPhase
+  error: string | null
+  askedAt: string
+  answeredAt: string | null
+}
+
+export interface QuestionDto extends QuestionSummaryDto {
+  answer: AnswerDto | null
 }
 
 export interface SourceDto {

@@ -82,15 +82,160 @@ function compiledFacts(content: string): { facts: FakeFact[] } {
   return { facts }
 }
 
+/** A passage or a fact the search tool returned. */
+interface ReadHit {
+  kind: 'chunk' | 'fact'
+  title: string
+  text: string
+  evidence_id?: string
+  locator?: unknown
+  fact_id?: string
+}
+
+const SEARCH_TOOL = 'search_knowledge'
+/** Segments of a fake answer at most: a short answer, like the one asked of a real model. */
+const MAX_ANSWER_SEGMENTS = 4
+/** Words shorter than this say nothing about what a question is about. */
+const MIN_TOPIC_WORD = 4
+/**
+ * A question holding this marker makes the fake model add a number it never read to its first
+ * sentence: the way to see, without a real model, that the checks suspend an invented figure.
+ */
+export const FAKE_INVENTION_MARKER = '#inventa'
+const INVENTED_SENTENCE = ' Il totale aggiornato è di 123.456 euro.'
+
+const topicWords = (text: string): string[] =>
+  (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter((w) => w.length >= MIN_TOPIC_WORD)
+
+/** The question of the PM, as the ask engine sends it (`{"domanda": …}`). */
+function questionOf(request: ModelRequest): string {
+  for (const message of request.messages) {
+    if (message.role !== 'user') continue
+    try {
+      const parsed = JSON.parse(message.content) as { domanda?: unknown }
+      if (typeof parsed.domanda === 'string') return parsed.domanda
+    } catch {
+      // Not the question: a note of the engine.
+    }
+  }
+  return ''
+}
+
+/** Everything the search tool returned in this conversation. */
+function hitsRead(request: ModelRequest): ReadHit[] {
+  return request.messages.flatMap((message) => {
+    if (message.role !== 'tool') return []
+    try {
+      const parsed = JSON.parse(message.content) as { results?: ReadHit[] }
+      return Array.isArray(parsed.results) ? parsed.results : []
+    } catch {
+      return []
+    }
+  })
+}
+
+const sourceOf = (hit: ReadHit) =>
+  hit.kind === 'fact'
+    ? { factId: hit.fact_id }
+    : { evidenceId: hit.evidence_id, locator: hit.locator }
+
+/** A sentence shaped like an order to the reader: reported by no well-behaved model. */
+const ORDER = /\bignora\b|\bistruzion/i
+
+/**
+ * The sentences of a passage that speak of the question, at most two; null when none does (a
+ * heading, an order addressed to the reader, words about something else).
+ */
+function relevantText(hit: ReadHit, topic: ReadonlySet<string>): string | null {
+  const sentences = sentencesOf(hit.text).filter(
+    (sentence) => !ORDER.test(sentence) && topicWords(sentence).some((word) => topic.has(word)),
+  )
+  return sentences.length > 0 ? sentences.slice(0, 2).join(' ') : null
+}
+
+/**
+ * The answer to a question from what was read: the passages and facts that share a word with
+ * the question, each quoted with its source; facts of the same subject that say different
+ * things as a contradiction; nothing relevant as an absence. Never a word that was not read.
+ */
+function projectAnswer(request: ModelRequest): unknown {
+  const topic = new Set(topicWords(questionOf(request)))
+  const said = new Set<string>()
+  const relevant = hitsRead(request).flatMap((hit) => {
+    const text = relevantText(hit, topic)
+    // The same words from a passage and from the fact compiled from it are said once.
+    if (text === null || said.has(text)) return []
+    said.add(text)
+    return [{ ...hit, text }]
+  })
+  const facts = relevant.filter((hit) => hit.kind === 'fact')
+  const bySubject = new Map<string, ReadHit[]>()
+  for (const fact of facts) bySubject.set(fact.title, [...(bySubject.get(fact.title) ?? []), fact])
+  const contradictions = [...bySubject]
+    .filter(([, sides]) => sides.length > 1)
+    .map(([subject, sides]) => ({
+      subject,
+      sides: sides.map((side) => ({ value: side.text, source: sourceOf(side) })),
+      reason: 'I documenti riportano valori diversi.',
+    }))
+  const invents = questionOf(request).includes(FAKE_INVENTION_MARKER)
+  const segments = relevant.slice(0, MAX_ANSWER_SEGMENTS).map((hit, index) => ({
+    text: hit.text + (invents && index === 0 ? INVENTED_SENTENCE : ''),
+    nature: 'fact',
+    sources: [sourceOf(hit)],
+  }))
+  const absences =
+    segments.length > 0
+      ? []
+      : [
+          {
+            question: 'In quale documento si trova questa informazione?',
+            proposal: 'Carica il documento o collega la fonte che la riporta.',
+          },
+        ]
+  return { lang: 'it', segments, contradictions, absences }
+}
+
 /** What the fake model answers, by the name of the response schema of the request. */
-const SKILLS: Readonly<Record<string, (content: string) => unknown>> = {
-  compiled_facts: compiledFacts,
+const SKILLS: Readonly<Record<string, (request: ModelRequest) => unknown>> = {
+  compiled_facts: (request) => {
+    const data = request.messages.find((message) => message.role === 'user')
+    return data?.content ? compiledFacts(data.content) : {}
+  },
+  project_answer: projectAnswer,
 }
 
 function answer(request: ModelRequest): string {
   const skill = SKILLS[request.responseSchema?.name ?? '']
-  const data = request.messages.find((message) => message.role === 'user')
-  return JSON.stringify(skill && data?.content ? skill(data.content) : {})
+  return JSON.stringify(skill ? skill(request) : {})
+}
+
+/**
+ * A turn with tools: the fake model searches once with the question, then says it has read
+ * enough. Only the search tool, only when it is offered.
+ */
+function toolTurn(request: ModelRequest): ModelResponse {
+  const searched = request.messages.some((message) => message.role === 'tool')
+  const canSearch = request.tools?.some((tool) => tool.name === SEARCH_TOOL) === true
+  const usage = { inputTokens: 0, outputTokens: 0 }
+  if (searched || !canSearch) {
+    return {
+      message: { role: 'assistant', content: 'Lettura completata.' },
+      finishReason: 'stop',
+      usage,
+      backend: FAKE_BACKEND,
+    }
+  }
+  return {
+    message: {
+      role: 'assistant',
+      content: null,
+      toolCalls: [{ id: 'search-1', name: SEARCH_TOOL, arguments: { query: questionOf(request) } }],
+    },
+    finishReason: 'tool_calls',
+    usage,
+    backend: FAKE_BACKEND,
+  }
 }
 
 const FNV_OFFSET = 0x811c9dc5
@@ -142,6 +287,7 @@ export function fakeRunner(options: FakeRunnerOptions = {}): ModelRunner {
     backend: FAKE_BACKEND,
     async run(request): Promise<ModelResponse> {
       record({ kind: 'chat', messages: request.messages })
+      if (request.tools?.length) return toolTurn(request)
       return {
         message: { role: 'assistant', content: answer(request) },
         finishReason: 'stop',

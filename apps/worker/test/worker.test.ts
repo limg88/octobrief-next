@@ -8,8 +8,10 @@ import {
   InMemoryJobQueue,
   InMemoryKnowledge,
   InMemoryProjects,
+  InMemoryQuestions,
   InMemorySources,
   InMemoryUsers,
+  readingOf,
 } from '@octobrief/application/testing'
 import { describe, expect, it } from 'vitest'
 import { startWorker } from '../src/worker.ts'
@@ -45,6 +47,7 @@ function setup(store: InMemoryDocuments) {
       warnings: [],
     })),
     retentionDays: 30,
+    asking: { questions: new InMemoryQuestions(store), reading: readingOf([]) },
     syncIntervalMs: 60_000,
     sources: (() => {
       const sources = new InMemorySources(store)
@@ -67,6 +70,7 @@ describe('startWorker', () => {
       'document.process',
       'document.compile',
       'source.sync',
+      'question.answer',
     ])
 
     await queue.handlers.get('system.ping')?.({ requestedAt: '2026-11-11T10:00:00.000Z' }, 'job-1')

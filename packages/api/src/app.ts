@@ -8,6 +8,7 @@ import { registerHealthRoutes } from './routes/health.ts'
 import { registerKnowledgeRoutes } from './routes/knowledge.ts'
 import { registerMeRoutes } from './routes/me.ts'
 import { registerProjectRoutes } from './routes/projects.ts'
+import { registerQuestionRoutes } from './routes/questions.ts'
 import { registerSourceRoutes } from './routes/sources.ts'
 import { registerSystemRoutes } from './routes/system.ts'
 
@@ -29,6 +30,7 @@ export function createApi(deps: ApiDependencies) {
   registerDocumentRoutes(app, deps)
   registerKnowledgeRoutes(app, deps)
   registerSourceRoutes(app, deps)
+  registerQuestionRoutes(app, deps)
   registerSystemRoutes(app, deps)
   app.doc31('/openapi.json', {
     openapi: '3.1.0',

@@ -74,7 +74,6 @@
     "onlyOwners": "Only the project owner or an administrator can add members."
   },
   "placeholder": {
-    "ask": "Questions to the project memory arrive with increment 4.",
     "deliverables": "Deliverables (status reports, client emails…) arrive with increment 5."
   },
   "errors": {
@@ -196,6 +195,93 @@
       "write_scope_refused": "The token can write: a read-only token is required.",
       "conflict": "The project already has a source of this name.",
       "forbidden": "Only the owner or an admin can connect sources."
+    }
+  },
+  "ask": {
+    "title": "Ask",
+    "subtitle": "Questions about the project: every sentence of the answer is checked against the sources read.",
+    "question": "Your question",
+    "placeholder": "For example: what is the overall budget? Which risks are open?",
+    "send": "Ask",
+    "history": "Your questions",
+    "noHistory": "No questions yet.",
+    "remove": "Remove from history: {text}",
+    "nothing": "No answer from the available sources.",
+    "absences": "What is missing",
+    "checks": "{total, plural, one {# check} other {# checks}} · {anomalies, plural, =0 {no anomalies} one {# anomaly} other {# anomalies}}",
+    "phase": {
+      "queued": "Queued…",
+      "reading": "Reading the project's documents and facts…",
+      "checking": "Checking every sentence against the sources…",
+      "done": "Ready",
+      "failed": "Failed"
+    },
+    "errors": {
+      "generic": "The answer failed. Try again.",
+      "ask_model_output_invalid": "The model did not answer in the expected form. Try again.",
+      "model_unavailable": "The model cannot be reached. Try again shortly.",
+      "model_timeout": "The model did not answer in time. Try again.",
+      "model_busy": "The model is busy. Try again shortly.",
+      "model_not_allowed": "The configured model is not allowed for project data."
+    }
+  },
+  "trust": {
+    "fact": "fact",
+    "workItem": "item {id}",
+    "counts": "counts",
+    "noDate": "unknown date",
+    "unknownSource": "unrecognized source",
+    "pmAsserted": "stated by you",
+    "contested": "contradicted",
+    "contradictions": "Sources that disagree",
+    "unverified": {
+      "not_read": "not read",
+      "unknown_source": "unknown source",
+      "numbers_not_in_source": "the numbers are not in the source"
+    },
+    "suspended": {
+      "generic": "Value suspended by the checks.",
+      "without_source": "Sentence suspended: no verified source supports it.",
+      "stale_data": "Sentence suspended: the source data is too old.",
+      "unknown_freshness": "Sentence suspended: it is not known how fresh the data is."
+    },
+    "nature": {
+      "fact": "Fact",
+      "inference": "Inference",
+      "suggestion": "Suggestion"
+    },
+    "freshness": {
+      "level": {
+        "fresh": "Up to date",
+        "dated": "Dated",
+        "warning": "To recheck",
+        "stale": "Old",
+        "unknown": "Unknown freshness"
+      },
+      "note": {
+        "to_recheck": "recheck the source",
+        "stale": "old source",
+        "superseded": "a newer version exists"
+      }
+    },
+    "anomalies": "Anomalies found by the checks",
+    "anomaly": {
+      "lang_mismatch": "answer in a language other than the one asked",
+      "without_source": "sentence without a verified source",
+      "stale_data": "data too old",
+      "future_source_date": "source dated in the future",
+      "unknown_source_freshness": "unknown freshness of the source",
+      "mixed_script": "text mixing alphabets",
+      "contradiction_unverified_side": "contradiction with an unverified side",
+      "contradiction_stale_side": "contradiction with a side too old",
+      "contradiction_with_data": "contradiction carrying unverified data",
+      "contradiction_with_name": "contradiction naming a person",
+      "contradiction_with_mixed_script": "contradiction mixing alphabets",
+      "same_document_contradiction": "contradiction inside one document",
+      "contested_source": "source contradicted by another",
+      "absence_with_data": "absence note carrying data",
+      "absence_with_name": "absence note naming a person",
+      "absence_with_mixed_script": "absence note mixing alphabets"
     }
   },
   "documentStatus": {
