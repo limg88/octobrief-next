@@ -30,7 +30,8 @@
     "overview": "Panoramica",
     "ask": "Chiedi",
     "deliverables": "Deliverable",
-    "memory": "Memoria"
+    "memory": "Memoria",
+    "sources": "Fonti"
   },
   "palette": {
     "placeholder": "Scrivi un comando o cerca…",
@@ -114,7 +115,8 @@
       "too_large": "Il file supera 50 MB.",
       "invalid_name": "Nome del file non valido.",
       "forbidden": "Può eliminarlo solo chi l'ha caricato, il responsabile o un admin."
-    }
+    },
+    "fromSource": "da {source}"
   },
   "knowledge": {
     "title": "Cosa ho capito",
@@ -132,6 +134,68 @@
       "economics": "Economia",
       "person": "Persone",
       "note": "Note"
+    }
+  },
+  "sources": {
+    "title": "Fonti",
+    "subtitle": "Da dove arrivano i documenti oltre al caricamento a mano, e quanto sono freschi.",
+    "new": "Collega una fonte",
+    "kind": "Tipo di fonte",
+    "name": "Nome della fonte",
+    "connect": "Collega",
+    "created": "Fonte «{name}» collegata",
+    "empty": "Nessuna fonte collegata.",
+    "never": "mai",
+    "failed": "Ultima lettura non riuscita ({code})",
+    "syncNow": "Leggi ora",
+    "syncQueued": "Lettura avviata",
+    "newToken": "Nuovo token",
+    "disconnect": "Scollega",
+    "confirmDelete": "Scollegare {name}? I documenti già arrivati restano.",
+    "account": "Email dell'account",
+    "secret": "Token in sola lettura",
+    "tokenTitle": "Token dell'alimentatore: copialo ora, non verrà più mostrato.",
+    "tokenNote": "Sul PC del PM: OCTOBRIEF_FEEDER_TOKEN=… node apps/feeder/src/cli.ts … (vedi demo/04-fonti).",
+    "tokenDismiss": "L'ho copiato",
+    "kinds": {
+      "m365": "Microsoft 365 (alimentatore)",
+      "dwsi": "NetSuite DWSI (alimentatore)",
+      "files": "Cartella o file (alimentatore)",
+      "jira": "Jira",
+      "ado": "Azure DevOps"
+    },
+    "hints": {
+      "m365": "Mail, Teams e SharePoint letti dall'alimentatore sul PC del PM tramite Claude e il connettore Microsoft 365: nessun permesso Graph.",
+      "dwsi": "Il data warehouse letto dal PC del PM con credenziali in sola lettura: la connessione non passa mai dal server.",
+      "files": "Una cartella del PC del PM (anche una libreria SharePoint sincronizzata) o un file di elementi.",
+      "jira": "Letto dal server ogni 15 minuti con un token in sola lettura, conservato cifrato.",
+      "ado": "Letto dal server ogni 15 minuti con un PAT in sola lettura, conservato cifrato."
+    },
+    "place": {
+      "jira": "Sito Jira (il nome prima di .atlassian.net)",
+      "ado": "Organizzazione"
+    },
+    "scope": {
+      "jira": "Chiavi dei progetti (es. BOR, APO) — vuoto: tutti",
+      "ado": "Nome del progetto"
+    },
+    "columns": {
+      "source": "Fonte",
+      "documents": "Documenti",
+      "lastSync": "Ultima consegna",
+      "dataAsOf": "Dati aggiornati al",
+      "actions": "Azioni"
+    },
+    "errors": {
+      "invalid_name": "Il nome è obbligatorio (massimo 120 caratteri).",
+      "secret_required": "Serve il token in sola lettura.",
+      "source_auth_failed": "Il sistema ha rifiutato le credenziali.",
+      "source_forbidden": "Le credenziali non danno accesso a ciò che è stato chiesto.",
+      "source_not_configured": "Impostazioni non valide, oppure nessun progetto corrisponde.",
+      "source_unreachable": "Il sistema non è raggiungibile.",
+      "write_scope_refused": "Il token può scrivere: serve un token in sola lettura.",
+      "conflict": "Il progetto ha già una fonte con questo nome.",
+      "forbidden": "Solo il responsabile o un amministratore può collegare fonti."
     }
   },
   "documentStatus": {

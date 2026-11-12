@@ -3,7 +3,14 @@ import type { Audience, DocumentKind, Locale } from '@octobrief/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/shell/session-context'
 import { apiRequest } from './api-client'
-import type { DocumentDto, DocumentTextDto, KnowledgeDto, MemberDto, ProjectDto } from './api-types'
+import type {
+  DocumentDto,
+  DocumentTextDto,
+  KnowledgeDto,
+  MemberDto,
+  ProjectDto,
+  SourceDto,
+} from './api-types'
 
 const PROJECTS_KEY = ['projects'] as const
 const projectKey = (slug: string) => ['projects', slug] as const
@@ -139,6 +146,64 @@ export function useReclassifyDocument(slug: string) {
 export function useDeleteDocument(slug: string) {
   return useDocumentMutation(slug, (id: string, csrfToken) =>
     apiRequest<void>(`${documentsPath(slug)}/${id}`, { method: 'DELETE', csrfToken }),
+  )
+}
+
+const sourcesKey = (slug: string) => ['projects', slug, 'sources'] as const
+const sourcesPath = (slug: string) => `/projects/${encodeURIComponent(slug)}/sources`
+
+export function useSources(slug: string) {
+  return useQuery({
+    queryKey: sourcesKey(slug),
+    queryFn: () => apiRequest<{ sources: SourceDto[] }>(sourcesPath(slug)).then((r) => r.sources),
+  })
+}
+
+function useSourceMutation<I, O>(slug: string, call: (input: I, csrfToken: string) => Promise<O>) {
+  const { csrfToken } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: I) => call(input, csrfToken),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: sourcesKey(slug) }),
+  })
+}
+
+export interface NewSourceInput {
+  kind: string
+  name: string
+  config?: Record<string, unknown>
+  secret?: string
+  scope?: string[]
+}
+
+export function useCreateSource(slug: string) {
+  return useSourceMutation(slug, (input: NewSourceInput, csrfToken) =>
+    apiRequest<{ source: SourceDto; ingestToken: string | null }>(sourcesPath(slug), {
+      method: 'POST',
+      body: input,
+      csrfToken,
+    }),
+  )
+}
+
+export function useDeleteSource(slug: string) {
+  return useSourceMutation(slug, (id: string, csrfToken) =>
+    apiRequest<void>(`${sourcesPath(slug)}/${id}`, { method: 'DELETE', csrfToken }),
+  )
+}
+
+export function useRotateSourceToken(slug: string) {
+  return useSourceMutation(slug, (id: string, csrfToken) =>
+    apiRequest<{ ingestToken: string }>(`${sourcesPath(slug)}/${id}/token`, {
+      method: 'POST',
+      csrfToken,
+    }),
+  )
+}
+
+export function useSyncSource(slug: string) {
+  return useSourceMutation(slug, (id: string, csrfToken) =>
+    apiRequest<void>(`${sourcesPath(slug)}/${id}/sync`, { method: 'POST', csrfToken }),
   )
 }
 

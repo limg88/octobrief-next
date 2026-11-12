@@ -1,11 +1,15 @@
 // Composition root of the worker process.
 import {
+  createConnectorFeeds,
   createConsoleLogger,
   createDocumentProcessingStore,
+  createExternalItemStore,
   createFileBlobStore,
   createKnowledgeStore,
   createModelRunner,
   createPool,
+  createSecretVault,
+  createSourceSyncStore,
   loadWorkerConfig,
   openPgBossQueue,
 } from '@octobrief/infrastructure'
@@ -27,6 +31,13 @@ const stop = await startWorker({
   blobs: createFileBlobStore(config.blobDir),
   extractor: createIsolatedExtractor(),
   retentionDays: config.retentionDays,
+  syncIntervalMs: config.syncIntervalMinutes * 60_000,
+  sources: {
+    sync: createSourceSyncStore(pool),
+    items: createExternalItemStore(pool, { asCreator: false }),
+    feeds: createConnectorFeeds({ logger, devEndpoints: config.sources.devEndpoints }),
+    vault: createSecretVault(config.sources.secretsKey),
+  },
 })
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

@@ -1,6 +1,7 @@
 import type {
   Classification,
   ClassificationState,
+  DocumentKind,
   DocumentSummary,
   Extraction,
   TextChunk,
@@ -42,6 +43,12 @@ export interface DocumentToProcess {
   readonly mediaType: string
   readonly blobKey: string
   readonly uploadedAt: Date
+  /** When the source system says the item was made or changed, for a document of a source. */
+  readonly originAt?: Date | null
+  /** When the file was last changed where a feeder read it. */
+  readonly fileModifiedAt?: Date | null
+  /** The kind its source declares for it. */
+  readonly systemKind?: DocumentKind | null
 }
 
 /** The worker's view of documents: no viewer, every project. */

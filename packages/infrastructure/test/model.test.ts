@@ -155,7 +155,11 @@ describe('ollama embedder', () => {
 })
 
 describe('model configuration', () => {
-  const BASE = { DATABASE_WORKER_URL: 'postgres://w@localhost/db', BLOB_DIR: '/var/blobs' }
+  const BASE = {
+    DATABASE_WORKER_URL: 'postgres://w@localhost/db',
+    BLOB_DIR: '/var/blobs',
+    SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  }
   const GATEWAY = {
     LLM_BACKEND: 'llm-api',
     LLM_API_URL: 'https://llm.example.test',

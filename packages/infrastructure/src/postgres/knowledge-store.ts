@@ -229,6 +229,18 @@ export function createKnowledgeStore(pool: pg.Pool): KnowledgeStore {
       }))
       const client = project.rows[0]?.client
       if (client) people.push({ displayName: client, kind: 'organization' })
+      const named = await pool.query<{ display_name: string; email: string; untrusted: boolean }>(
+        `SELECT display_name, email, untrusted FROM project_people
+          WHERE project_id = $1 ORDER BY display_name, email`,
+        [projectId],
+      )
+      for (const row of named.rows) {
+        people.push({
+          displayName: row.display_name,
+          ...(row.email ? { email: row.email } : {}),
+          trust: row.untrusted ? 'untrusted' : 'seen',
+        })
+      }
       return people
     },
 

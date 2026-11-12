@@ -1,5 +1,5 @@
 /** The sections of a project, with the key of the «G then …» shortcut. */
-export const SECTIONS = ['overview', 'ask', 'deliverables', 'memory'] as const
+export const SECTIONS = ['overview', 'ask', 'deliverables', 'memory', 'sources'] as const
 export type Section = (typeof SECTIONS)[number]
 
 export interface NavEntry {
@@ -13,6 +13,7 @@ const SECTION_KEYS: Record<Section, string> = {
   ask: 'c',
   deliverables: 'd',
   memory: 'm',
+  sources: 'f',
 }
 
 export function projectHref(slug: string, section: Section = 'overview'): string {

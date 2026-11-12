@@ -41,6 +41,8 @@ const DocumentSchema = z
     uploadedBy: z.string(),
     uploaderName: z.string(),
     uploadedAt: z.iso.datetime(),
+    sourceName: z.string().nullable(),
+    originAt: z.iso.datetime().nullable(),
   })
   .openapi('Document')
 
@@ -74,6 +76,8 @@ function toDto(document: DocumentSummary) {
     uploadedBy: document.uploadedBy,
     uploaderName: document.uploaderName,
     uploadedAt: document.uploadedAt.toISOString(),
+    sourceName: document.sourceName,
+    originAt: document.originAt?.toISOString() ?? null,
   }
 }
 

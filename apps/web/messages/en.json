@@ -30,7 +30,8 @@
     "overview": "Overview",
     "ask": "Ask",
     "deliverables": "Deliverables",
-    "memory": "Memory"
+    "memory": "Memory",
+    "sources": "Sources"
   },
   "palette": {
     "placeholder": "Type a command or search…",
@@ -114,7 +115,8 @@
       "too_large": "The file is over 50 MB.",
       "invalid_name": "Invalid file name.",
       "forbidden": "Only the uploader, the owner or an admin can delete it."
-    }
+    },
+    "fromSource": "from {source}"
   },
   "knowledge": {
     "title": "What I understood",
@@ -132,6 +134,68 @@
       "economics": "Economics",
       "person": "People",
       "note": "Notes"
+    }
+  },
+  "sources": {
+    "title": "Sources",
+    "subtitle": "Where documents come from besides manual upload, and how fresh they are.",
+    "new": "Connect a source",
+    "kind": "Kind of source",
+    "name": "Source name",
+    "connect": "Connect",
+    "created": "Source “{name}” connected",
+    "empty": "No source connected.",
+    "never": "never",
+    "failed": "Last read failed ({code})",
+    "syncNow": "Read now",
+    "syncQueued": "Reading started",
+    "newToken": "New token",
+    "disconnect": "Disconnect",
+    "confirmDelete": "Disconnect {name}? Documents already delivered stay.",
+    "account": "Account email",
+    "secret": "Read-only token",
+    "tokenTitle": "Feeder token: copy it now, it will not be shown again.",
+    "tokenNote": "On the PM's computer: OCTOBRIEF_FEEDER_TOKEN=… node apps/feeder/src/cli.ts … (see demo/04-fonti).",
+    "tokenDismiss": "I copied it",
+    "kinds": {
+      "m365": "Microsoft 365 (feeder)",
+      "dwsi": "NetSuite DWSI (feeder)",
+      "files": "Folder or file (feeder)",
+      "jira": "Jira",
+      "ado": "Azure DevOps"
+    },
+    "hints": {
+      "m365": "Mail, Teams and SharePoint read by the feeder on the PM's computer through Claude and the Microsoft 365 connector: no Graph permission.",
+      "dwsi": "The data warehouse read from the PM's computer with read-only credentials: the connection never goes through the server.",
+      "files": "A folder of the PM's computer (a synced SharePoint library too) or a file of items.",
+      "jira": "Read by the server every 15 minutes with a read-only token, stored encrypted.",
+      "ado": "Read by the server every 15 minutes with a read-only PAT, stored encrypted."
+    },
+    "place": {
+      "jira": "Jira site (the name before .atlassian.net)",
+      "ado": "Organization"
+    },
+    "scope": {
+      "jira": "Project keys (e.g. BOR, APO) — empty: all",
+      "ado": "Project name"
+    },
+    "columns": {
+      "source": "Source",
+      "documents": "Documents",
+      "lastSync": "Last delivery",
+      "dataAsOf": "Data as of",
+      "actions": "Actions"
+    },
+    "errors": {
+      "invalid_name": "The name is required (120 characters at most).",
+      "secret_required": "A read-only token is required.",
+      "source_auth_failed": "The system refused the credentials.",
+      "source_forbidden": "The credentials give no access to what was asked.",
+      "source_not_configured": "Invalid settings, or no project matches.",
+      "source_unreachable": "The system cannot be reached.",
+      "write_scope_refused": "The token can write: a read-only token is required.",
+      "conflict": "The project already has a source of this name.",
+      "forbidden": "Only the owner or an admin can connect sources."
     }
   },
   "documentStatus": {

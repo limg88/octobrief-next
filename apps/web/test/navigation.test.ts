@@ -15,6 +15,7 @@ describe('navigation', () => {
       ['ask', '/projects/alpha/ask', 'c'],
       ['deliverables', '/projects/alpha/deliverables', 'd'],
       ['memory', '/projects/alpha/memory', 'm'],
+      ['sources', '/projects/alpha/sources', 'f'],
     ])
   })
 

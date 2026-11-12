@@ -1,5 +1,6 @@
 // Clean architecture boundaries: dependencies point inward only.
 //   domain <- application <- (infrastructure | api) <- apps (composition roots)
+//   domain <- connectors <- (infrastructure | apps/feeder): read-only adapters to source systems
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -15,14 +16,28 @@ module.exports = {
       comment: 'application sees domain and zod; never infrastructure, api or apps.',
       severity: 'error',
       from: { path: '^packages/application/src' },
-      to: { path: '^(packages/(infrastructure|api)|apps)/' },
+      to: { path: '^(packages/(infrastructure|api|connectors)|apps)/' },
+    },
+    {
+      name: 'connectors-depend-on-domain-only',
+      comment: 'connectors read source systems; they know the domain and nothing else of ours.',
+      severity: 'error',
+      from: { path: '^packages/connectors/src' },
+      to: { path: '^(packages/(application|infrastructure|api)|apps)/' },
+    },
+    {
+      name: 'feeder-stays-light',
+      comment: 'the feeder runs on a PM computer: no server code, only connectors and the domain.',
+      severity: 'error',
+      from: { path: '^apps/feeder/src' },
+      to: { path: '^(packages/(application|infrastructure|api)|apps/(web|worker))/' },
     },
     {
       name: 'api-does-not-know-infrastructure',
       comment: 'the HTTP interface talks to use cases and ports, never to adapters.',
       severity: 'error',
       from: { path: '^packages/api/src' },
-      to: { path: '^(packages/infrastructure|apps)/' },
+      to: { path: '^(packages/(infrastructure|connectors)|apps)/' },
     },
     {
       name: 'infrastructure-does-not-know-interfaces',

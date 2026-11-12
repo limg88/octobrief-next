@@ -1,6 +1,8 @@
 import type { HealthProbe, JobQueue } from '@octobrief/application'
 import {
+  FakeFeeds,
   FakeIdentityProvider,
+  FakeVault,
   InMemoryBlobs,
   InMemoryDocuments,
   InMemoryJobQueue,
@@ -8,6 +10,7 @@ import {
   InMemoryLoginAttempts,
   InMemoryProjects,
   InMemorySessions,
+  InMemorySources,
   InMemoryUsers,
   RecordingLogger,
 } from '@octobrief/application/testing'
@@ -22,6 +25,7 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
   const logger = new RecordingLogger()
   const projects = new InMemoryProjects(users)
   const documents = new InMemoryDocuments(projects, users)
+  const sources = new InMemorySources(documents)
   const deps: ApiDependencies = {
     probes: [] as HealthProbe[],
     queue: new InMemoryJobQueue() as JobQueue,
@@ -32,6 +36,10 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
     projects,
     documents,
     facts: new InMemoryKnowledge(documents),
+    sources,
+    items: sources,
+    feeds: new FakeFeeds(),
+    vault: new FakeVault(),
     blobs: new InMemoryBlobs(),
     adminEmails: new Set(['alba@example.test']),
     logger,

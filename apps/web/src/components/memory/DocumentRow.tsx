@@ -58,6 +58,11 @@ export function DocumentRow({ document, onReclassify, onView, onDelete }: Docume
           {formatSize(document.sizeBytes)} · {document.uploaderName} ·{' '}
           {t('chunks', { count: document.chunkCount })}
         </div>
+        {document.sourceName && (
+          <div className="text-xs text-muted-foreground">
+            {t('fromSource', { source: document.sourceName })}
+          </div>
+        )}
       </Cell>
       <Cell>
         <select

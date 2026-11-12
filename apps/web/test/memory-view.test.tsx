@@ -25,6 +25,8 @@ const SAL: DocumentDto = {
   uploadedBy: 'u-paola',
   uploaderName: 'Paola Prova',
   uploadedAt: '2026-11-11T10:00:00.000Z',
+  sourceName: 'Posta Borea',
+  originAt: '2026-11-10T08:00:00.000Z',
 }
 
 const PENDING: DocumentDto = {

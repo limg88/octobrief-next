@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@octobrief/application": "workspace:*",
+    "@octobrief/connectors": "workspace:*",
     "@octobrief/domain": "workspace:*",
     "fflate": "0.8.3",
     "openid-client": "6.8.8",

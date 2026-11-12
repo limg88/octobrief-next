@@ -80,6 +80,7 @@ describe('GET /api/openapi.json', () => {
     }
     expect(Object.keys(doc.paths).sort()).toEqual([
       '/api/health',
+      '/api/ingest/{id}',
       '/api/me',
       '/api/projects',
       '/api/projects/{slug}',
@@ -87,6 +88,10 @@ describe('GET /api/openapi.json', () => {
       '/api/projects/{slug}/documents/{id}',
       '/api/projects/{slug}/knowledge',
       '/api/projects/{slug}/members',
+      '/api/projects/{slug}/sources',
+      '/api/projects/{slug}/sources/{id}',
+      '/api/projects/{slug}/sources/{id}/sync',
+      '/api/projects/{slug}/sources/{id}/token',
       '/api/system/pings',
       '/api/system/pings/{jobId}',
     ])

@@ -63,8 +63,11 @@ export {
   uniqueSlug,
 } from './project.ts'
 export * from './pseudonymizer.ts'
+export * from './read-log.ts'
 export * from './relative-dates.ts'
 export { isCalendarDate, romeDateString, romeMidnight } from './rome-time.ts'
+export * from './source.ts'
 export * from './suspicious.ts'
+export * from './tracker.ts'
 export type { Locale, User, UserRole } from './user.ts'
 export { DEFAULT_LOCALE, isAdmin, isLocale, LOCALES, USER_ROLES } from './user.ts'

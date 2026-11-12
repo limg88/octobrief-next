@@ -18,4 +18,6 @@ export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
   'document.process': { retryLimit: 2, retryDelay: 10, expireInSeconds: 300 },
   // Model calls of a whole document: slow backends take minutes; a retry covers a busy gateway.
   'document.compile': { retryLimit: 2, retryDelay: 30, expireInSeconds: 1800 },
+  // A failed read is recorded on the source; the next scheduled run tries again.
+  'source.sync': { retryLimit: 0, retryDelay: 1, expireInSeconds: 1800 },
 }

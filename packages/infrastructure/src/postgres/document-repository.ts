@@ -35,13 +35,17 @@ interface DocumentRow {
   uploaded_by: string
   uploader_name: string
   uploaded_at: Date
+  source_name: string | null
+  origin_at: Date | null
 }
 
 const SUMMARY = `
   SELECT d.id, d.project_id, d.file_name, d.media_type, d.size_bytes, d.status, d.kind,
          d.audience, d.audience_source, d.document_date, d.date_source, d.uncertain, d.warnings,
-         d.chunk_count, d.uploaded_by, u.display_name AS uploader_name, d.uploaded_at
-    FROM documents d JOIN users u ON u.id = d.uploaded_by`
+         d.chunk_count, d.uploaded_by, u.display_name AS uploader_name, d.uploaded_at,
+         s.name AS source_name, d.origin_at
+    FROM documents d JOIN users u ON u.id = d.uploaded_by
+    LEFT JOIN sources s ON s.id = d.source_id`
 
 function toSummary(row: DocumentRow): DocumentSummary {
   return {
@@ -62,6 +66,8 @@ function toSummary(row: DocumentRow): DocumentSummary {
     uploadedBy: row.uploaded_by,
     uploaderName: row.uploader_name,
     uploadedAt: row.uploaded_at,
+    sourceName: row.source_name,
+    originAt: row.origin_at,
   }
 }
 
@@ -161,8 +167,13 @@ export function createDocumentProcessingStore(pool: pg.Pool): DocumentProcessing
         media_type: string
         blob_key: string
         uploaded_at: Date
+        origin_at: Date | null
+        system_kind: DocumentKind | null
+        file_modified_at: Date | null
       }>(
-        `SELECT id, file_name, media_type, blob_key, uploaded_at FROM documents
+        `SELECT id, file_name, media_type, blob_key, uploaded_at, origin_at, system_kind,
+                file_modified_at
+           FROM documents
           WHERE id = $1 AND status = 'pending'`,
         [documentId],
       )
@@ -174,6 +185,9 @@ export function createDocumentProcessingStore(pool: pg.Pool): DocumentProcessing
         mediaType: row.media_type,
         blobKey: row.blob_key,
         uploadedAt: row.uploaded_at,
+        originAt: row.origin_at,
+        systemKind: row.system_kind,
+        fileModifiedAt: row.file_modified_at,
       }
       return document
     },

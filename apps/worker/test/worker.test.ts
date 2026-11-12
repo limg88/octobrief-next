@@ -1,11 +1,14 @@
 import type { JobHandler, JobName, JobWorker, Logger } from '@octobrief/application'
 import {
   FakeExtractor,
+  FakeFeeds,
+  FakeVault,
   InMemoryBlobs,
   InMemoryDocuments,
   InMemoryJobQueue,
   InMemoryKnowledge,
   InMemoryProjects,
+  InMemorySources,
   InMemoryUsers,
 } from '@octobrief/application/testing'
 import { describe, expect, it } from 'vitest'
@@ -42,6 +45,11 @@ function setup(store: InMemoryDocuments) {
       warnings: [],
     })),
     retentionDays: 30,
+    syncIntervalMs: 60_000,
+    sources: (() => {
+      const sources = new InMemorySources(store)
+      return { sync: sources, items: sources, feeds: new FakeFeeds(), vault: new FakeVault() }
+    })(),
     now: () => new Date('2026-11-11T10:00:00Z'),
   }
   return { deps, queue, messages }
@@ -58,6 +66,7 @@ describe('startWorker', () => {
       'system.ping',
       'document.process',
       'document.compile',
+      'source.sync',
     ])
 
     await queue.handlers.get('system.ping')?.({ requestedAt: '2026-11-11T10:00:00.000Z' }, 'job-1')

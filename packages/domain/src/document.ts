@@ -39,6 +39,10 @@ export interface DocumentSummary {
   readonly uploadedBy: string
   readonly uploaderName: string
   readonly uploadedAt: Date
+  /** The source that brought the document; null for a manual upload. */
+  readonly sourceName: string | null
+  /** When the source system says the item was made or changed. */
+  readonly originAt: Date | null
 }
 
 export type InvalidDocumentReason = 'empty' | 'too_large' | 'invalid_name'

@@ -87,7 +87,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 1 | completato (11/11/2026), demo `demo/01-accesso-e-shell` |
 | 2a | completato (11/11/2026), demo `demo/02-documenti` |
 | 2b | completato (12/11/2026), demo `demo/03-conoscenza` |
-| 3 | da fare |
+| 3 | completato (12/11/2026), demo `demo/04-fonti` |
+| 4 | da fare |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -148,3 +149,22 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
   `llm-api` e Ollama hanno test di contratto ma non sono stati provati contro i servizi reali.
 - **Limiti per backend impostabili dall'Admin** (NX `backend-limits`) non portati: valgono i default della compilazione.
 - **«Cosa ho capito» è in sola lettura**: la correzione dei fatti da parte del PM non è ancora prevista in nessun incremento.
+
+### Scelte prese durante l'incremento 3
+- **Due modi di alimentare un progetto**, con la stessa pipeline dei caricamenti (estrazione, classificazione, lettura):
+  - **fonti alimentate** (Microsoft 365, DWSI, cartella o file): un alimentatore gira sul PC del PM e consegna a `POST /api/ingest/{fonte}` con il token della fonte;
+  - **fonti lette dal worker** (Jira, Azure DevOps): ogni 15 minuti (`SYNC_INTERVAL_MINUTES`) o su richiesta, con i connettori in sola lettura di NX.
+- **Token dell'alimentatore**: mostrato una sola volta, nel database resta solo il suo SHA-256. Si rigenera dalla pagina Fonti e il vecchio smette subito di valere.
+- **Le consegne entrano come la persona che ha collegato la fonte**: valgono le stesse regole RLS dei caricamenti. Se quella persona non vede più il progetto, la consegna viene rifiutata.
+- **Credenziali di Jira e ADO cifrate** con AES-256-GCM e la chiave `SECRETS_KEY` (32 byte in base64, generata da `pnpm db:setup`). Il cifrato è legato all'identificativo della fonte: copiato su un'altra fonte non si apre.
+- **Versioni**: un elemento viene salvato di nuovo solo se cambia versione; in quel caso sostituisce il documento precedente (e i fatti che solo quello dichiarava).
+- **Persone nominate dalle fonti** (mittenti, partecipanti, assegnatari): salvate per progetto e nascoste a ogni modello, come i membri.
+- **Dati strutturati**: le attività dei tracker (`tracker_items`) e le righe del warehouse (`system_rows`) sono salvate come dati, non come documenti. Le useranno Chiedi e i deliverable.
+- **Pacchetto `packages/connectors`** (portato da NX): connettori Jira, ADO e DWSI, client HTTP sicuro (percorsi ammessi, nessun redirect, nessun indirizzo privato). I connettori Graph e cartella-Mac di NX non sono stati portati.
+- **Alimentatore** (`apps/feeder`), quattro modi di leggere:
+  - `folder`: una cartella del PC, anche una libreria SharePoint sincronizzata;
+  - `file`: una consegna già scritta in JSON;
+  - `m365`: lancia Claude con il connettore Microsoft 365 del PM e una richiesta di sola lettura, e consegna il JSON che Claude stampa;
+  - `dwsi`: legge il warehouse con il connettore NX; la connessione (anche non cifrata) resta sul PC del PM.
+- **Non provato dal vivo**: `m365` (serve un seat Claude con il connettore), `dwsi` (serve il warehouse), Jira e ADO reali. Sono coperti da test con sistemi finti.
+- **Data di un file letto da una cartella**: la data di modifica del file è solo un indizio debole; vince la data scritta nel nome o nel contenuto.

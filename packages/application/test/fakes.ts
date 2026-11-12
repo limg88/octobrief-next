@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import type {
   Classification,
   ClassificationState,
+  DocumentKind,
   DocumentSummary,
   Extraction,
   Fact,
@@ -255,6 +256,7 @@ interface StoredDocument {
   summary: DocumentSummary
   blobKey: string
   chunks: TextChunk[]
+  systemKind?: string | null
 }
 
 /** Both views of the documents table; `visible` stands in for row-level security. */
@@ -306,6 +308,8 @@ export class InMemoryDocuments implements DocumentRepository, DocumentProcessing
       uploadedBy: document.uploadedBy,
       uploaderName: document.uploadedBy,
       uploadedAt: new Date('2026-11-11T10:00:00Z'),
+      sourceName: null,
+      originAt: null,
     }
     this.rows.set(summary.id, { summary, blobKey: document.blobKey, chunks: [] })
     return summary
@@ -337,8 +341,16 @@ export class InMemoryDocuments implements DocumentRepository, DocumentProcessing
   async pending(documentId: string) {
     const row = this.rows.get(documentId)
     if (row?.summary.status !== 'pending') return null
-    const { id, fileName, mediaType, uploadedAt } = row.summary
-    return { id, fileName, mediaType, uploadedAt, blobKey: row.blobKey }
+    const { id, fileName, mediaType, uploadedAt, originAt } = row.summary
+    return {
+      id,
+      fileName,
+      mediaType,
+      uploadedAt,
+      blobKey: row.blobKey,
+      originAt,
+      systemKind: (row.systemKind ?? null) as DocumentKind | null,
+    }
   }
   async markReady(documentId: string, extraction: Extraction, classification: Classification) {
     this.update(
@@ -469,3 +481,5 @@ export class InMemoryKnowledge implements KnowledgeStore, FactRepository {
     return progress
   }
 }
+
+export { FakeFeeds, FakeVault, InMemorySources } from './source-fakes.ts'

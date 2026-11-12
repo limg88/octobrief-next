@@ -3,11 +3,14 @@ import {
   createPingHandler,
   createProcessDocumentHandler,
   createPurgeDocumentsHandler,
+  createScheduleSyncHandler,
+  createSyncSourceHandler,
   type JobWorker,
   type KnowledgeStore,
   type Logger,
   type ModelRunner,
   type ProcessingDependencies,
+  type SyncDependencies,
 } from '@octobrief/application'
 import { retentionCutoff } from '@octobrief/domain'
 
@@ -21,6 +24,9 @@ export interface WorkerDependencies extends Omit<ProcessingDependencies, 'logger
   readonly runner: ModelRunner
   readonly logger: Logger
   readonly retentionDays: number
+  /** What reading Jira and Azure DevOps needs, and how often it happens. */
+  readonly sources: Omit<SyncDependencies, 'blobs' | 'jobs' | 'logger'>
+  readonly syncIntervalMs: number
   readonly now?: () => Date
 }
 
@@ -33,6 +39,16 @@ export async function startWorker(deps: WorkerDependencies): Promise<() => Promi
     'document.compile',
     createCompileDocumentHandler({ knowledge: deps.knowledge, runner: deps.runner, logger }),
   )
+  await queue.work(
+    'source.sync',
+    createSyncSourceHandler({ ...deps.sources, blobs: deps.blobs, jobs: deps.jobs, logger }),
+  )
+  const scheduleSync = createScheduleSyncHandler({ sync: deps.sources.sync, jobs: deps.jobs })
+  const runSync = () => {
+    scheduleSync().catch((error: unknown) =>
+      logger.error('source sync scheduling failed', { error: (error as Error).name }),
+    )
+  }
   const purge = createPurgeDocumentsHandler({
     store: deps.store,
     blobs: deps.blobs,
@@ -48,9 +64,13 @@ export async function startWorker(deps: WorkerDependencies): Promise<() => Promi
   runPurge()
   const timer = setInterval(runPurge, PURGE_INTERVAL_MS)
   timer.unref()
+  runSync()
+  const syncTimer = setInterval(runSync, deps.syncIntervalMs)
+  syncTimer.unref()
   logger.info('worker started')
   return async () => {
     clearInterval(timer)
+    clearInterval(syncTimer)
     await queue.stop()
     logger.info('worker stopped')
   }

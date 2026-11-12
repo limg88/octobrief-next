@@ -8,6 +8,7 @@ import type {
   Locale,
   Locator,
   MemberRole,
+  SourceKind,
   Uncertain,
   UserRole,
 } from '@octobrief/domain'
@@ -55,6 +56,20 @@ export interface DocumentDto {
   uploadedBy: string
   uploaderName: string
   uploadedAt: string
+  sourceName: string | null
+  originAt: string | null
+}
+
+export interface SourceDto {
+  id: string
+  kind: SourceKind
+  name: string
+  perimeter: string[]
+  lastSyncAt: string | null
+  dataAsOf: string | null
+  lastError: string | null
+  documentCount: number
+  createdAt: string
 }
 
 export interface FactDto {

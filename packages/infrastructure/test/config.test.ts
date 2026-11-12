@@ -9,6 +9,7 @@ const WEB_ENV = {
   OIDC_CLIENT_SECRET: 'secret-value',
   ADMIN_EMAILS: ' Alba@Example.test, ,bob@example.test',
   BLOB_DIR: '/var/lib/octobrief/blobs',
+  SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
 }
 
 describe('web config', () => {
@@ -62,6 +63,7 @@ describe('worker config', () => {
   const WORKER_ENV = {
     DATABASE_WORKER_URL: 'postgresql://worker@localhost/db',
     BLOB_DIR: '/var/lib/octobrief/blobs',
+    SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
   }
 
   it('reads database URL, blob directory and retention with its default', () => {
@@ -70,9 +72,31 @@ describe('worker config', () => {
       blobDir: '/var/lib/octobrief/blobs',
       retentionDays: 365,
       model: { chat: { backend: 'fake' }, embedding: { backend: 'fake' } },
+      syncIntervalMinutes: 15,
+      sources: { secretsKey: expect.objectContaining({ version: 1 }), devEndpoints: {} },
     })
     expect(loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '30' }).retentionDays).toBe(30)
     expect(() => loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '0' })).toThrow(/RETENTION_DAYS/)
     expect(() => loadWorkerConfig({})).toThrow(/DATABASE_WORKER_URL/)
+  })
+
+  it('wants a real secrets key and accepts fake source systems on loopback only', () => {
+    expect(() => loadWorkerConfig({ ...WORKER_ENV, SECRETS_KEY: 'too-short' })).toThrow(
+      'SECRETS_KEY',
+    )
+    expect(() =>
+      loadWorkerConfig({ ...WORKER_ENV, SOURCES_DEV_JIRA_URL: 'https://jira.example.com' }),
+    ).toThrow('SOURCES_DEV_JIRA_URL')
+    const config = loadWorkerConfig({
+      ...WORKER_ENV,
+      SOURCES_DEV_JIRA_URL: 'http://127.0.0.1:4330',
+      SOURCES_DEV_ADO_URL: 'http://127.0.0.1:4331',
+      SYNC_INTERVAL_MINUTES: '5',
+    })
+    expect(config.syncIntervalMinutes).toBe(5)
+    expect(config.sources.devEndpoints).toEqual({
+      jira: 'http://127.0.0.1:4330',
+      ado: 'http://127.0.0.1:4331',
+    })
   })
 })

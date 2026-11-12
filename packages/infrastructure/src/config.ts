@@ -1,13 +1,27 @@
 import { DEFAULT_RETENTION_DAYS } from '@octobrief/domain'
 import { z } from 'zod'
+import { readSecretsKey, type SecretsKey } from './secrets/vault.ts'
 
 const postgresUrl = z.string().regex(/^postgres(ql)?:\/\//, 'must be a postgres:// URL')
 // Web and worker run from different directories: a relative path would point to two places.
 const absolutePath = z.string().regex(/^\//, 'must be an absolute path')
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]'])
 
+const loopbackUrl = z
+  .url()
+  .refine((url) => LOCAL_HOSTS.has(new URL(url).hostname), 'must be a loopback address')
+
+// The key that seals the credentials of the sources, and (development only) the loopback
+// addresses of fake source systems.
+const sourcesShape = {
+  SECRETS_KEY: z.string().refine((value) => readSecretsKey(value) !== null, 'not a secrets key'),
+  SOURCES_DEV_JIRA_URL: loopbackUrl.optional(),
+  SOURCES_DEV_ADO_URL: loopbackUrl.optional(),
+}
+
 const webSchema = z
   .object({
+    ...sourcesShape,
     DATABASE_URL: postgresUrl,
     PUBLIC_URL: z.url(),
     OIDC_ISSUER: z.url(),
@@ -24,6 +38,8 @@ const webSchema = z
       LOCAL_HOSTS.has(new URL(env.OIDC_ISSUER).hostname),
     { path: ['OIDC_ALLOW_INSECURE_ISSUER'], message: 'only for a loopback issuer' },
   )
+/** How often the worker reads Jira and Azure DevOps. */
+const DEFAULT_SYNC_MINUTES = 15
 const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434'
 const DEFAULT_EMBEDDING_MODEL = 'bge-m3'
 const DEFAULT_EMBEDDING_DIGEST = 'unpinned'
@@ -61,9 +77,17 @@ const workerSchema = z
     DATABASE_WORKER_URL: postgresUrl,
     BLOB_DIR: absolutePath,
     RETENTION_DAYS: z.coerce.number().int().positive().default(DEFAULT_RETENTION_DAYS),
+    SYNC_INTERVAL_MINUTES: z.coerce.number().int().positive().default(DEFAULT_SYNC_MINUTES),
+    ...sourcesShape,
     ...modelShape,
   })
   .superRefine(checkModel)
+
+/** What both processes need to work with sources. */
+export interface SourcesConfig {
+  readonly secretsKey: SecretsKey
+  readonly devEndpoints: { readonly jira?: string; readonly ado?: string }
+}
 
 export interface WebConfig {
   readonly databaseUrl: string
@@ -77,6 +101,7 @@ export interface WebConfig {
   }
   readonly adminEmails: ReadonlySet<string>
   readonly blobDir: string
+  readonly sources: SourcesConfig
 }
 
 /** Which model reads the documents and which encoder makes the vectors of their text. */
@@ -103,6 +128,8 @@ export interface WorkerConfig {
   readonly databaseUrl: string
   readonly blobDir: string
   readonly retentionDays: number
+  readonly syncIntervalMinutes: number
+  readonly sources: SourcesConfig
   readonly model: ModelConfig
 }
 
@@ -126,6 +153,20 @@ function emailList(raw: string): Set<string> {
   return new Set(list(raw).map((email) => email.toLowerCase()))
 }
 
+function sourcesConfig(env: {
+  SECRETS_KEY: string
+  SOURCES_DEV_JIRA_URL?: string | undefined
+  SOURCES_DEV_ADO_URL?: string | undefined
+}): SourcesConfig {
+  return {
+    secretsKey: readSecretsKey(env.SECRETS_KEY) as SecretsKey,
+    devEndpoints: {
+      ...(env.SOURCES_DEV_JIRA_URL ? { jira: env.SOURCES_DEV_JIRA_URL } : {}),
+      ...(env.SOURCES_DEV_ADO_URL ? { ado: env.SOURCES_DEV_ADO_URL } : {}),
+    },
+  }
+}
+
 export function loadWebConfig(env: NodeJS.ProcessEnv = process.env): WebConfig {
   const parsed = parse(webSchema, env)
   const publicUrl = new URL(parsed.PUBLIC_URL).origin
@@ -141,6 +182,7 @@ export function loadWebConfig(env: NodeJS.ProcessEnv = process.env): WebConfig {
     },
     adminEmails: emailList(parsed.ADMIN_EMAILS),
     blobDir: parsed.BLOB_DIR,
+    sources: sourcesConfig(parsed),
   }
 }
 
@@ -187,6 +229,8 @@ export function loadWorkerConfig(env: NodeJS.ProcessEnv = process.env): WorkerCo
     databaseUrl: parsed.DATABASE_WORKER_URL,
     blobDir: parsed.BLOB_DIR,
     retentionDays: parsed.RETENTION_DAYS,
+    syncIntervalMinutes: parsed.SYNC_INTERVAL_MINUTES,
+    sources: sourcesConfig(parsed),
     model: modelConfig(parsed),
   }
 }

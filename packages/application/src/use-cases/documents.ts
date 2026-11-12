@@ -191,6 +191,9 @@ export function createProcessDocumentHandler(deps: ProcessingDependencies) {
       lang: 'it',
       metadataDate: extraction.metadataDate,
       acquiredAt: document.uploadedAt,
+      ...(document.originAt ? { systemDate: document.originAt } : {}),
+      ...(document.systemKind ? { systemKind: document.systemKind } : {}),
+      ...(document.fileModifiedAt ? { fileModifiedDate: document.fileModifiedAt } : {}),
     })
     await deps.store.markReady(document.id, extraction, classification)
     await deps.jobs.enqueue('document.compile', { documentId: document.id })

@@ -39,6 +39,22 @@ export { KNOWLEDGE_STATUSES } from './ports/knowledge-store.ts'
 export type { Logger } from './ports/logger.ts'
 export * from './ports/model-runner.ts'
 export type { ProjectRepository, ProjectWithRole } from './ports/project-repository.ts'
+export type {
+  ExternalItemStore,
+  FeedBatch,
+  FeedSource,
+  NewExternalDocument,
+  NewSource,
+  SealedSecret,
+  SecretVault,
+  SourceFeeds,
+  SourceRepository,
+  SourceSyncStore,
+  SourceTarget,
+  SourceToSync,
+  StoredExternalDocument,
+} from './ports/source-stores.ts'
+export { FeedError } from './ports/source-stores.ts'
 export type { TextExtractor } from './ports/text-extractor.ts'
 export type { AuthDependencies } from './use-cases/auth.ts'
 export {
@@ -84,3 +100,24 @@ export {
   listProjects,
 } from './use-cases/projects.ts'
 export { sanitizeReturnTo } from './use-cases/return-to.ts'
+export type {
+  DeliveryOutcome,
+  IngestDependencies,
+  SourceDependencies,
+  SourceInput,
+  StoreDependencies,
+  SyncDependencies,
+} from './use-cases/sources.ts'
+export {
+  createScheduleSyncHandler,
+  createSource,
+  createSyncSourceHandler,
+  deleteSource,
+  INGEST_TOKEN_PREFIX,
+  ingestDelivery,
+  listSources,
+  MAX_BATCHES_PER_SYNC,
+  requestSync,
+  rotateIngestToken,
+  storeDelivery,
+} from './use-cases/sources.ts'

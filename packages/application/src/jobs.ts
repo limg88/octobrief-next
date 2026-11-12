@@ -5,6 +5,7 @@ export const JOB_SCHEMAS = {
   'system.ping': z.object({ requestedAt: z.iso.datetime() }),
   'document.process': z.object({ documentId: z.uuid() }),
   'document.compile': z.object({ documentId: z.uuid() }),
+  'source.sync': z.object({ sourceId: z.uuid() }),
 } as const
 
 export type JobName = keyof typeof JOB_SCHEMAS
