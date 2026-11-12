@@ -1,0 +1,15 @@
+# HTTPS in front of the web. Port 80 is not published: no redirect from plain HTTP.
+{
+	auto_https disable_redirects
+	admin off
+}
+
+https://{$SITE_HOST} {
+	tls {$CADDY_TLS:internal}
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy web:3310
+}

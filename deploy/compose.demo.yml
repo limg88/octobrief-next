@@ -1,0 +1,19 @@
+# Demo only (demo/11-deploy): a fake OpenID Connect issuer next to the web, in its network
+# namespace, so that browser and web both reach it as http://127.0.0.1:<port>. Never in production.
+services:
+  web:
+    ports:
+      - "127.0.0.1:${FAKE_OIDC_PORT:-4321}:${FAKE_OIDC_PORT:-4321}"
+
+  fake-oidc:
+    image: octobrief-app:${OCTOBRIEF_VERSION:-local}
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "tools/fake-oidc/src/cli.ts", "--port", "${FAKE_OIDC_PORT:-4321}", "--bind", "0.0.0.0"]
+    environment:
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      PUBLIC_URL: ${PUBLIC_URL}
+    network_mode: "service:web"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

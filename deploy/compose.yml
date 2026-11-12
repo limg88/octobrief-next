@@ -1,0 +1,176 @@
+# Octobrief on one server. Instructions: docs/runbook.md.
+#   deploy/octobrief.sh up        (reads deploy/.env, made by deploy/init-env.sh)
+# No secret in this file. Only Caddy publishes a port; the database is on a network with no way out.
+name: octobrief
+
+x-app: &app
+  image: octobrief-app:${OCTOBRIEF_VERSION:-local}
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging: &logging
+    driver: local
+    options: { max-size: 20m, max-file: "5" }
+
+x-sources: &sources
+  SECRETS_KEY: ${SECRETS_KEY:?SECRETS_KEY is required (run deploy/init-env.sh)}
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: octobrief
+      POSTGRES_USER: octobrief_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (run deploy/init-env.sh)}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [data]
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U octobrief_owner -d octobrief"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: the two login roles of web and worker, with the passwords of the env file.
+  db-roles:
+    image: pgvector/pgvector:0.8.1-pg17
+    restart: "no"
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD:?WORKER_DB_PASSWORD is required}
+    volumes:
+      - ../scripts/db-setup-roles.sql:/db-setup-roles.sql:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        psql -q -h postgres -U octobrief_owner -d octobrief -v ON_ERROR_STOP=1
+        -v "app_password=$$APP_DB_PASSWORD" -v "worker_password=$$WORKER_DB_PASSWORD"
+        -f /db-setup-roles.sql
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # One-shot: queue and schema migrations, as the owner. Web and worker wait for it.
+  migrate:
+    <<: *app
+    restart: "no"
+    working_dir: /app
+    command: ["node", "scripts/migrate.ts"]
+    environment:
+      DATABASE_OWNER_URL: postgres://octobrief_owner:${POSTGRES_PASSWORD}@postgres:5432/octobrief
+    networks: [data]
+    depends_on:
+      db-roles: { condition: service_completed_successfully }
+
+  web:
+    <<: *app
+    restart: unless-stopped
+    environment:
+      <<: *sources
+      DATABASE_URL: postgres://octobrief_app:${APP_DB_PASSWORD}@postgres:5432/octobrief
+      PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required (https://<host>)}
+      OIDC_ISSUER: ${OIDC_ISSUER:?OIDC_ISSUER is required}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?OIDC_CLIENT_ID is required}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?OIDC_CLIENT_SECRET is required}
+      OIDC_ALLOW_INSECURE_ISSUER: ${OIDC_ALLOW_INSECURE_ISSUER:-false}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    volumes:
+      - blobs:/data/blobs
+    networks: [default, data]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3310/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  worker:
+    <<: *app
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "apps/worker/src/main.ts"]
+    environment:
+      <<: *sources
+      DATABASE_WORKER_URL: postgres://octobrief_worker:${WORKER_DB_PASSWORD}@postgres:5432/octobrief
+      RENDERER_URL: http://renderer:8080
+      RETENTION_DAYS: ${RETENTION_DAYS:-365}
+      SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-15}
+      LLM_BACKEND: ${LLM_BACKEND:-fake}
+      LLM_API_URL: ${LLM_API_URL:-}
+      LLM_API_TOKEN: ${LLM_API_TOKEN:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_ALLOWED_BACKENDS: ${LLM_ALLOWED_BACKENDS:-}
+      EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-fake}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-bge-m3}
+      EMBEDDING_DIGEST: ${EMBEDDING_DIGEST:-unpinned}
+      OLLAMA_URL: ${OLLAMA_URL:-http://127.0.0.1:11434}
+    volumes:
+      - blobs:/data/blobs
+    networks: [default, data, render]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      renderer: { condition: service_healthy }
+
+  # Word, PowerPoint and Excel files: on a network with no way out, no secret, no volume,
+  # a user that is not root on a read-only filesystem.
+  renderer:
+    build:
+      context: ..
+      dockerfile: apps/renderer/Dockerfile
+      target: runtime
+    image: octobrief-renderer:${OCTOBRIEF_VERSION:-local}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 64
+    networks: [render]
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8080), 2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # The only door: HTTPS in front of the web. CADDY_TLS is `internal` (Caddy's own authority)
+  # or `/certs/<certificate> /certs/<key>` for the files in deploy/certs.
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      SITE_HOST: ${SITE_HOST:?SITE_HOST is required (the name people type, without port)}
+      CADDY_TLS: ${CADDY_TLS:-internal}
+    ports:
+      - "${HTTPS_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [default]
+    logging: *logging
+    depends_on:
+      web: { condition: service_healthy }
+
+networks:
+  data:
+    internal: true
+  render:
+    internal: true
+
+volumes:
+  pgdata:
+  blobs:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,20 @@
+# Build context of deploy/Dockerfile: sources only. Never secrets, data or local state.
+.git
+.github
+**/node_modules
+**/.next
+**/coverage
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+.tmp
+.data
+private
+.playwright-mcp
+apps/renderer
+demo
+docs
+e2e
+deploy
+**/.DS_Store

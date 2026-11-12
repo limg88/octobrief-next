@@ -3,7 +3,9 @@ import { FAKE_USERS, startFakeOidc } from './server.ts'
 
 const DEFAULT_PORT = '4320'
 
-const { values } = parseArgs({ options: { port: { type: 'string' } } })
+const { values } = parseArgs({
+  options: { port: { type: 'string' }, bind: { type: 'string' } },
+})
 const port = values.port ?? (process.env.OIDC_ISSUER ? new URL(process.env.OIDC_ISSUER).port : '')
 
 const clientId = process.env.OIDC_CLIENT_ID
@@ -16,6 +18,7 @@ if (!clientId || !clientSecret || !publicUrl) {
 
 const fake = await startFakeOidc({
   port: Number(port || DEFAULT_PORT),
+  ...(values.bind ? { bindHost: values.bind } : {}),
   clientId,
   clientSecret,
   redirectUris: [new URL('/api/auth/callback', publicUrl).toString()],

@@ -69,6 +69,17 @@ describe('worker config', () => {
     TEMPLATES_DIR: '/srv/octobrief/templates',
   }
 
+  it('treats a key set to nothing as not set (compose passes optional keys empty)', () => {
+    const env = {
+      ...WORKER_ENV,
+      LLM_API_URL: '',
+      LLM_API_TOKEN: '',
+      LLM_MODEL: '',
+      RENDERER_URL: '',
+    }
+    expect(loadWorkerConfig(env)).toEqual(loadWorkerConfig(WORKER_ENV))
+  })
+
   it('reads database URL, blob directory and retention with its default', () => {
     expect(loadWorkerConfig(WORKER_ENV)).toEqual({
       databaseUrl: 'postgresql://worker@localhost/db',

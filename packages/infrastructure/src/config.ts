@@ -159,8 +159,13 @@ export class ConfigError extends Error {
   }
 }
 
+/** A key set to nothing counts as not set: compose files pass optional keys as empty strings. */
+function withoutEmptyKeys(env: NodeJS.ProcessEnv): Record<string, string | undefined> {
+  return Object.fromEntries(Object.entries(env).filter(([, value]) => value !== ''))
+}
+
 function parse<T extends z.ZodType>(schema: T, env: NodeJS.ProcessEnv): z.infer<T> {
-  const result = schema.safeParse(env)
+  const result = schema.safeParse(withoutEmptyKeys(env))
   if (!result.success) {
     throw new ConfigError(result.error.issues.map((issue) => issue.path.join('.')))
   }

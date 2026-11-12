@@ -91,7 +91,7 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 4 | completato (12/11/2026), demo `demo/05-chiedi` |
 | 5 | completato (12/11/2026), demo `demo/06-deliverable` |
 | 6 | completato (12/11/2026), demo `demo/07-verbale`, `demo/08-stima-costi`, `demo/09-analisi-bug`, `demo/10-rischi-opportunita` |
-| 7 | da fare |
+| 7 | completato (12/11/2026), demo `demo/11-deploy`, runbook `docs/runbook.md` |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -221,3 +221,17 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Coda**: una sola lettura per fonte alla volta. Una seconda richiesta entro un minuto non aggiunge lavoro; una lettura rimasta in attesa più di mezz'ora viene scartata.
 - **Titolo delle attività del tracker**: reso disponibile come campo a ricette e Chiedi.
 - **Modello finto come agente**: per un testo che riguarda un documento nominato nelle note, cerca, legge quel documento e cita le righe pertinenti (data, partecipanti, decisioni, azioni, rischi). Per gli altri testi cita valori e righe già presenti nel documento.
+
+### Scelte prese durante l'incremento 7
+- **Una sola immagine** per web e worker (`deploy/Dockerfile`): Node 24 esegue i sorgenti TypeScript del workspace, si compila solo il web. È grande (circa 1,8 GB) perché contiene anche gli strumenti di sviluppo; ridurla è un lavoro successivo.
+- **Compose di produzione** in `deploy/compose.yml`, separato da quello di sviluppo:
+  - solo Caddy pubblica una porta (HTTPS);
+  - Postgres e renderer stanno su reti interne senza uscita;
+  - ruoli del database e migrazioni sono servizi a esecuzione singola che web e worker aspettano;
+  - ogni processo riceve solo le sue variabili: il web non ha le credenziali del worker né del proprietario del database.
+- **Certificati**: `CADDY_TLS=internal` (autorità di Caddy) oppure i file dell'azienda in `deploy/certs/`. Niente ACME: il server non è esposto a internet.
+- **Segreti** generati sul server da `deploy/init-env.sh` in `deploy/.env` (permessi 600, escluso da git).
+- **Una chiave d'ambiente vuota vale come non impostata**: compose passa vuote le chiavi opzionali.
+- **Backup e ripristino** con `deploy/octobrief.sh`: `pg_dump` in formato custom, archivio dei file caricati e impronte SHA-256. Il ripristino ricrea il database dal dump.
+- **Issuer finto solo in demo**, aggiunto da `deploy/compose.demo.yml` nello spazio di rete del web: così browser e web lo raggiungono entrambi come `127.0.0.1` e la regola «HTTP solo verso loopback» resta valida.
+- **CI**: il job `deploy` esegue la demo 11 a ogni push.

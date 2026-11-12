@@ -9,6 +9,8 @@ export { FAKE_USERS, type FakeUser, resolveUser } from './users.ts'
 export interface FakeOidcOptions {
   port?: number
   host?: string
+  /** Where to listen when it differs from the issuer's host (a container that publishes the port). */
+  bindHost?: string
   clientId: string
   clientSecret: string
   redirectUris: readonly string[]
@@ -232,7 +234,7 @@ export async function startFakeOidc(options: FakeOidcOptions): Promise<FakeOidc>
   })
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
-    server.listen(options.port ?? 0, host, () => resolve())
+    server.listen(options.port ?? 0, options.bindHost ?? host, () => resolve())
   })
   const { port } = server.address() as AddressInfo
   issuer = `http://${host}:${port}`
