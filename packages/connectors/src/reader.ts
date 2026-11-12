@@ -74,6 +74,43 @@ function inScope(option: PerimeterOption, scope: readonly string[]): boolean {
   })
 }
 
+const pathKey = (path: string): string =>
+  path
+    .split(/[\\/]/)
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part !== '')
+    .join('\\')
+
+/**
+ * The areas of an Azure DevOps project to read. With none named, the root areas: the whole
+ * project (naming every node would make a query too long). Otherwise the areas named by their
+ * path, with or without the project in front; one that the project does not have is an error,
+ * never a perimeter read in part.
+ */
+function areasOf(nodes: readonly PerimeterOption[], named: readonly string[]): PerimeterOption[] {
+  const areas = nodes.filter((node) => node.id.startsWith(AREA_OPTION_PREFIX))
+  const roots = areas.filter((node) => node.parentId === undefined)
+  if (named.length === 0) return roots
+  const byId = new Map(areas.map((node) => [node.id, node]))
+  const pathOf = (node: PerimeterOption): string[] => {
+    const parent = node.parentId === undefined ? undefined : byId.get(node.parentId)
+    return [...(parent ? pathOf(parent) : []), node.label]
+  }
+  const byPath = new Map<string, PerimeterOption>()
+  for (const node of areas) {
+    const path = pathOf(node)
+    byPath.set(pathKey(path.join('\\')), node)
+    // Without the project in front, as people write it; a root keeps its own name only.
+    if (path.length > 1) byPath.set(pathKey(path.slice(1).join('\\')), node)
+  }
+  for (const root of roots) byPath.set(pathKey(root.label), root)
+  return named.map((name) => {
+    const found = byPath.get(pathKey(name))
+    if (!found) throw new ConnectorError('source_not_found')
+    return found
+  })
+}
+
 /**
  * Jira and Azure DevOps through the read-only connectors: every call goes through the safe HTTP
  * client (allowlisted paths, no redirects, no private addresses). Failures are `ConnectorError`s
@@ -130,10 +167,7 @@ export function createConnectorReader(options: ConnectorReaderOptions = {}): Con
         if (!project) throw new ConnectorError(NOTHING_TO_READ)
         const projectId = project.id.slice(PROJECT_OPTION_PREFIX.length)
         config = connectors[kind].parseConfig({ ...(rawConfig as object), projectId })
-        // The whole project is its root areas: naming every node would make a query too long.
-        entries = (await optionsFor(config)).filter(
-          (entry) => entry.id.startsWith(AREA_OPTION_PREFIX) && entry.parentId === undefined,
-        )
+        entries = areasOf(await optionsFor(config), scope.slice(1))
       } else if (scope.length > 0) {
         entries = entries.filter((entry) => inScope(entry, scope))
       }

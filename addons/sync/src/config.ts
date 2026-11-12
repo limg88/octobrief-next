@@ -34,6 +34,11 @@ const JiraSchema = z.object({
 const AdoSchema = z.object({
   organization: z.string().min(1),
   project: z.string().min(1),
+  /**
+   * The area paths to read, with or without the project in front (`Team A`, `Team A\\Backend`);
+   * empty: the whole project.
+   */
+  areas: list,
   patEnv: envName,
   /** The day the personal access token expires: the add-on warns the day before. */
   patExpiresOn: since,
@@ -162,6 +167,7 @@ export const EXAMPLE_CONFIG = {
   ado: {
     organization: '<organizzazione>',
     project: '<progetto>',
+    areas: ['<area del progetto, se ne leggi solo una parte>'],
     patEnv: 'ADO_PAT',
     patExpiresOn: '2026-12-31',
   },

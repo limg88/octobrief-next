@@ -48,7 +48,7 @@ export function buildSources(config: SyncConfig, options: BuildOptions): SystemS
             host: 'dev.azure.com',
             readOnlyToken: true,
           },
-          scope: [config.ado.project],
+          scope: [config.ado.project, ...config.ado.areas],
           secret: secretOf(options.env, config.ado.patEnv),
         },
         options.reader,

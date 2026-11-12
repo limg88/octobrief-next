@@ -2,6 +2,11 @@
 
 L'addon ha una versione propria, indipendente da quella di Octobrief. Il formato dei file che scrive è versionato a parte (`octobrief: 1` nell'intestazione).
 
+## 0.1.4 — 2026-11-12
+
+- Azure DevOps: `ado.areas` limita la lettura ad alcune aree del progetto; senza, si legge tutto il progetto.
+- Quando il perimetro di Jira o Azure DevOps cambia, la cartella della fonte viene svuotata e riletta dal giorno di inizio; ciò che non è più nel perimetro è segnalato a Octobrief come rimosso. Alla prima passata dopo l'aggiornamento succede una volta per entrambe.
+
 ## 0.1.3 — 2026-11-12
 
 - Microsoft 365: se Claude non ha il connettore la passata fallisce con `m365: connector_unavailable` invece di risultare riuscita con zero elementi; `check` lo verifica prima.

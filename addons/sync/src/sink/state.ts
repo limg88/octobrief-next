@@ -21,6 +21,8 @@ export interface SystemState {
   lastRunAt: string | null
   /** A stable code of what went wrong at the last run, or null. */
   lastError: string | null
+  /** What of the system the items were read from (see `SystemSource.scope`); absent: all of it. */
+  scope?: string
   items: Record<string, WrittenItem>
 }
 

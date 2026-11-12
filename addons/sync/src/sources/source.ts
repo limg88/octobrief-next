@@ -14,6 +14,11 @@ export interface SystemSource {
   readonly system: SourceKind
   /** How its documents are written (subfolders, how they were read). */
   readonly writer?: FolderWriterOptions
+  /**
+   * What of the system is read, when the configuration narrows it: a different one from the last
+   * run empties the system's folder and reads again, so nothing outside it is left behind.
+   */
+  readonly scope?: string
   /** Where a first reading starts: from the day given, or from the beginning. */
   startCursor(since: Date | null): unknown
   /** What the system has after `cursor`, step by step, up to now. */

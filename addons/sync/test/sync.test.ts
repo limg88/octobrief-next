@@ -579,6 +579,38 @@ describe('pull', () => {
     expect(again.asked).toEqual([{ n: 2 }])
   })
 
+  it('empties the folder of a system and reads again when its perimeter changes', async () => {
+    const cfg = config({ since: '2026-01-01', ado: ADO })
+    const whole = fixedSource('ado', [
+      { delivery: delivery({ records: [issue('1'), issue('2')] }), cursor: { n: 2 } },
+    ])
+    await runPull(cfg, [whole], { now: () => NOW })
+    const files = () => readdirSync(join(cfg.folder, 'ado')).length
+    expect(files()).toBe(2)
+
+    const narrowed = {
+      ...fixedSource('ado', [{ delivery: delivery({ records: [issue('2')] }), cursor: { n: 9 } }]),
+      scope: 'borea|team a',
+    }
+    const lines: string[] = []
+    const outcomes = await runPull(cfg, [narrowed], { now: () => NOW, log: (l) => lines.push(l) })
+    expect(lines[0]).toBe('ado: perimetro cambiato, la cartella viene riletta da capo')
+    expect(outcomes).toEqual([{ system: 'ado', written: 1, unchanged: 0, removed: 2, error: null }])
+    // Read again from the start day, not from where the wider reading had stopped.
+    expect(narrowed.asked).toEqual([{ from: '2025-12-31T23:00:00.000Z' }])
+    expect(files()).toBe(1)
+    const state = openState(cfg.folder)
+    expect(Object.keys(state.system('ado').items)).toEqual(['2'])
+    // What is no longer in the perimeter is told to Octobrief as gone.
+    expect(state.removedOf('ado')).toEqual(['1'])
+
+    // The same perimeter again: nothing is emptied.
+    const same = { ...fixedSource('ado', []), scope: 'borea|team a' }
+    await runPull(cfg, [same], { now: () => NOW })
+    expect(same.asked).toEqual([{ n: 9 }])
+    expect(files()).toBe(1)
+  })
+
   it('keeps what a failing system wrote and goes on with the others', async () => {
     const jira = fixedSource(
       'jira',
@@ -728,6 +760,9 @@ describe('access check', () => {
       scope: ['BOR'],
     })
     expect(calls[1]).toMatchObject({ config: { organization: 'contoso' }, scope: ['Borea'] })
+    const narrowed = config({ ado: { ...ADO, areas: ['Team A'] } })
+    await checkAccess(narrowed, { ADO_PAT: 'pat' }, reader)
+    expect(calls.at(-1)).toMatchObject({ scope: ['Borea', 'Team A'] })
     expect(await checkAccess(cfg, {}, reader)).toEqual([
       "Jira: accesso NON riuscito (manca la variabile d'ambiente JIRA_TOKEN)",
       "Azure DevOps: accesso NON riuscito (manca la variabile d'ambiente ADO_PAT)",

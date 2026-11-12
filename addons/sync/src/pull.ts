@@ -5,7 +5,7 @@ import type { SourceKind } from '@octobrief/domain'
 import { type SyncConfig, sinceOf } from './config.ts'
 import { FeederError } from './feeder.ts'
 import { createFolderWriter, type WriteOutcome } from './sink/folder-writer.ts'
-import { openState, type SystemState } from './sink/state.ts'
+import { emptySystem, openState, type SystemState } from './sink/state.ts'
 import type { SystemSource } from './sources/source.ts'
 import { patWarning, renderStatus } from './status.ts'
 
@@ -77,6 +77,14 @@ export async function runPull(
     const total: WriteOutcome = { written: 0, unchanged: 0, removed: 0 }
     let error: string | null = null
     try {
+      const scope = source.scope ?? ''
+      if ((known.scope ?? '') !== scope) {
+        // Read from another perimeter: what the folder holds is not what is asked for now.
+        total.removed += writer.clear(source.system)
+        Object.assign(known, emptySystem())
+        log(`${source.system}: perimetro cambiato, la cartella viene riletta da capo`)
+      }
+      known.scope = scope
       const cursor = resumeFrom(known, source, sinceOf(config, source.system, options.since))
       const freshBefore = known.dataAsOf
       for await (const batch of source.batches(cursor, signal)) {

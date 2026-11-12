@@ -42,7 +42,7 @@ export async function checkAccess(
         'ado',
         { organization: ado.organization, host: 'dev.azure.com', readOnlyToken: true },
         secretOf(env, ado.patEnv),
-        [ado.project],
+        [ado.project, ...ado.areas],
       ),
     )
   }

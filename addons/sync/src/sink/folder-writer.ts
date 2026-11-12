@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { renderSyncFile, SYNC_SUBFOLDERS, type SyncFile } from '@octobrief/connectors'
 import type { Delivery, ExternalDocument, SourceKind } from '@octobrief/domain'
 import { recordBody, rowsBody } from './body.ts'
-import type { StateStore } from './state.ts'
+import type { StateStore, WrittenItem } from './state.ts'
 
 /** What one delivery changed in the folder. */
 export interface WriteOutcome {
@@ -151,7 +151,18 @@ export function createFolderWriter(root: string, state: StateStore) {
     if (delivery.dataAsOf) known.dataAsOf = delivery.dataAsOf.toISOString()
     return outcome
   }
-  return { write }
+
+  /** Empties the folder of a system: every file removed, every item marked as gone. */
+  function clear(system: SourceKind): number {
+    const sub = SYNC_SUBFOLDERS[system]
+    const known = state.system(system)
+    const ids = Object.keys(known.items)
+    for (const id of ids) removeFile(root, sub, (known.items[id] as WrittenItem).path)
+    known.items = {}
+    state.setRemoved(system, ids, [])
+    return ids.length
+  }
+  return { write, clear }
 }
 
 export type FolderWriter = ReturnType<typeof createFolderWriter>

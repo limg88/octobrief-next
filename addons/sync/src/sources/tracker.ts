@@ -9,7 +9,7 @@ export interface TrackerOptions {
   readonly kind: PullSourceKind
   /** The settings as the connector reads them (site and account, or organization). */
   readonly config: Readonly<Record<string, unknown>>
-  /** Project keys or names to read; for Azure DevOps, the one project. */
+  /** Project keys or names to read; for Azure DevOps, the one project and then its areas. */
   readonly scope: readonly string[]
   readonly secret: string
 }
@@ -42,6 +42,10 @@ export function cursorFrom(kind: PullSourceKind, since: Date | null): unknown {
 export function trackerSource(options: TrackerOptions, reader: ConnectorReader): SystemSource {
   return {
     system: options.kind,
+    scope: options.scope
+      .map((entry) => entry.trim().toLowerCase())
+      .sort()
+      .join('|'),
     startCursor: (since) => cursorFrom(options.kind, since),
     async *batches(cursor, signal) {
       const { config, perimeter } = await reader.connect(

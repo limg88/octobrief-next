@@ -28,7 +28,7 @@ ENV
 | Sistema | Cosa serve | Note |
 |---|---|---|
 | Jira Cloud | token API dell'account (id.atlassian.com → Sicurezza → Token API) | `site` è il nome prima di `.atlassian.net`; `projects` le chiavi dei progetti |
-| Azure DevOps | PAT con soli permessi di lettura su Work Items | segna il giorno di scadenza in `patExpiresOn` |
+| Azure DevOps | PAT con soli permessi di lettura su Work Items | segna il giorno di scadenza in `patExpiresOn`; se il progetto ADO contiene più commesse, elenca in `areas` solo le aree della tua (es. `["Team A"]`), altrimenti si legge tutto il progetto |
 | NetSuite / DWSI | utente in sola lettura del database | senza TLS: `"tls": "plaintext"`, solo in VPN; `host` è un nome o un indirizzo IPv4 di rete privata |
 | Microsoft 365 | Claude Code installato, con il connettore Microsoft 365 collegato al tuo account | vedi il punto 3 |
 
@@ -38,7 +38,7 @@ ENV
 node addons/sync/src/cli.ts check --config ~/.octobrief/<progetto>.json
 ```
 
-Deve dire `accesso riuscito` per Jira e Azure DevOps. Se dice `source_auth_failed` il token è sbagliato o scaduto; `source_not_configured` vuol dire che la chiave o il nome del progetto non corrispondono a nulla che il token vede.
+Deve dire `accesso riuscito` per Jira e Azure DevOps. Se dice `source_auth_failed` il token è sbagliato o scaduto; `source_not_configured` vuol dire che la chiave o il nome del progetto non corrispondono a nulla che il token vede; `source_not_found` che un'area di `ado.areas` non esiste nel progetto. Se cambi `areas` (o i progetti di Jira), alla passata successiva la cartella di quella fonte viene svuotata e riletta dal giorno di inizio.
 
 ## 3. Microsoft 365 tramite Claude
 
