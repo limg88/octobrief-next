@@ -191,7 +191,40 @@
       "source_unreachable": "The system cannot be reached.",
       "write_scope_refused": "The token can write: a read-only token is required.",
       "conflict": "The project already has a source of this name.",
-      "forbidden": "Only the owner or an admin can connect sources."
+      "forbidden": "Only the owner or an admin can connect sources.",
+      "invalid_feed": "This kind of source cannot arrive that way.",
+      "folder_required": "The path of the folder is required.",
+      "folder_feed_disabled": "This installation reads no folders: set SYNC_FOLDERS_ROOT.",
+      "folder_not_found": "The folder does not exist, or the subfolder of the system is missing.",
+      "folder_not_allowed": "The folder is outside the allowed location (SYNC_FOLDERS_ROOT)."
+    },
+    "feeds": {
+      "folder": "{system} · from folder {path}",
+      "push": "{system} · sent from the PC"
+    },
+    "folder": {
+      "title": "Connect a synchronized folder",
+      "hint": "The folder the sync add-on keeps up to date (Jira, Azure DevOps, Microsoft 365, NetSuite). One source is created for each system you choose.",
+      "mode": "How the folder arrives",
+      "modes": {
+        "folder": "It is on this machine: the server reads it",
+        "push": "It is on the PM's PC: the add-on sends it"
+      },
+      "path": "Path of the folder on the server",
+      "systemsLabel": "Systems in the folder",
+      "systems": {
+        "jira": "Jira",
+        "ado": "Azure DevOps",
+        "m365": "Microsoft 365",
+        "dwsi": "NetSuite",
+        "files": "Other files"
+      },
+      "sourceName": "{system} (synchronized folder)",
+      "connect": "Connect the folder",
+      "connected": "Folder connected",
+      "setupTitle": "Copy now into the add-on's configuration: the tokens will not be shown again.",
+      "setupConfig": "In the configuration file (the \"push\" block):",
+      "setupEnv": "In the add-on's private .env file:"
     }
   },
   "ask": {

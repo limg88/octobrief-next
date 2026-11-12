@@ -64,6 +64,15 @@ describe.skipIf(!hasDatabase)('queue on Postgres (integration)', () => {
     expect(await web.status('source.sync', first)).toBe('queued')
     expect(second).toBe(`${ALREADY_QUEUED}:${sourceId}`)
     expect(other).not.toContain(ALREADY_QUEUED)
+
+    // Once the worker has taken the read, «read now» queues another one.
+    let taken = 0
+    await worker.work('source.sync', async () => {
+      taken++
+    })
+    await expect.poll(() => taken, { timeout: 15_000, interval: 250 }).toBeGreaterThanOrEqual(2)
+    const again = await web.enqueue('source.sync', { sourceId })
+    expect(again).not.toContain(ALREADY_QUEUED)
   })
 
   it('answers null for an unknown job', async () => {

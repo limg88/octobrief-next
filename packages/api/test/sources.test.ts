@@ -46,6 +46,42 @@ describe('sources API', () => {
     expect((await send(base, 'DELETE', paola)).status).toBe(404)
   })
 
+  it('connects a source read from a synchronized folder, and one fed by a program', async () => {
+    const { paola, send } = await project()
+    const url = '/api/projects/borea/sources'
+    const fromFolder = await send(url, 'POST', paola, {
+      kind: 'jira',
+      name: 'Jira da cartella',
+      feed: 'folder',
+      folderPath: '/sync/borea',
+    })
+    expect(fromFolder.status).toBe(201)
+    const folder = (await fromFolder.json()) as Created
+    expect(folder).toMatchObject({
+      source: { kind: 'jira', feed: 'folder', folderPath: '/sync/borea' },
+      ingestToken: null,
+    })
+    expect((await send(`${url}/${folder.source.id}/sync`, 'POST', paola)).status).toBe(202)
+
+    const outside = await send(url, 'POST', paola, {
+      kind: 'ado',
+      name: 'Altrove',
+      feed: 'folder',
+      folderPath: '/etc',
+    })
+    expect(await outside.json()).toEqual({ error: 'invalid', reason: 'folder_not_allowed' })
+    const noFolder = await send(url, 'POST', paola, { kind: 'ado', name: 'ADO', feed: 'folder' })
+    expect(await noFolder.json()).toEqual({ error: 'invalid', reason: 'folder_required' })
+    const wrong = await send(url, 'POST', paola, { kind: 'm365', name: 'Posta', feed: 'direct' })
+    expect(await wrong.json()).toEqual({ error: 'invalid', reason: 'invalid_feed' })
+
+    const pushed = (await (
+      await send(url, 'POST', paola, { kind: 'ado', name: 'ADO dal PC', feed: 'push' })
+    ).json()) as Created
+    expect(pushed.source).toMatchObject({ kind: 'ado', feed: 'push', folderPath: null })
+    expect(pushed.ingestToken).toMatch(/^obf_/)
+  })
+
   it('connects a pulling source after checking its credential, and reads it on request', async () => {
     const { paola, send } = await project()
     const body = { kind: 'jira', name: 'Jira', config: { site: 'contoso' }, scope: ['BOR'] }

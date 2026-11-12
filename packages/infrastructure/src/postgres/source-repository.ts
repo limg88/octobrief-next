@@ -6,7 +6,7 @@ import type {
   SourceTarget,
   SourceToSync,
 } from '@octobrief/application'
-import type { PullSourceKind, Source, SourceKind } from '@octobrief/domain'
+import type { Source, SourceFeed, SourceKind } from '@octobrief/domain'
 import type pg from 'pg'
 import { asViewer, inTransaction } from './transaction.ts'
 
@@ -14,6 +14,8 @@ interface SourceRow {
   id: string
   project_id: string
   kind: SourceKind
+  feed: SourceFeed
+  folder_path: string | null
   name: string
   config: Record<string, unknown>
   perimeter: string[]
@@ -26,7 +28,11 @@ interface SourceRow {
 }
 
 const SOURCE = `
-  SELECT s.id, s.project_id, s.kind, s.name, s.config, s.perimeter, s.last_sync_at,
+  SELECT s.id, s.project_id, s.kind, s.folder_path,
+         CASE WHEN s.folder_path IS NOT NULL THEN 'folder'
+              WHEN s.token_hash IS NOT NULL THEN 'push'
+              ELSE 'direct' END AS feed,
+         s.name, s.config, s.perimeter, s.last_sync_at,
          s.data_as_of, s.last_error, s.created_by, s.created_at,
          (SELECT count(*) FROM documents d WHERE d.source_id = s.id)::int AS document_count
     FROM sources s`
@@ -36,6 +42,8 @@ function toSource(row: SourceRow): Source {
     id: row.id,
     projectId: row.project_id,
     kind: row.kind,
+    feed: row.feed,
+    folderPath: row.folder_path,
     name: row.name,
     config: row.config,
     perimeter: row.perimeter,
@@ -77,8 +85,8 @@ export function createSourceRepository(pool: pg.Pool): SourceRepository {
         const inserted = await client.query(
           `INSERT INTO sources (id, project_id, kind, name, config, perimeter, token_hash,
                                 secret_key_version, secret_iv, secret_tag, secret_ciphertext,
-                                created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                                created_by, folder_path)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
            ON CONFLICT (project_id, name) DO NOTHING`,
           [
             source.id,
@@ -93,6 +101,7 @@ export function createSourceRepository(pool: pg.Pool): SourceRepository {
             secret ? Buffer.from(secret.tag) : null,
             secret ? Buffer.from(secret.ciphertext) : null,
             source.createdBy,
+            source.folderPath,
           ],
         )
         if (inserted.rowCount === 0) return null
@@ -134,8 +143,9 @@ export function createSourceRepository(pool: pg.Pool): SourceRepository {
 interface SyncRow {
   id: string
   project_id: string
-  kind: PullSourceKind
+  kind: SourceKind
   created_by: string
+  folder_path: string | null
   config: Record<string, unknown>
   perimeter: string[]
   cursor: unknown
@@ -156,21 +166,24 @@ function sealedOf(row: SyncRow): SealedSecret | null {
   }
 }
 
+/** What the worker reads by itself: a folder, or a system it holds the credential of. */
+const READ_BY_WORKER = '(folder_path IS NOT NULL OR token_hash IS NULL)'
+
 /** The worker's view of the sources it reads by itself. */
 export function createSourceSyncStore(pool: pg.Pool): SourceSyncStore {
   return {
     async pullSourceIds() {
       const { rows } = await pool.query<{ id: string }>(
-        `SELECT id FROM sources WHERE kind IN ('jira', 'ado') ORDER BY created_at`,
+        `SELECT id FROM sources WHERE ${READ_BY_WORKER} ORDER BY created_at`,
       )
       return rows.map((row) => row.id)
     },
 
     async load(sourceId) {
       const { rows } = await pool.query<SyncRow>(
-        `SELECT id, project_id, kind, created_by, config, perimeter, cursor, secret_key_version,
-                secret_iv, secret_tag, secret_ciphertext
-           FROM sources WHERE id = $1 AND kind IN ('jira', 'ado')`,
+        `SELECT id, project_id, kind, created_by, folder_path, config, perimeter, cursor,
+                secret_key_version, secret_iv, secret_tag, secret_ciphertext
+           FROM sources WHERE id = $1 AND ${READ_BY_WORKER}`,
         [sourceId],
       )
       const row = rows[0]
@@ -180,6 +193,7 @@ export function createSourceSyncStore(pool: pg.Pool): SourceSyncStore {
         projectId: row.project_id,
         kind: row.kind,
         createdBy: row.created_by,
+        folderPath: row.folder_path,
         config: row.config,
         perimeter: row.perimeter,
         cursor: row.cursor,

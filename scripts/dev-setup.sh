@@ -40,6 +40,9 @@ add_env_key ADMIN_EMAILS "alba.amministratrice@example.test"
 # Uploaded files; absolute because web and worker run from different directories.
 add_env_key BLOB_DIR "$(pwd)/.data/blobs"
 add_env_key RETENTION_DAYS "365"
+# Where the sync add-on writes its folders on this computer; sources are read only from here.
+add_env_key SYNC_FOLDERS_ROOT "$HOME/OctobriefSync"
+mkdir -p "$HOME/OctobriefSync"
 
 docker compose --env-file .env.local up -d --wait
 

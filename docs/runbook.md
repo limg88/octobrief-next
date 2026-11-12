@@ -91,6 +91,16 @@ Prova il ripristino a intervalli regolari: `bash demo/11-deploy/run.sh` lo fa in
 
 Il worker cancella all'avvio e poi ogni ora documenti e file più vecchi di `RETENTION_DAYS` (365 se non impostato). Per cambiarlo: modifica `deploy/.env` e `deploy/octobrief.sh up`.
 
+## Cartelle sincronizzate sul server (facoltativo)
+
+Per le fonti alimentate da una cartella che sta sul server (vedi `docs/roadmap.md`, incremento 8): imposta `SYNC_FOLDERS_DIR=<percorso assoluto sull'host>` in `deploy/.env` e avvia con il file aggiuntivo:
+
+```bash
+OCTOBRIEF_EXTRA_COMPOSE=deploy/compose.sync.yml deploy/octobrief.sh up
+```
+
+La cartella è montata in sola lettura in `/data/sync`: nel riquadro «Collega una cartella sincronizzata» il percorso da indicare è `/data/sync/<progetto>`. Se invece la cartella sta sul PC del PM non serve nulla di questo: la invia l'addon.
+
 ## Se qualcosa non va
 
 | Sintomo | Controllo |

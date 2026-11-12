@@ -1,0 +1,18 @@
+# Optional: synchronized folders kept on the server (docs/sync.md). Mounts one folder of the host,
+# read-only, as the only place sources may be read from.
+#   OCTOBRIEF_EXTRA_COMPOSE=deploy/compose.sync.yml deploy/octobrief.sh up
+# With SYNC_FOLDERS_DIR=<absolute path on the host> in deploy/.env.
+x-sync: &sync
+  volumes:
+    - blobs:/data/blobs
+    - ${SYNC_FOLDERS_DIR:?SYNC_FOLDERS_DIR is required (absolute path of the folders on the host)}:/data/sync:ro
+
+services:
+  web:
+    <<: *sync
+    environment:
+      SYNC_FOLDERS_ROOT: /data/sync
+  worker:
+    <<: *sync
+    environment:
+      SYNC_FOLDERS_ROOT: /data/sync

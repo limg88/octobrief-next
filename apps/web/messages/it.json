@@ -191,7 +191,40 @@
       "source_unreachable": "Il sistema non è raggiungibile.",
       "write_scope_refused": "Il token può scrivere: serve un token in sola lettura.",
       "conflict": "Il progetto ha già una fonte con questo nome.",
-      "forbidden": "Solo il responsabile o un amministratore può collegare fonti."
+      "forbidden": "Solo il responsabile o un amministratore può collegare fonti.",
+      "invalid_feed": "Questo tipo di fonte non può arrivare in quel modo.",
+      "folder_required": "Serve il percorso della cartella.",
+      "folder_feed_disabled": "Questa installazione non legge cartelle: va impostata SYNC_FOLDERS_ROOT.",
+      "folder_not_found": "La cartella non esiste, o manca la sottocartella del sistema.",
+      "folder_not_allowed": "La cartella è fuori dalla posizione consentita (SYNC_FOLDERS_ROOT)."
+    },
+    "feeds": {
+      "folder": "{system} · dalla cartella {path}",
+      "push": "{system} · inviato dal PC"
+    },
+    "folder": {
+      "title": "Collega una cartella sincronizzata",
+      "hint": "La cartella che l'addon di sincronizzazione tiene aggiornata (Jira, Azure DevOps, Microsoft 365, NetSuite). Nasce una fonte per ogni sistema scelto.",
+      "mode": "Come arriva la cartella",
+      "modes": {
+        "folder": "È su questa macchina: la legge il server",
+        "push": "È sul PC del PM: la invia l'addon"
+      },
+      "path": "Percorso della cartella sul server",
+      "systemsLabel": "Sistemi nella cartella",
+      "systems": {
+        "jira": "Jira",
+        "ado": "Azure DevOps",
+        "m365": "Microsoft 365",
+        "dwsi": "NetSuite",
+        "files": "Altri file"
+      },
+      "sourceName": "{system} (cartella sincronizzata)",
+      "connect": "Collega la cartella",
+      "connected": "Cartella collegata",
+      "setupTitle": "Da copiare ora nella configurazione dell'addon: i token non verranno più mostrati.",
+      "setupConfig": "Nel file di configurazione (blocco «push»):",
+      "setupEnv": "Nel file .env privato dell'addon:"
     }
   },
   "ask": {

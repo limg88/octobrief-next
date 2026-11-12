@@ -495,4 +495,4 @@ export {
   repositoryLibrary,
 } from './deliverable-fakes.ts'
 export { InMemoryQuestions, readingOf } from './question-fakes.ts'
-export { FakeFeeds, FakeVault, InMemorySources } from './source-fakes.ts'
+export { FakeFeeds, FakeFolders, FakeVault, InMemorySources } from './source-fakes.ts'

@@ -89,7 +89,11 @@ describe('worker config', () => {
       syncIntervalMinutes: 15,
       recipesDir: '/srv/octobrief/recipes',
       templatesDir: '/srv/octobrief/templates',
-      sources: { secretsKey: expect.objectContaining({ version: 1 }), devEndpoints: {} },
+      sources: {
+        secretsKey: expect.objectContaining({ version: 1 }),
+        devEndpoints: {},
+        syncFoldersRoot: null,
+      },
     })
     expect(loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '30' }).retentionDays).toBe(30)
     expect(() => loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '0' })).toThrow(/RETENTION_DAYS/)
@@ -108,8 +112,10 @@ describe('worker config', () => {
       SOURCES_DEV_JIRA_URL: 'http://127.0.0.1:4330',
       SOURCES_DEV_ADO_URL: 'http://127.0.0.1:4331',
       SYNC_INTERVAL_MINUTES: '5',
+      SYNC_FOLDERS_ROOT: '/srv/octobrief/sync',
     })
     expect(config.syncIntervalMinutes).toBe(5)
+    expect(config.sources.syncFoldersRoot).toBe('/srv/octobrief/sync')
     expect(config.sources.devEndpoints).toEqual({
       jira: 'http://127.0.0.1:4330',
       ado: 'http://127.0.0.1:4331',

@@ -2,6 +2,7 @@ import type { JobHandler, JobName, JobWorker, Logger } from '@octobrief/applicat
 import {
   FakeExtractor,
   FakeFeeds,
+  FakeFolders,
   FakeTemplates,
   FakeVault,
   InMemoryBlobs,
@@ -60,7 +61,13 @@ function setup(store: InMemoryDocuments) {
     syncIntervalMs: 60_000,
     sources: (() => {
       const sources = new InMemorySources(store)
-      return { sync: sources, items: sources, feeds: new FakeFeeds(), vault: new FakeVault() }
+      return {
+        sync: sources,
+        items: sources,
+        feeds: new FakeFeeds(),
+        folders: new FakeFolders(),
+        vault: new FakeVault(),
+      }
     })(),
     now: () => new Date('2026-11-11T10:00:00Z'),
   }

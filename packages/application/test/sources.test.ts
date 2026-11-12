@@ -16,6 +16,7 @@ import {
 } from '../src/use-cases/sources.ts'
 import {
   FakeFeeds,
+  FakeFolders,
   FakeVault,
   InMemoryBlobs,
   InMemoryDocuments,
@@ -62,9 +63,10 @@ async function setup() {
   const blobs = new InMemoryBlobs()
   const queue = new InMemoryJobQueue()
   const feeds = new FakeFeeds()
+  const folders = new FakeFolders()
   const vault = new FakeVault()
   const logger = new RecordingLogger()
-  const deps = { users, projects, sources, feeds, vault, queue }
+  const deps = { users, projects, sources, feeds, folders, vault, queue }
   const store = { sources, items: sources, blobs, jobs: queue }
   const paola = users.add(person('paola'))
   const marco = users.add(person('marco'))
@@ -76,6 +78,7 @@ async function setup() {
     sync: sources,
     items: sources,
     feeds,
+    folders,
     vault,
     blobs,
     jobs: queue,
@@ -88,6 +91,7 @@ async function setup() {
     documents,
     blobs,
     feeds,
+    folders,
     logger,
     paola,
     marco,
@@ -334,14 +338,123 @@ describe('reading a pulling source', () => {
     await sync({ sourceId: crypto.randomUUID() })
   })
 
+  it('connects a source fed from a synchronized folder: no token, no credential, a first read', async () => {
+    const { deps, paola, project, sources, jobs } = await setup()
+    const { source, ingestToken } = await createSource(deps, paola, project.slug, {
+      kind: 'jira',
+      name: 'Jira da cartella',
+      feed: 'folder',
+      folderPath: ' /sync/borea ',
+    })
+    expect(ingestToken).toBeNull()
+    expect(source).toMatchObject({ kind: 'jira', feed: 'folder', folderPath: '/sync/borea' })
+    expect(sources.rows.get(source.id)).toMatchObject({ tokenHash: null, secret: null })
+    expect(jobs()).toEqual(['source.sync'])
+
+    await expect(
+      createSource(deps, paola, project.slug, { kind: 'm365', name: 'Posta', feed: 'folder' }),
+    ).rejects.toMatchObject({ reason: 'folder_required' })
+    await expect(
+      createSource(deps, paola, project.slug, {
+        kind: 'm365',
+        name: 'Posta',
+        feed: 'folder',
+        folderPath: '/etc',
+      }),
+    ).rejects.toMatchObject({ code: 'invalid', message: 'folder_not_allowed' })
+  })
+
+  it('lets a program feed a tracker with a token, and refuses a feed the kind cannot have', async () => {
+    const { deps, store, paola, project, sources, jobs } = await setup()
+    const { source, ingestToken } = await createSource(deps, paola, project.slug, {
+      kind: 'ado',
+      name: 'ADO dal PC',
+      feed: 'push',
+    })
+    expect(source.feed).toBe('push')
+    expect(jobs()).toEqual([])
+    const record = {
+      externalId: '42',
+      version: 'v1',
+      title: 'Errore nel report',
+      record: { type: 'Bug' },
+      originAt: null,
+      url: null,
+      people: [],
+    }
+    const outcome = await ingestDelivery(
+      store,
+      source.id,
+      ingestToken as string,
+      delivery({ records: [record] }),
+    )
+    expect(outcome.records).toBe(1)
+    expect(sources.records.size).toBe(1)
+    await expect(requestSync(deps, paola, project.slug, source.id)).rejects.toMatchObject({
+      code: 'conflict',
+    })
+    expect(await rotateIngestToken(deps, paola, project.slug, source.id)).toMatch(/^obf_/)
+
+    for (const input of [
+      { kind: 'm365', name: 'Posta', feed: 'direct' },
+      { kind: 'jira', name: 'Jira', feed: 'altro' },
+    ]) {
+      await expect(createSource(deps, paola, project.slug, input)).rejects.toMatchObject({
+        reason: 'invalid_feed',
+      })
+    }
+  })
+
+  it('reads a folder source batch after batch, whatever its kind', async () => {
+    const { deps, sync, folders, sources, paola, project, logger } = await setup()
+    const { source } = await createSource(deps, paola, project.slug, {
+      kind: 'm365',
+      name: 'Posta da cartella',
+      feed: 'folder',
+      folderPath: '/sync/borea',
+    })
+    folders.batches.set('/sync/borea', [
+      {
+        ...delivery({ documents: [mail('m1', 'v1', 'prima')] }),
+        nextCursor: { offset: 1 },
+        done: false,
+      },
+      { ...delivery({ documents: [mail('m2', 'v1', 'seconda')] }), nextCursor: null, done: true },
+    ])
+    await sync({ sourceId: source.id })
+    expect(folders.reads).toEqual([
+      { kind: 'm365', folderPath: '/sync/borea', cursor: null },
+      { kind: 'm365', folderPath: '/sync/borea', cursor: { offset: 1 } },
+    ])
+    expect(sources.rows.get(source.id)?.cursor).toBeNull()
+    expect(logger.entries.at(-1)).toMatchObject({
+      message: 'source synced',
+      fields: { created: 2 },
+    })
+    await expect(rotateIngestToken(deps, paola, project.slug, source.id)).rejects.toMatchObject({
+      code: 'conflict',
+    })
+
+    // The folder is gone: the code is recorded on the source, nothing is raised.
+    await sync({ sourceId: source.id })
+    expect(sources.rows.get(source.id)?.source.lastError).toBe('folder_not_found')
+  })
+
   it('queues a read of every pulling source on schedule', async () => {
     const { deps, paola, project, sources, jobs, source } = await connected()
     await createSource(deps, paola, project.slug, { kind: 'files', name: 'Cartella' })
+    const fromFolder = await createSource(deps, paola, project.slug, {
+      kind: 'files',
+      name: 'Cartella sincronizzata',
+      feed: 'folder',
+      folderPath: '/sync/borea',
+    })
     const queue = new InMemoryJobQueue()
     await createScheduleSyncHandler({ sync: sources, jobs: queue })()
     expect([...queue.jobs.values()]).toEqual([
       { name: 'source.sync', data: { sourceId: source.id }, status: 'queued' },
+      { name: 'source.sync', data: { sourceId: fromFolder.source.id }, status: 'queued' },
     ])
-    expect(jobs()).toEqual(['source.sync'])
+    expect(jobs()).toEqual(['source.sync', 'source.sync'])
   })
 })

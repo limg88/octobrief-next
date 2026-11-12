@@ -70,6 +70,7 @@ export type {
   ExternalItemStore,
   FeedBatch,
   FeedSource,
+  FolderFeeds,
   NewExternalDocument,
   NewSource,
   SealedSecret,

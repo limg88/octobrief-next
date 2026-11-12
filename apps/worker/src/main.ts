@@ -10,6 +10,7 @@ import {
   createFileBlobStore,
   createFileRecipeLibrary,
   createFileTemplateStore,
+  createFolderFeeds,
   createKnowledgeStore,
   createModelRunner,
   createPool,
@@ -69,6 +70,7 @@ const stop = await startWorker({
     sync: createSourceSyncStore(pool),
     items: createExternalItemStore(pool, { asCreator: false }),
     feeds: createConnectorFeeds({ logger, devEndpoints: config.sources.devEndpoints }),
+    folders: createFolderFeeds({ root: config.sources.syncFoldersRoot }),
     vault: createSecretVault(config.sources.secretsKey),
   },
 })

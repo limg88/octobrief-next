@@ -92,6 +92,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 5 | completato (12/11/2026), demo `demo/06-deliverable` |
 | 6 | completato (12/11/2026), demo `demo/07-verbale`, `demo/08-stima-costi`, `demo/09-analisi-bug`, `demo/10-rischi-opportunita` |
 | 7 | completato (12/11/2026), demo `demo/11-deploy`, runbook `docs/runbook.md` |
+| 8a | completato (12/11/2026), demo `demo/12-cartella-sincronizzata` |
+| 8b, 8c | in corso: addon di sincronizzazione (`addons/sync`) |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -235,3 +237,21 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Backup e ripristino** con `deploy/octobrief.sh`: `pg_dump` in formato custom, archivio dei file caricati e impronte SHA-256. Il ripristino ricrea il database dal dump.
 - **Issuer finto solo in demo**, aggiunto da `deploy/compose.demo.yml` nello spazio di rete del web: così browser e web lo raggiungono entrambi come `127.0.0.1` e la regola «HTTP solo verso loopback» resta valida.
 - **CI**: il job `deploy` esegue la demo 11 a ogni push.
+
+### Incremento 8 — Cartella sincronizzata e addon (aggiunto il 12/11/2026)
+Serve a importare progetti reali che hanno Jira, Azure DevOps, Microsoft 365 (tramite il connettore di Claude) e NetSuite/DWSI: un addon versionato a parte scrive periodicamente una cartella di file Markdown, e Octobrief la legge periodicamente.
+
+### Scelte prese durante l'incremento 8a
+- **Formato dei file** in `packages/connectors/src/folder/sync-file.ts`: testo Markdown sotto un'intestazione a righe `chiave: valore JSON` (YAML valido, letto senza una libreria YAML). Tre tipi: `document`, `record` (attività di un tracker), `rows` (righe di una vista). Sta in `connectors`, non in `domain`, perché lo usano l'addon e il worker.
+- **La cartella non è un nuovo tipo di fonte**: è un modo di alimentare le fonti dei tipi esistenti. Ogni fonte ha un `feed`:
+  - `direct`: il worker legge il sistema con una credenziale (Jira, Azure DevOps);
+  - `folder`: il worker legge la sottocartella del sistema (`jira`, `ado`, `m365`, `netsuite`, `files`);
+  - `push`: un programma sul PC invia con il token della fonte (ora anche per Jira e Azure DevOps).
+
+  Così le ricette, che dipendono dal tipo di fonte, non cambiano.
+- **Sicurezza della lettura da cartella**: solo sotto `SYNC_FOLDERS_ROOT`, confrontando i percorsi reali (un link non porta fuori), ricontrollato a ogni lettura. Senza la variabile la funzione è spenta.
+- **Rimozioni e freschezza** stanno in `.octobrief-sync/removed.json` e `state.json` dentro la cartella, e arrivano con l'ultimo blocco di una lettura.
+- **Un tipo di documento non riconosciuto** nell'intestazione viene ignorato: decide la classificazione di Octobrief.
+- **Coda delle letture**: una sola lettura *in attesa* per fonte (policy `short` di pg-boss) invece del limite di una al minuto. Prima «Leggi ora» premuto entro un minuto da una lettura non faceva nulla pur dicendo «Lettura avviata».
+- **Deploy**: `deploy/compose.sync.yml` monta in sola lettura la cartella dell'host per chi tiene le cartelle sul server.
+

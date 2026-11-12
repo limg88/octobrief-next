@@ -13,12 +13,34 @@ export type SourceKind = (typeof SOURCE_KINDS)[number]
 export const isPullSource = (kind: SourceKind): kind is PullSourceKind =>
   (PULL_SOURCE_KINDS as readonly string[]).includes(kind)
 
+/**
+ * How the items of a source reach Octobrief: `direct`, the worker reads the system with a sealed
+ * credential (Jira, Azure DevOps); `folder`, the worker reads a folder a synchronization keeps
+ * on this machine; `push`, a program on the PM's computer sends them with the source's token.
+ */
+export const SOURCE_FEEDS = ['direct', 'folder', 'push'] as const
+export type SourceFeed = (typeof SOURCE_FEEDS)[number]
+
+/** The feed of a source when the PM names none: what each kind has always been. */
+export const defaultFeed = (kind: SourceKind): SourceFeed =>
+  isPullSource(kind) ? 'direct' : 'push'
+
+/** Only the systems the worker has a connector for can be read directly. */
+export const allowsFeed = (kind: SourceKind, feed: SourceFeed): boolean =>
+  feed !== 'direct' || isPullSource(kind)
+
+/** Whether the worker reads the source by itself, on its timer or when asked. */
+export const isReadByWorker = (feed: SourceFeed): boolean => feed !== 'push'
+
 export const SOURCE_NAME_MAX_LENGTH = 120
 
 export interface Source {
   readonly id: string
   readonly projectId: string
   readonly kind: SourceKind
+  readonly feed: SourceFeed
+  /** The synchronized folder a `folder` source is read from; null otherwise. */
+  readonly folderPath: string | null
   readonly name: string
   /** Connector settings; never a credential. */
   readonly config: Readonly<Record<string, unknown>>
@@ -33,7 +55,12 @@ export interface Source {
   readonly createdAt: Date
 }
 
-export type InvalidSourceReason = 'invalid_name' | 'invalid_kind' | 'secret_required'
+export type InvalidSourceReason =
+  | 'invalid_name'
+  | 'invalid_kind'
+  | 'invalid_feed'
+  | 'secret_required'
+  | 'folder_required'
 
 export class InvalidSourceError extends Error {
   readonly reason: InvalidSourceReason

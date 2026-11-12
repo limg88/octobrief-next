@@ -12,6 +12,8 @@ const BASE = '/api/projects/alpha/sources'
 const JIRA: SourceDto = {
   id: 's-1',
   kind: 'jira',
+  feed: 'direct',
+  folderPath: null,
   name: 'Jira Borea',
   perimeter: ['project:10001'],
   lastSyncAt: '2026-11-12T09:00:00.000Z',
@@ -24,6 +26,7 @@ const MAIL: SourceDto = {
   ...JIRA,
   id: 's-2',
   kind: 'm365',
+  feed: 'push',
   name: 'Posta',
   lastSyncAt: null,
   dataAsOf: null,
@@ -102,6 +105,118 @@ describe('SourcesView', () => {
       secret: 'segreto',
     })
     expect(await screen.findByText('Il sistema ha rifiutato le credenziali.')).toBeTruthy()
+  })
+
+  it('connects a synchronized folder the server reads: one source for each system', async () => {
+    const created: Array<Record<string, unknown>> = []
+    mockApi({
+      [`GET ${BASE}`]: () => Response.json({ sources: [] }),
+      [`POST ${BASE}`]: (init) => {
+        const body = bodyOf(init)
+        created.push(body)
+        return Response.json(
+          { source: { ...JIRA, ...body, id: `s-${created.length}` }, ingestToken: null },
+          { status: 201 },
+        )
+      },
+    })
+    renderWithProviders(<SourcesView slug="alpha" />)
+    const form = (await screen.findByText('Collega una cartella sincronizzata')).closest(
+      'form',
+    ) as HTMLElement
+    await userEvent.type(
+      within(form).getByLabelText('Percorso della cartella sul server'),
+      '/sync/borea',
+    )
+    await userEvent.click(within(form).getByLabelText('NetSuite'))
+    await userEvent.click(within(form).getByLabelText('Altri file'))
+    await userEvent.click(within(form).getByRole('button', { name: 'Collega la cartella' }))
+    await screen.findByText('Cartella collegata')
+    expect(created).toEqual([
+      {
+        kind: 'm365',
+        name: 'Microsoft 365 (cartella sincronizzata)',
+        feed: 'folder',
+        folderPath: '/sync/borea',
+      },
+      {
+        kind: 'files',
+        name: 'Altri file (cartella sincronizzata)',
+        feed: 'folder',
+        folderPath: '/sync/borea',
+      },
+      {
+        kind: 'jira',
+        name: 'Jira (cartella sincronizzata)',
+        feed: 'folder',
+        folderPath: '/sync/borea',
+      },
+      {
+        kind: 'ado',
+        name: 'Azure DevOps (cartella sincronizzata)',
+        feed: 'folder',
+        folderPath: '/sync/borea',
+      },
+    ])
+  })
+
+  it('prepares what the add-on needs when the folder is sent from the PC', async () => {
+    mockApi({
+      [`GET ${BASE}`]: () => Response.json({ sources: [] }),
+      [`POST ${BASE}`]: (init) => {
+        const body = bodyOf(init)
+        return Response.json(
+          { source: { ...JIRA, ...body, id: `id-${body.kind}` }, ingestToken: `obf_${body.kind}` },
+          { status: 201 },
+        )
+      },
+    })
+    renderWithProviders(<SourcesView slug="alpha" />)
+    const form = (await screen.findByText('Collega una cartella sincronizzata')).closest(
+      'form',
+    ) as HTMLElement
+    await userEvent.selectOptions(within(form).getByLabelText('Come arriva la cartella'), 'push')
+    expect(within(form).queryByLabelText('Percorso della cartella sul server')).toBeNull()
+    for (const system of ['Azure DevOps', 'Microsoft 365', 'NetSuite']) {
+      await userEvent.click(within(form).getByLabelText(system))
+    }
+    await userEvent.click(within(form).getByRole('button', { name: 'Collega la cartella' }))
+    const setup = (await screen.findByText(/Da copiare ora nella configurazione/)).closest(
+      'div',
+    ) as HTMLElement
+    expect(setup.textContent).toContain('"id": "id-jira"')
+    expect(setup.textContent).toContain('"tokenEnv": "OCTOBRIEF_TOKEN_JIRA"')
+    expect(setup.textContent).toContain('OCTOBRIEF_TOKEN_JIRA=obf_jira')
+    await userEvent.click(within(setup).getByRole('button', { name: "L'ho copiato" }))
+    expect(screen.queryByText(/Da copiare ora nella configurazione/)).toBeNull()
+  })
+
+  it('says why a folder is refused, and shows how each source is fed', async () => {
+    mockApi({
+      [`GET ${BASE}`]: () =>
+        Response.json({
+          sources: [
+            { ...JIRA, feed: 'folder', folderPath: '/sync/borea', lastError: null },
+            { ...JIRA, id: 's-3', name: 'ADO dal PC', kind: 'ado', feed: 'push', lastError: null },
+          ],
+        }),
+      [`POST ${BASE}`]: () =>
+        Response.json({ error: 'invalid', reason: 'folder_not_allowed' }, { status: 400 }),
+    })
+    renderWithProviders(<SourcesView slug="alpha" />)
+    const fromFolder = (await screen.findByText('Jira Borea')).closest('tr') as HTMLElement
+    expect(fromFolder.textContent).toContain('Jira · dalla cartella /sync/borea')
+    expect(within(fromFolder).getByRole('button', { name: 'Leggi ora' })).toBeTruthy()
+    const pushed = screen.getByText('ADO dal PC').closest('tr') as HTMLElement
+    expect(pushed.textContent).toContain('Azure DevOps · inviato dal PC')
+    expect(within(pushed).getByRole('button', { name: 'Nuovo token' })).toBeTruthy()
+
+    const form = screen
+      .getByText('Collega una cartella sincronizzata')
+      .closest('form') as HTMLElement
+    await userEvent.type(within(form).getByLabelText('Percorso della cartella sul server'), '/etc')
+    await userEvent.click(within(form).getByRole('button', { name: 'Collega la cartella' }))
+    await screen.findByText(/fuori dalla posizione consentita/)
   })
 
   it('disconnects a source after a confirmation', async () => {

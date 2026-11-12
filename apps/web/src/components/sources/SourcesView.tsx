@@ -1,11 +1,10 @@
 'use client'
-import { isPullSource, SOURCE_KINDS, type SourceKind } from '@octobrief/domain'
+import { isPullSource, isReadByWorker, SOURCE_KINDS, type SourceKind } from '@octobrief/domain'
 import { useFormatter, useTranslations } from 'next-intl'
 import { type FormEvent, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ApiError } from '@/lib/api-client'
 import type { SourceDto } from '@/lib/api-types'
 import {
   useCreateSource,
@@ -14,25 +13,10 @@ import {
   useSources,
   useSyncSource,
 } from '@/lib/queries'
+import { type PushSetup, SyncFolderForm } from './SyncFolderForm'
+import { sourceErrorKey } from './source-errors'
 
-/** Reasons a source is refused that have a message of their own. */
-export const SOURCE_ERRORS = [
-  'invalid_name',
-  'secret_required',
-  'source_auth_failed',
-  'source_forbidden',
-  'source_not_configured',
-  'source_unreachable',
-  'write_scope_refused',
-  'conflict',
-  'forbidden',
-] as const
-
-export function sourceErrorKey(error: unknown): (typeof SOURCE_ERRORS)[number] | null {
-  if (!(error instanceof ApiError)) return null
-  const candidate = error.code === 'invalid' ? error.reason : error.code
-  return SOURCE_ERRORS.find((key) => key === candidate) ?? null
-}
+export { SOURCE_ERRORS, sourceErrorKey } from './source-errors'
 
 /** What the form sends for a pulling source: its settings and the projects to read. */
 export function pullSettings(kind: SourceKind, account: string, place: string, scope: string) {
@@ -177,7 +161,16 @@ function SourceRow({
     <tr className="border-t border-border text-sm">
       <td className="px-3 py-2">
         <div className="font-medium">{source.name}</div>
-        <div className="text-xs text-muted-foreground">{t(`kinds.${source.kind}`)}</div>
+        <div className="text-xs text-muted-foreground">
+          {source.feed === 'folder'
+            ? t('feeds.folder', {
+                system: t(`folder.systems.${source.kind}`),
+                path: source.folderPath ?? '',
+              })
+            : source.feed === 'push' && isPullSource(source.kind)
+              ? t('feeds.push', { system: t(`folder.systems.${source.kind}`) })
+              : t(`kinds.${source.kind}`)}
+        </div>
       </td>
       <td className="px-3 py-2">{source.documentCount}</td>
       <td className="px-3 py-2">{when(source.lastSyncAt)}</td>
@@ -191,7 +184,7 @@ function SourceRow({
       </td>
       <td className="px-3 py-2">
         <div className="flex flex-wrap gap-2">
-          {isPullSource(source.kind) ? (
+          {isReadByWorker(source.feed) ? (
             <Button
               variant="outline"
               size="sm"
@@ -241,6 +234,7 @@ export function SourcesView({ slug }: { slug: string }) {
   const t = useTranslations('sources')
   const sources = useSources(slug)
   const [token, setToken] = useState<string | null>(null)
+  const [setup, setSetup] = useState<PushSetup | null>(null)
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
@@ -263,7 +257,25 @@ export function SourcesView({ slug }: { slug: string }) {
           </div>
         </div>
       )}
+      {setup && (
+        <div
+          role="status"
+          className="flex flex-col gap-2 rounded-lg border border-border bg-muted/50 p-4"
+        >
+          <p className="text-sm font-medium">{t('folder.setupTitle')}</p>
+          <p className="text-xs text-muted-foreground">{t('folder.setupConfig')}</p>
+          <pre className="overflow-x-auto text-xs">{setup.config}</pre>
+          <p className="text-xs text-muted-foreground">{t('folder.setupEnv')}</p>
+          <pre className="overflow-x-auto break-all text-xs">{setup.env}</pre>
+          <div>
+            <Button variant="outline" size="sm" onClick={() => setSetup(null)}>
+              {t('tokenDismiss')}
+            </Button>
+          </div>
+        </div>
+      )}
       <NewSourceForm slug={slug} onToken={setToken} />
+      <SyncFolderForm slug={slug} onSetup={setSetup} />
       {sources.data?.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('empty')}</p>
       ) : (

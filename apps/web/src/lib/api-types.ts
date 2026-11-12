@@ -9,6 +9,7 @@ import type {
   Locator,
   MemberRole,
   QuestionPhase,
+  SourceFeed,
   SourceKind,
   Uncertain,
   UserRole,
@@ -193,6 +194,8 @@ export interface RunViewDto {
 export interface SourceDto {
   id: string
   kind: SourceKind
+  feed: SourceFeed
+  folderPath: string | null
   name: string
   perimeter: string[]
   lastSyncAt: string | null

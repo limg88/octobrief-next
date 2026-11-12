@@ -1,6 +1,7 @@
 import type { HealthProbe, JobQueue } from '@octobrief/application'
 import {
   FakeFeeds,
+  FakeFolders,
   FakeIdentityProvider,
   FakeVault,
   InMemoryBlobs,
@@ -45,6 +46,7 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
     sources,
     items: sources,
     feeds: new FakeFeeds(),
+    folders: new FakeFolders(),
     vault: new FakeVault(),
     blobs: new InMemoryBlobs(),
     adminEmails: new Set(['alba@example.test']),

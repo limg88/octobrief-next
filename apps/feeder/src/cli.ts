@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { DATABASE_TLS_MODES, type DatabaseTls } from '@octobrief/connectors'
+import { SOURCE_KINDS, type SourceKind } from '@octobrief/domain'
 import { createIngestClient, FeederError, type Provider, runFeeder } from './feeder.ts'
 import { commandProvider, m365Provider } from './providers/command.ts'
 import { dwsiProvider } from './providers/dwsi.ts'
@@ -11,7 +12,7 @@ import { fileProvider } from './providers/file.ts'
 import { folderProvider } from './providers/folder.ts'
 
 const USAGE = `Uso: feeder <folder|file|m365|dwsi|command> --server <url> --source <id> [opzioni]
-  folder   --path <cartella>
+  folder   --path <cartella> [--system jira|ado|m365|dwsi|files]   (con --system: cartella sincronizzata)
   file     --path <delivery.json>
   m365     --query <testo> [--days 7] [--claude <eseguibile>]
   dwsi     --host <h> [--port 5432] --database <db> --user <u> --codes PRJ000001,PRJ000002
@@ -26,6 +27,7 @@ const { positionals, values } = parseArgs({
     source: { type: 'string' },
     'token-file': { type: 'string' },
     path: { type: 'string' },
+    system: { type: 'string' },
     query: { type: 'string' },
     days: { type: 'string', default: '7' },
     claude: { type: 'string' },
@@ -52,10 +54,16 @@ const need = (name: keyof typeof values): string => {
   return value
 }
 
+function systemOf(value: string | undefined): SourceKind | undefined {
+  if (value === undefined) return undefined
+  if (!(SOURCE_KINDS as readonly string[]).includes(value)) fail(`--system non valido\n\n${USAGE}`)
+  return value as SourceKind
+}
+
 function providerOf(kind: string | undefined): Provider {
   switch (kind) {
     case 'folder':
-      return folderProvider(need('path'))
+      return folderProvider(need('path'), systemOf(values.system))
     case 'file':
       return fileProvider(need('path'))
     case 'm365':

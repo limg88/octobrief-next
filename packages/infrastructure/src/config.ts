@@ -25,6 +25,8 @@ const sourcesShape = {
   SECRETS_KEY: z.string().refine((value) => readSecretsKey(value) !== null, 'not a secrets key'),
   SOURCES_DEV_JIRA_URL: loopbackUrl.optional(),
   SOURCES_DEV_ADO_URL: loopbackUrl.optional(),
+  // The only place synchronized folders may be under; not set: no source is read from a folder.
+  SYNC_FOLDERS_ROOT: absolutePath.optional(),
 }
 
 const webSchema = z
@@ -98,6 +100,8 @@ const workerSchema = z
 export interface SourcesConfig {
   readonly secretsKey: SecretsKey
   readonly devEndpoints: { readonly jira?: string; readonly ado?: string }
+  /** Where synchronized folders may be; null when the installation allows none. */
+  readonly syncFoldersRoot: string | null
 }
 
 export interface WebConfig {
@@ -180,6 +184,7 @@ function sourcesConfig(env: {
   SECRETS_KEY: string
   SOURCES_DEV_JIRA_URL?: string | undefined
   SOURCES_DEV_ADO_URL?: string | undefined
+  SYNC_FOLDERS_ROOT?: string | undefined
 }): SourcesConfig {
   return {
     secretsKey: readSecretsKey(env.SECRETS_KEY) as SecretsKey,
@@ -187,6 +192,7 @@ function sourcesConfig(env: {
       ...(env.SOURCES_DEV_JIRA_URL ? { jira: env.SOURCES_DEV_JIRA_URL } : {}),
       ...(env.SOURCES_DEV_ADO_URL ? { ado: env.SOURCES_DEV_ADO_URL } : {}),
     },
+    syncFoldersRoot: env.SYNC_FOLDERS_ROOT ?? null,
   }
 }
 

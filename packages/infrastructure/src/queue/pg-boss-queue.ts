@@ -76,10 +76,7 @@ export async function openPgBossQueue(
         return id
       }
       const key = String((payload as Record<string, unknown>)[singleton.field])
-      const id = await boss.send(name, payload, {
-        singletonKey: key,
-        singletonSeconds: singleton.seconds,
-      })
+      const id = await boss.send(name, payload, { singletonKey: key })
       // Not added: the same work is already queued, which is what the caller wanted.
       return id ?? `${ALREADY_QUEUED}:${key}`
     },

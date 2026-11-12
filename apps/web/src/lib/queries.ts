@@ -5,6 +5,7 @@ import {
   isTerminalPhase,
   type Locale,
   type QuestionPhase,
+  type SourceFeed,
 } from '@octobrief/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
@@ -186,6 +187,8 @@ export interface NewSourceInput {
   config?: Record<string, unknown>
   secret?: string
   scope?: string[]
+  feed?: SourceFeed
+  folderPath?: string
 }
 
 export function useCreateSource(slug: string) {

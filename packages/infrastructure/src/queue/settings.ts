@@ -12,15 +12,18 @@ export interface QueueSettings {
   readonly expireInSeconds: number
   /** How long a job may wait to be taken before it is dropped; the queue's default when absent. */
   readonly retentionSeconds?: number
+  /** `short`: at most one job waiting for each singleton key; the queue's default when absent. */
+  readonly policy?: 'short'
 }
 
 /**
- * Jobs that are the same work when they name the same thing: only one of them is queued within
- * the window, the others are not added (a source is not read twice in a row because the
- * scheduler and the PM both asked).
+ * Jobs that are the same work when they name the same thing: while one of them waits to be
+ * taken, the others are not added (a source is not queued twice because the scheduler and the
+ * PM both asked). Once the worker has taken it, a new one may be queued: «read now» after a read
+ * reads again. Their queue has the `short` policy.
  */
-export const SINGLETON_JOBS: Partial<Record<JobName, { field: string; seconds: number }>> = {
-  'source.sync': { field: 'sourceId', seconds: 60 },
+export const SINGLETON_JOBS: Partial<Record<JobName, { field: string }>> = {
+  'source.sync': { field: 'sourceId' },
 }
 
 export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
@@ -31,7 +34,13 @@ export const QUEUE_SETTINGS: Record<JobName, QueueSettings> = {
   'document.compile': { retryLimit: 2, retryDelay: 30, expireInSeconds: 1800 },
   // A failed read is recorded on the source; the next scheduled run tries again.
   // A read left waiting for half an hour (the worker was down) is dropped: the next schedule asks again.
-  'source.sync': { retryLimit: 0, retryDelay: 1, expireInSeconds: 1800, retentionSeconds: 1800 },
+  'source.sync': {
+    retryLimit: 0,
+    retryDelay: 1,
+    expireInSeconds: 1800,
+    retentionSeconds: 1800,
+    policy: 'short',
+  },
   // A failed answer is recorded on the question: the PM asks again.
   'question.answer': { retryLimit: 0, retryDelay: 1, expireInSeconds: 900 },
   // A failed run, revision or render is recorded on the run: the PM decides what to do next.

@@ -7,6 +7,9 @@ import { QUEUE_ROLES, QUEUE_SCHEMA, QUEUE_SETTINGS } from './settings.ts'
  * Installs or migrates the queue schema and its queues, then grants the runtime roles what pg-boss
  * needs and nothing more. `ownerUrl` must connect as the database owner. Safe to run again.
  */
+/** The policy pg-boss gives a queue made without one. */
+const DEFAULT_POLICY = 'standard'
+
 export async function installQueue(ownerUrl: string): Promise<void> {
   const boss = new PgBoss({
     connectionString: ownerUrl,
@@ -26,9 +29,15 @@ export async function installQueue(ownerUrl: string): Promise<void> {
   await boss.start()
   try {
     for (const name of JOB_NAMES) {
-      const settings = QUEUE_SETTINGS[name]
-      if (await boss.getQueue(name)) await boss.updateQueue(name, settings)
-      else await boss.createQueue(name, settings)
+      const { policy, ...settings } = QUEUE_SETTINGS[name]
+      const existing = await boss.getQueue(name)
+      // The policy of a queue cannot be changed: one made with another policy is made again.
+      // What waited in it is dropped; only reads of sources do, and the schedule asks again.
+      if (existing && existing.policy !== (policy ?? DEFAULT_POLICY)) {
+        await boss.deleteQueue(name)
+        await boss.createQueue(name, { ...settings, ...(policy ? { policy } : {}) })
+      } else if (existing) await boss.updateQueue(name, settings)
+      else await boss.createQueue(name, { ...settings, ...(policy ? { policy } : {}) })
     }
   } finally {
     await boss.stop({ graceful: false, close: true })

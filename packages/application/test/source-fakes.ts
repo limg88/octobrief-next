@@ -4,11 +4,13 @@ import type {
   ItemPerson,
   PullSourceKind,
   Source,
+  SourceKind,
 } from '@octobrief/domain'
 import {
   type ExternalItemStore,
   type FeedBatch,
   FeedError,
+  type FolderFeeds,
   type NewExternalDocument,
   type NewSource,
   type SealedSecret,
@@ -62,6 +64,8 @@ export class InMemorySources implements SourceRepository, SourceSyncStore, Exter
       id: source.id,
       projectId: source.projectId,
       kind: source.kind,
+      feed: source.folderPath ? 'folder' : source.tokenHash ? 'push' : 'direct',
+      folderPath: source.folderPath,
       name: source.name,
       config: source.config,
       perimeter: source.perimeter,
@@ -97,15 +101,15 @@ export class InMemorySources implements SourceRepository, SourceSyncStore, Exter
   }
   async pullSourceIds() {
     return [...this.rows.values()]
-      .filter((row) => row.source.kind === 'jira' || row.source.kind === 'ado')
+      .filter((row) => row.source.feed !== 'push')
       .map((row) => row.source.id)
   }
   async load(sourceId: string): Promise<SourceToSync | null> {
     const row = this.rows.get(sourceId)
-    if (!row || (row.source.kind !== 'jira' && row.source.kind !== 'ado')) return null
+    if (!row || row.source.feed === 'push') return null
     return {
       ...this.target(row),
-      kind: row.source.kind as PullSourceKind,
+      folderPath: row.source.folderPath,
       config: row.source.config,
       perimeter: row.source.perimeter,
       secret: row.secret,
@@ -196,6 +200,24 @@ export class FakeVault implements SecretVault {
 }
 
 /** A source system scripted by the test: one batch per pull, in order. */
+/** Folders by path: what a reading of each one gives, one batch at a time. */
+export class FakeFolders implements FolderFeeds {
+  /** The only place folders may be under. */
+  root = '/sync'
+  readonly batches = new Map<string, FeedBatch[]>()
+  readonly reads: Array<{ kind: SourceKind; folderPath: string; cursor: unknown }> = []
+  async check(folderPath: string) {
+    if (!folderPath.startsWith(`${this.root}/`)) throw new FeedError('folder_not_allowed')
+    return folderPath
+  }
+  async read(kind: SourceKind, folderPath: string, cursor: unknown) {
+    this.reads.push({ kind, folderPath, cursor })
+    const batch = this.batches.get(folderPath)?.shift()
+    if (!batch) throw new FeedError('folder_not_found')
+    return batch
+  }
+}
+
 export class FakeFeeds implements SourceFeeds {
   batches: FeedBatch[] = []
   readonly pulls: Array<{ secret: string | null; cursor: unknown }> = []

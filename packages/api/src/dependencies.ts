@@ -4,6 +4,7 @@ import type {
   DocumentRepository,
   ExternalItemStore,
   FactRepository,
+  FolderFeeds,
   HealthProbe,
   JobQueue,
   Logger,
@@ -30,6 +31,7 @@ export interface ApiDependencies extends AuthDependencies {
   /** Stores a feeder's delivery as the person who connected its source. */
   readonly items: ExternalItemStore
   readonly feeds: SourceFeeds
+  readonly folders: FolderFeeds
   readonly vault: SecretVault
   readonly blobs: BlobStore
   readonly logger: Logger

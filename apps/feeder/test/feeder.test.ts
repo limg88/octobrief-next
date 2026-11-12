@@ -1,6 +1,7 @@
 import { chmodSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { renderSyncFile } from '@octobrief/connectors'
 import type { Delivery } from '@octobrief/domain'
 import { describe, expect, it } from 'vitest'
 import {
@@ -223,9 +224,37 @@ describe('providers', () => {
       ['nota.txt', 'nota.txt', 'text/plain'],
       ['sub/SAL.md', 'SAL.md', 'text/markdown'],
     ])
-    expect(Buffer.from(documents[0]?.contentBase64 as string, 'base64').toString()).toBe('una nota')
+    expect(documents[0]?.text).toBe('una nota')
     expect(documents[0]?.version).toMatch(/^8-\d+$/)
     expect(deliveries.at(-1)?.dataAsOf).toEqual(expect.any(String))
+  })
+
+  it('sends the subfolder of a system of a synchronized folder, each file as its header says', async () => {
+    const root = temp()
+    mkdirSync(join(root, 'jira'))
+    mkdirSync(join(root, '.octobrief-sync'))
+    writeFileSync(
+      join(root, 'jira', 'BOR-1.md'),
+      renderSyncFile({
+        system: 'jira',
+        type: 'record',
+        body: '# BOR-1\n',
+        record: {
+          externalId: 'BOR-1',
+          version: 'v1',
+          title: 'Il report non si apre',
+          originAt: null,
+          url: null,
+          people: [],
+          record: { type: 'Bug' },
+        },
+      }),
+    )
+    writeFileSync(join(root, '.octobrief-sync', 'removed.json'), '{"jira":["BOR-9"]}')
+    const [delivery] = await all(folderProvider(root, 'jira'))
+    expect(delivery?.records).toMatchObject([{ externalId: 'BOR-1', record: { type: 'Bug' } }])
+    expect(delivery?.removed).toEqual(['BOR-9'])
+    expect(delivery?.documents).toEqual([])
   })
 
   it('delivers in several steps a folder with many files', async () => {

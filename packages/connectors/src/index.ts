@@ -24,6 +24,8 @@ export {
   type SyncErrorCode,
   TRANSIENT_SYNC_ERRORS,
 } from './errors.ts'
+export * from './folder/sync-file.ts'
+export * from './folder/sync-folder.ts'
 export { type JiraConfig, type JiraEndpoint, jiraRules } from './jira/config.ts'
 export {
   createJiraConnector,

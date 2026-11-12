@@ -1,19 +1,24 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import {
+  allowsFeed,
   canManageSources,
   type Delivery,
+  defaultFeed,
   type ExternalDocument,
   InvalidSourceError,
   type ItemPerson,
   isAdmin,
   isPullSource,
+  isReadByWorker,
   itemFileName,
   MAX_ITEM_BYTES,
   MAX_ITEMS_PER_DELIVERY,
   MAX_ROWS_PER_DELIVERY,
   normalizeSourceName,
+  SOURCE_FEEDS,
   SOURCE_KINDS,
   type Source,
+  type SourceFeed,
   type SourceKind,
   type User,
 } from '@octobrief/domain'
@@ -24,11 +29,13 @@ import type { Logger } from '../ports/logger.ts'
 import {
   type ExternalItemStore,
   FeedError,
+  type FolderFeeds,
   type SecretVault,
   type SourceFeeds,
   type SourceRepository,
   type SourceSyncStore,
   type SourceTarget,
+  type SourceToSync,
 } from '../ports/source-stores.ts'
 import { getProject, type ProjectDependencies } from './projects.ts'
 
@@ -40,6 +47,8 @@ export const INGEST_TOKEN_PREFIX = 'obf_'
 export const MAX_BATCHES_PER_SYNC = 10
 /** Stored when a sync fails for a reason that is not the source system's. */
 const UNEXPECTED_FAILURE = 'sync_failed'
+/** Stored when the worker is asked to read a source it has no way to read. */
+const NOT_READABLE = 'source_not_configured'
 
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex')
 
@@ -51,6 +60,7 @@ function newIngestToken(): { token: string; hash: string } {
 export interface SourceDependencies extends ProjectDependencies {
   readonly sources: SourceRepository
   readonly feeds: SourceFeeds
+  readonly folders: FolderFeeds
   readonly vault: SecretVault
   readonly queue: JobQueue
 }
@@ -64,6 +74,10 @@ export interface SourceInput {
   readonly secret?: string | undefined
   /** Project keys or names to read; empty: everything the credential sees. */
   readonly scope?: readonly string[] | undefined
+  /** How the items arrive; by default what the kind has always been. */
+  readonly feed?: string | undefined
+  /** The synchronized folder of a source fed from a folder. */
+  readonly folderPath?: string | undefined
 }
 
 async function manageableProject(deps: ProjectDependencies, viewer: User, slug: string) {
@@ -82,8 +96,10 @@ function invalidSource(error: unknown): never {
 }
 
 /**
- * Connects a source. A pushing one gets a token for its feeder, returned here once; a pulling
- * one is checked against its system first, and its credential is stored sealed.
+ * Connects a source. One fed by a program on the PM's computer gets a token, returned here once;
+ * one the worker reads from its system is checked against it first, and its credential is stored
+ * sealed; one read from a synchronized folder needs neither, only a folder the installation
+ * allows.
  */
 export async function createSource(
   deps: SourceDependencies,
@@ -96,6 +112,10 @@ export async function createSource(
     throw new InvalidSourceError('invalid_kind')
   }
   const kind = input.kind as SourceKind
+  const feed = (input.feed ?? defaultFeed(kind)) as SourceFeed
+  if (!(SOURCE_FEEDS as readonly string[]).includes(feed) || !allowsFeed(kind, feed)) {
+    throw new InvalidSourceError('invalid_feed')
+  }
   const base = {
     id: randomUUID(),
     projectId: project.id,
@@ -105,7 +125,18 @@ export async function createSource(
   }
   let created: Source | null
   let ingestToken: string | null = null
-  if (isPullSource(kind)) {
+  if (feed === 'folder') {
+    if (!input.folderPath?.trim()) throw new InvalidSourceError('folder_required')
+    const folderPath = await deps.folders.check(input.folderPath.trim()).catch(invalidSource)
+    created = await deps.sources.create(viewer.id, {
+      ...base,
+      config: {},
+      perimeter: [],
+      tokenHash: null,
+      secret: null,
+      folderPath,
+    })
+  } else if (feed === 'direct' && isPullSource(kind)) {
     if (!input.secret?.trim()) throw new InvalidSourceError('secret_required')
     const { config, perimeter } = await deps.feeds
       .connect(kind, input.config ?? {}, input.secret, input.scope ?? [])
@@ -116,6 +147,7 @@ export async function createSource(
       perimeter,
       tokenHash: null,
       secret: deps.vault.seal(base.id, input.secret),
+      folderPath: null,
     })
   } else {
     const fresh = newIngestToken()
@@ -126,10 +158,11 @@ export async function createSource(
       perimeter: [],
       tokenHash: fresh.hash,
       secret: null,
+      folderPath: null,
     })
   }
   if (!created) throw new ApplicationError('conflict', 'the project already has this source')
-  if (isPullSource(kind)) await deps.queue.enqueue('source.sync', { sourceId: created.id })
+  if (isReadByWorker(feed)) await deps.queue.enqueue('source.sync', { sourceId: created.id })
   return { source: created, ingestToken }
 }
 
@@ -172,7 +205,7 @@ export async function rotateIngestToken(
   sourceId: string,
 ): Promise<string> {
   const source = await manageableSource(deps, viewer, slug, sourceId)
-  if (isPullSource(source.kind)) {
+  if (isReadByWorker(source.feed)) {
     throw new ApplicationError('conflict', 'this source is read by the worker, not fed')
   }
   const fresh = newIngestToken()
@@ -188,7 +221,7 @@ export async function requestSync(
   sourceId: string,
 ): Promise<void> {
   const source = await manageableSource(deps, viewer, slug, sourceId)
-  if (!isPullSource(source.kind)) {
+  if (!isReadByWorker(source.feed)) {
     throw new ApplicationError('conflict', 'this source is fed by its feeder')
   }
   await deps.queue.enqueue('source.sync', { sourceId: source.id })
@@ -311,9 +344,26 @@ export async function ingestDelivery(
 export interface SyncDependencies extends StoreDependencies {
   readonly sync: SourceSyncStore
   readonly feeds: SourceFeeds
+  readonly folders: Pick<FolderFeeds, 'read'>
   readonly vault: SecretVault
   readonly logger: Logger
   readonly signal?: AbortSignal
+}
+
+/** The next batch of a source the worker reads: from its folder, or from its system. */
+function nextBatch(
+  deps: SyncDependencies,
+  source: SourceToSync,
+  secret: string | null,
+  cursor: unknown,
+) {
+  if (source.folderPath !== null) return deps.folders.read(source.kind, source.folderPath, cursor)
+  if (!isPullSource(source.kind)) throw new FeedError(NOT_READABLE)
+  return deps.feeds.pull(
+    { kind: source.kind, config: source.config, perimeter: source.perimeter, secret },
+    cursor,
+    deps.signal ?? new AbortController().signal,
+  )
 }
 
 /**
@@ -329,11 +379,7 @@ export function createSyncSourceHandler(deps: SyncDependencies) {
       const secret = source.secret ? deps.vault.unseal(source.id, source.secret) : null
       let cursor = source.cursor
       for (let batch = 0; batch < MAX_BATCHES_PER_SYNC; batch++) {
-        const read = await deps.feeds.pull(
-          { kind: source.kind, config: source.config, perimeter: source.perimeter, secret },
-          cursor,
-          deps.signal ?? new AbortController().signal,
-        )
+        const read = await nextBatch(deps, source, secret, cursor)
         const outcome = await storeDelivery(deps, source, read)
         cursor = read.nextCursor
         await deps.sync.saveCursor(source.id, cursor)
@@ -351,7 +397,7 @@ export function createSyncSourceHandler(deps: SyncDependencies) {
   }
 }
 
-/** Queues a reading of every pulling source; run by the worker on a timer. */
+/** Queues a reading of every source the worker reads by itself; run by the worker on a timer. */
 export function createScheduleSyncHandler(deps: {
   sync: Pick<SourceSyncStore, 'pullSourceIds'>
   jobs: Pick<JobQueue, 'enqueue'>

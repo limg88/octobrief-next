@@ -62,6 +62,7 @@ describe.skipIf(!hasDatabase)('sources on Postgres (integration)', () => {
     perimeter: [],
     tokenHash: null,
     secret: null,
+    folderPath: null,
     createdBy: owner.id,
     ...over,
   })
@@ -111,6 +112,8 @@ describe.skipIf(!hasDatabase)('sources on Postgres (integration)', () => {
     expect(await sources.create(owner.id, source)).toMatchObject({
       id: source.id,
       kind: 'm365',
+      feed: 'push',
+      folderPath: null,
       name: 'Posta Borea',
       documentCount: 0,
       lastSyncAt: null,
@@ -223,9 +226,33 @@ describe.skipIf(!hasDatabase)('sources on Postgres (integration)', () => {
     const withSecret = { ...source, perimeter: ['project:1'], secret: vault.seal(source.id, 'pat') }
     await sources.create(owner.id, withSecret)
     expect(await sync.pullSourceIds()).toContain(source.id)
+
+    // A source read from a synchronized folder is the worker's too, whatever its kind; one fed
+    // with a token is not, even when it is a tracker.
+    const fromFolder = newSource({ name: 'Posta da cartella', folderPath: '/sync/borea' })
+    expect(await sources.create(owner.id, fromFolder)).toMatchObject({
+      feed: 'folder',
+      folderPath: '/sync/borea',
+    })
+    const pushed = newSource({ kind: 'ado', name: 'ADO dal PC', tokenHash: TOKEN_HASH })
+    expect(await sources.create(owner.id, pushed)).toMatchObject({ kind: 'ado', feed: 'push' })
+    const worked = await sync.pullSourceIds()
+    expect(worked).toContain(fromFolder.id)
+    expect(worked).not.toContain(pushed.id)
+    expect(await sync.load(fromFolder.id)).toMatchObject({
+      kind: 'm365',
+      folderPath: '/sync/borea',
+    })
+    expect(await sync.load(pushed.id)).toBeNull()
+    // One way in for each source.
+    await expect(
+      sources.create(owner.id, newSource({ name: 'Due', folderPath: '/x', tokenHash: TOKEN_HASH })),
+    ).rejects.toThrow(/sources_one_feed/)
+
     const loaded = await sync.load(source.id)
     expect(loaded).toMatchObject({
       kind: 'jira',
+      folderPath: null,
       config: { site: 'contoso' },
       perimeter: ['project:1'],
       cursor: null,

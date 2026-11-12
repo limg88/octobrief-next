@@ -2,6 +2,12 @@ export { createFileBlobStore } from './blob/file-blob-store.ts'
 export type { ModelConfig, SourcesConfig, WebConfig, WorkerConfig } from './config.ts'
 export { ConfigError, loadWebConfig, loadWorkerConfig } from './config.ts'
 export { createConnectorFeeds } from './feeds/connector-feeds.ts'
+export {
+  createFolderFeeds,
+  FOLDER_FEED_DISABLED,
+  FOLDER_NOT_ALLOWED,
+  FOLDER_NOT_FOUND,
+} from './feeds/folder-feeds.ts'
 export { createConsoleLogger } from './logging/console-logger.ts'
 export { configuredBackends, createModelRunner } from './model/create-model-runner.ts'
 export { fakeEmbedding, fakeRunner } from './model/fake-runner.ts'

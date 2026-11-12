@@ -13,6 +13,7 @@ import {
   DOCUMENT_KINDS,
   type ItemPerson,
   MAX_ITEMS_PER_DELIVERY,
+  SOURCE_FEEDS,
   SOURCE_KINDS,
   type Source,
 } from '@octobrief/domain'
@@ -29,6 +30,8 @@ const SourceSchema = z
   .object({
     id: z.string(),
     kind: z.enum(SOURCE_KINDS),
+    feed: z.enum(SOURCE_FEEDS),
+    folderPath: z.string().nullable(),
     name: z.string(),
     perimeter: z.array(z.string()),
     lastSyncAt: z.iso.datetime().nullable(),
@@ -43,6 +46,8 @@ function toDto(source: Source) {
   return {
     id: source.id,
     kind: source.kind,
+    feed: source.feed,
+    folderPath: source.folderPath,
     name: source.name,
     perimeter: [...source.perimeter],
     lastSyncAt: source.lastSyncAt?.toISOString() ?? null,
@@ -91,6 +96,8 @@ const createSourceRoute = createRoute({
             config: z.record(z.string(), z.unknown()).optional(),
             secret: z.string().max(8192).optional(),
             scope: z.array(z.string().max(200)).max(50).optional(),
+            feed: z.string().max(20).optional(),
+            folderPath: z.string().max(1024).optional(),
           })
           .openapi('NewSource'),
       ),

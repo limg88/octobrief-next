@@ -293,6 +293,7 @@ describe.skipIf(!hasDatabase)('asking on Postgres (integration)', () => {
       perimeter: [],
       tokenHash: null,
       secret: null,
+      folderPath: null,
       createdBy: owner.id,
     }
     await sources.create(owner.id, source)

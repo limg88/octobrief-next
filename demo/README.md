@@ -16,6 +16,7 @@ Ogni incremento della roadmap si chiude con una demo eseguibile in pochi minuti.
 | 09 | Analisi bug e CR: dashboard sui dati del tracker (Jira finto), Excel | `KEEP=1 bash demo/09-analisi-bug/run.sh` | [COPIONE](09-analisi-bug/COPIONE.md) |
 | 10 | Rischi e opportunità: una ricetta nuova scritta come file, elenchi dai fatti della memoria, Word | `KEEP=1 bash demo/10-rischi-opportunita/run.sh` | [COPIONE](10-rischi-opportunita/COPIONE.md) |
 | 11 | Deploy on-prem: installazione di produzione da zero (Caddy, HTTPS, database senza porte), backup, perdita dei dati e ripristino | `KEEP=1 bash demo/11-deploy/run.sh` | [COPIONE](11-deploy/COPIONE.md) |
+| 12 | Cartella sincronizzata: file Markdown con intestazione dati letti dal server o inviati dal PC, fonti del tipo vero, dashboard dai dati della cartella | `KEEP=1 bash demo/12-cartella-sincronizzata/run.sh` | [COPIONE](12-cartella-sincronizzata/COPIONE.md) |
 
 ## Controllo da browser
 

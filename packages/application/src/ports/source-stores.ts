@@ -33,6 +33,8 @@ export interface NewSource {
   readonly perimeter: readonly string[]
   readonly tokenHash: string | null
   readonly secret: SealedSecret | null
+  /** The synchronized folder the worker reads this source from, if it is fed that way. */
+  readonly folderPath: string | null
   readonly createdBy: string
 }
 
@@ -58,7 +60,8 @@ export interface SourceRepository {
 }
 
 export interface SourceToSync extends SourceTarget {
-  readonly kind: PullSourceKind
+  /** Set when the source is read from a synchronized folder instead of its system. */
+  readonly folderPath: string | null
   readonly config: Readonly<Record<string, unknown>>
   readonly perimeter: readonly string[]
   readonly secret: SealedSecret | null
@@ -67,7 +70,7 @@ export interface SourceToSync extends SourceTarget {
 
 /** The worker's view of the pulling sources. */
 export interface SourceSyncStore {
-  /** Ids of every Jira and Azure DevOps source. */
+  /** Ids of every source the worker reads by itself: from its system or from a folder. */
   pullSourceIds(): Promise<string[]>
   load(sourceId: string): Promise<SourceToSync | null>
   saveCursor(sourceId: string, cursor: unknown): Promise<void>
@@ -126,6 +129,16 @@ export interface FeedSource {
   readonly config: Readonly<Record<string, unknown>>
   readonly perimeter: readonly string[]
   readonly secret: string | null
+}
+
+/** A batch of a folder: the cursor is how far the listing of its files has been read. */
+export interface FolderFeeds {
+  /**
+   * Checks that the folder may be read (it is under the root the installation allows and it
+   * exists) and returns its path as it will be stored. Throws a `FeedError` otherwise.
+   */
+  check(folderPath: string): Promise<string>
+  read(kind: SourceKind, folderPath: string, cursor: unknown): Promise<FeedBatch>
 }
 
 /**
