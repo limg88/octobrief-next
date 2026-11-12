@@ -32,7 +32,6 @@ start_renderer
 
 step "2/5 Avvio e progetto"
 start_dev .tmp/demo-08.log
-trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null
 slug="$(call "$paola" GET /projects | node -pe "JSON.parse(require('fs').readFileSync(0)).projects.find(p=>p.name==='${project_name}').slug")"

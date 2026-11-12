@@ -51,7 +51,8 @@ expect "$(stat -c '%a' "$OCTOBRIEF_ENV_FILE" 2>/dev/null || stat -f '%Lp' "$OCTO
 
 step "2/7 Da zero: immagini, database, ruoli, migrazioni, web, worker, renderer e Caddy"
 octobrief down -v --remove-orphans >/dev/null 2>&1 || true
-[ "${KEEP:-0}" = "1" ] || trap 'octobrief down -v --remove-orphans >/dev/null 2>&1 || true' EXIT
+# With KEEP=1 the installation stays on, but only if the demo succeeded.
+trap 'code=$?; { [ "${KEEP:-0}" = "1" ] && [ "$code" -eq 0 ]; } || octobrief down -v --remove-orphans >/dev/null 2>&1 || true' EXIT
 octobrief up 2>&1 | tail -3
 wait_web
 wait_issuer

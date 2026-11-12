@@ -30,7 +30,6 @@ echo "  ordine: $order_file · fatture: $invoice_1, $invoice_2"
 
 step "3/9 Avvio; Paola crea il progetto e carica ordine e fatture"
 start_dev .tmp/demo-06.log
-trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 login marco "$marco"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null

@@ -24,6 +24,29 @@ prepare_database() {
   mkdir -p .tmp
 }
 
+# forget_old_trackers: the Jira sources of earlier demos point to fake servers that are gone, and
+# those left by tests were never configured. The worker would still try each one at start, one
+# every two seconds, and the source of this demo would wait behind them.
+forget_old_trackers() {
+  docker compose --env-file .env.local exec -T postgres psql -q -U octobrief_owner -d octobrief -v ON_ERROR_STOP=1 \
+    -c "DELETE FROM sources WHERE kind IN ('jira', 'ado') AND (config->>'site' = 'demo' OR config = '{}'::jsonb)" \
+    -c "DELETE FROM pgboss.job WHERE name = 'source.sync' AND state IN ('created', 'retry')" >/dev/null
+}
+
+# stop_demo: on exit, stops what the demo started (web, worker, issuer, $extra_pids, renderer).
+# With KEEP=1 everything stays on for the browser part, but only if the demo succeeded: a stack
+# left on by a failed demo would get in the way of the next one.
+stop_demo() {
+  local code=$?
+  if [ "${KEEP:-0}" = "1" ] && [ "$code" -eq 0 ]; then return; fi
+  # shellcheck disable=SC2086
+  [ -z "${extra_pids:-}" ] || kill $extra_pids 2>/dev/null || true
+  [ -z "${dev_pid:-}" ] || kill -- -"$dev_pid" 2>/dev/null || true
+  [ "${renderer_started:-0}" != "1" ] || stop_renderer
+}
+
+trap stop_demo EXIT
+
 # start_dev <log>: web + worker + fake issuer in their own process group; stopped on exit
 # unless KEEP=1.
 start_dev() {
@@ -38,7 +61,6 @@ start_dev() {
   pnpm dev >"$log" 2>&1 &
   dev_pid=$!
   set +m
-  if [ "${KEEP:-0}" != "1" ]; then trap 'kill -- -"$dev_pid" 2>/dev/null || true' EXIT; fi
   for _ in $(seq 1 90); do
     curl -sf "$base/api/health" >/dev/null 2>&1 && break
     sleep 1
@@ -82,6 +104,7 @@ compose() { docker compose --env-file .env.local --profile renderer "$@"; }
 # start_renderer: the isolated renderer of Word, PowerPoint and Excel files, on RENDERER_URL.
 start_renderer() {
   export RENDERER_URL="http://127.0.0.1:${RENDERER_PORT:-5451}"
+  renderer_started=1
   compose up -d --build --wait renderer-gateway 2>&1 | tail -1
   ok "renderer pronto su $RENDERER_URL (rete interna senza uscita, utente non root, sola lettura)"
 }

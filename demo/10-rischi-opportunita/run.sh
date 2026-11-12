@@ -29,7 +29,6 @@ Paola Prova deve inviare il piano di rientro al cliente entro il 20 novembre 202
 Il comitato ha deciso di anticipare il collaudo del modulo di reportistica.
 NOTE
 start_dev .tmp/demo-10.log
-trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null
 slug="$(call "$paola" GET /projects | node -pe "JSON.parse(require('fs').readFileSync(0)).projects.find(p=>p.name==='${project_name}').slug")"

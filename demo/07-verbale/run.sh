@@ -21,7 +21,6 @@ step "2/6 Avvio; Paola carica il trascritto sintetico di una riunione"
 rm -rf "$docs"
 node demo/06-deliverable/sal-data.ts "$docs" >/dev/null
 start_dev .tmp/demo-07.log
-trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null
 slug="$(call "$paola" GET /projects | node -pe "JSON.parse(require('fs').readFileSync(0)).projects.find(p=>p.name==='${project_name}').slug")"

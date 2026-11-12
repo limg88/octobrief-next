@@ -12,19 +12,19 @@ project_name="Borea $(date +%H%M%S)"
 step "1/6 Prerequisiti, database, renderer isolato e un Jira finto (3 bug, 2 CR, 1 storia)"
 check_prerequisites
 prepare_database
+forget_old_trackers
 start_renderer
 rm -f .tmp/demo-09-jira.url
 node demo/09-analisi-bug/fake-jira.ts .tmp/demo-09-jira.url >/dev/null &
 jira_pid=$!
+# With KEEP=1 the fake Jira stays on too: the browser part needs it.
+extra_pids="$jira_pid"
 for _ in $(seq 1 30); do [ -s .tmp/demo-09-jira.url ] && break; sleep 0.2; done
 export SOURCES_DEV_JIRA_URL="$(cat .tmp/demo-09-jira.url)"
 echo "  Jira finto su $SOURCES_DEV_JIRA_URL"
 
 step "2/6 Avvio; Paola collega Jira e il worker lo legge"
 start_dev .tmp/demo-09.log
-# With KEEP=1 the fake Jira stays on too: the worker keeps reading it.
-extra_pids="$jira_pid"
-trap '[ "${KEEP:-0}" = "1" ] || { kill "$jira_pid" 2>/dev/null || true; kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null
 slug="$(call "$paola" GET /projects | node -pe "JSON.parse(require('fs').readFileSync(0)).projects.find(p=>p.name==='${project_name}').slug")"
