@@ -734,6 +734,22 @@ describe('access check', () => {
     ])
     expect(await checkAccess(config(), {}, reader)).toEqual([])
   })
+
+  it('asks Claude whether it has the Microsoft 365 connector', async () => {
+    const { reader } = fakeReader()
+    const cfg = config({ m365: { keywords: ['Borea'] } })
+    const answering = (text: string) => async () => JSON.stringify({ result: text })
+    expect(await checkAccess(cfg, {}, reader, answering('{"connector":"available"}'))).toEqual([
+      'Microsoft 365: connettore disponibile per Claude',
+    ])
+    expect(
+      await checkAccess(cfg, {}, reader, answering('{"error":"connector_unavailable"}')),
+    ).toEqual(['Microsoft 365: connettore NON disponibile (m365: connector_unavailable)'])
+    expect(await checkAccess(cfg, {}, reader, answering('Non saprei.'))).toEqual([
+      'Microsoft 365: connettore NON disponibile (m365: claude_error)',
+    ])
+    expect(await checkAccess(cfg, {}, reader)).toEqual([])
+  })
 })
 
 describe('periodic run', () => {
@@ -935,6 +951,21 @@ describe('Microsoft 365 through Claude', () => {
     await expect(collect(source, { until: week.from.toISOString() })).rejects.toMatchObject({
       code: 'provider_failed',
     })
+    // An answer that says it could not read is a failure, never "nothing found".
+    for (const [error, message] of [
+      ['connector_unavailable', 'm365: connector_unavailable'],
+      ['Outlook non risponde', 'm365: claude_error'],
+    ]) {
+      const refusing = m365Source(
+        m365({ keywords: ['Borea'] }),
+        async () => JSON.stringify({ result: JSON.stringify({ documents: [], error }) }),
+        () => week.to,
+      )
+      await expect(collect(refusing, { until: week.from.toISOString() })).rejects.toMatchObject({
+        code: 'provider_failed',
+        message,
+      })
+    }
     const missing = claudeRunner(m365({ claude: join(root, 'claude-che-non-esiste') }))
     await expect(missing('x')).rejects.toMatchObject({ code: 'provider_failed' })
     const script = join(root, 'claude-finto.sh')

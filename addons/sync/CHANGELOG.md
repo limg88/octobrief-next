@@ -2,6 +2,10 @@
 
 L'addon ha una versione propria, indipendente da quella di Octobrief. Il formato dei file che scrive è versionato a parte (`octobrief: 1` nell'intestazione).
 
+## 0.1.3 — 2026-11-12
+
+- Microsoft 365: se Claude non ha il connettore la passata fallisce con `m365: connector_unavailable` invece di risultare riuscita con zero elementi; `check` lo verifica prima.
+
 ## 0.1.2 — 2026-11-12
 
 - Microsoft 365: `m365.model` sceglie il modello con cui è lanciato Claude.

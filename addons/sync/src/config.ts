@@ -71,7 +71,7 @@ const M365Schema = z.object({
   /** The model Claude runs with (an alias such as `sonnet` or a full id); its own default if absent. */
   model: z
     .string()
-    .regex(/^[A-Za-z0-9][A-Za-z0-9._:\[\]-]*$/)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9._:[\]-]*$/)
     .optional(),
 })
 

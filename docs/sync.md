@@ -48,7 +48,7 @@ L'addon lancia `claude -p` e gli permette solo gli strumenti elencati in `m365.a
 claude mcp list
 ```
 
-Se il nome non è `claude_ai_Microsoft_365`, metti in `allowedTools` il prefisso giusto, `mcp__<nome>`. Con `"model": "sonnet"` (o un altro nome che `claude --model` accetta) scegli il modello di queste chiamate; senza, vale quello predefinito di Claude Code. Poi indica il perimetro:
+`check` chiede a Claude se ha il connettore: «connettore NON disponibile (m365: connector_unavailable)» significa che `claude -p` lanciato dal terminale non lo vede, anche se in una sessione interattiva c'è. Se il nome non è `claude_ai_Microsoft_365`, metti in `allowedTools` il prefisso giusto, `mcp__<nome>`. Con `"model": "sonnet"` (o un altro nome che `claude --model` accetta) scegli il modello di queste chiamate; senza, vale quello predefinito di Claude Code. Poi indica il perimetro:
 - `keywords`: parole, frasi e **indirizzi email** (persone del cliente, liste di distribuzione);
 - `outlook.folders` e `outlook.mailboxes`: cartelle e caselle condivise da leggere;
 - `teams.channels` (`Team/Canale`) e `teams.chats`;

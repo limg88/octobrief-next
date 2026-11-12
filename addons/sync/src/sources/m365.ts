@@ -92,6 +92,10 @@ const TEXT: Readonly<Record<M365Section, string>> = {
   file: 'il testo completo del file',
 }
 
+/** What Claude answers when the session it runs in has no Microsoft 365 connector. */
+export const CONNECTOR_UNAVAILABLE = 'connector_unavailable'
+const UNAVAILABLE_RULE = `Se in questa sessione non hai strumenti del connettore Microsoft 365, rispondi solo {"error":"${CONNECTOR_UNAVAILABLE}"}.`
+
 /** The request made to Claude for one section over one window; null when nothing is asked. */
 export function m365Prompt(
   section: M365Section,
@@ -105,6 +109,7 @@ export function m365Prompt(
     `Cerca ${WHAT[section]} dal ${romeDateString(window.from)} (compreso) al ${romeDateString(window.to)} (escluso), ${scope}.`,
     'Rispondi con UN SOLO oggetto JSON, senza altro testo, di questa forma:',
     `{"truncated":<true se gli elementi trovati sono più di ${MAX_ITEMS_PER_ANSWER}>,"documents":[{"externalId":"<id stabile dell'elemento nel sistema>","version":"<data di ultima modifica ISO 8601>","title":"<oggetto o titolo>","mediaType":"text/markdown","text":"<${TEXT[section]}>","originAt":"<data ISO 8601 dell'elemento>","url":"<link web o null>"${section === 'teams' ? ',"kind":"transcript se è la trascrizione di una riunione, altrimenti ometti"' : ''},"people":[{"displayName":"<nome>","email":"<email>","untrusted":<true se esterno all'organizzazione>}]}]}`,
+    UNAVAILABLE_RULE,
     `Elenca in "people" OGNI persona nominata (mittente, destinatari, partecipanti). Al massimo ${MAX_ITEMS_PER_ANSWER} elementi, i più recenti. Non riassumere e non tradurre: riporta il testo com'è. Se non trovi nulla rispondi {"truncated":false,"documents":[]}.`,
   ].join('\n')
 }
@@ -136,11 +141,37 @@ export function claudeRunner(config: M365Config): ClaudeRunner {
     })
 }
 
-/** Whether the answer says there was more than it could carry. */
-function truncatedIn(output: string): boolean {
+/** The object Claude answered with: the text of its `result`, or what it printed. */
+function answerOf(output: string): Record<string, unknown> | null {
   const parsed = firstJsonObject(output) as Record<string, unknown> | null
   const inner = typeof parsed?.result === 'string' ? firstJsonObject(parsed.result) : parsed
-  return (inner as { truncated?: unknown } | null)?.truncated === true
+  return inner as Record<string, unknown> | null
+}
+
+/**
+ * Fails when Claude says it could not read: an answer with an `error` is never taken for "nothing
+ * found". Only the known code is repeated; any other text of the model stays out of the report.
+ */
+function refuseError(output: string): void {
+  const error = answerOf(output)?.error
+  if (error === undefined || error === null || error === '') return
+  const code = error === CONNECTOR_UNAVAILABLE ? CONNECTOR_UNAVAILABLE : 'claude_error'
+  throw new FeederError('provider_failed', `m365: ${code}`)
+}
+
+/** Whether the answer says there was more than it could carry. */
+const truncatedIn = (output: string): boolean => answerOf(output)?.truncated === true
+
+/**
+ * Asks Claude, without reading any data, whether it has the Microsoft 365 connector: fails as a
+ * source would when it has not, or when Claude cannot be run.
+ */
+export async function probeM365(run: ClaudeRunner): Promise<void> {
+  const output = await run(
+    `Non leggere alcun dato e non chiamare strumenti di lettura. ${UNAVAILABLE_RULE} Altrimenti rispondi solo {"connector":"available"}.`,
+  )
+  refuseError(output)
+  if (answerOf(output) === null) throw new FeederError('provider_failed', 'm365: claude_error')
 }
 
 /**
@@ -162,6 +193,7 @@ export function m365Source(
     const prompt = m365Prompt(name, config, window)
     if (prompt === null) return
     const output = await run(prompt)
+    refuseError(output)
     const span = window.to.getTime() - window.from.getTime()
     if (truncatedIn(output) && span > DAY_MS) {
       const middle = new Date(window.from.getTime() + Math.ceil(span / 2 / DAY_MS) * DAY_MS)

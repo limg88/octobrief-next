@@ -25,6 +25,7 @@ import { runPush } from './push.ts'
 import { every } from './schedule.ts'
 import { parseSince } from './since.ts'
 import { buildSources } from './sources/build.ts'
+import { claudeRunner } from './sources/m365.ts'
 import { patWarning } from './status.ts'
 
 const USAGE = `Uso: octobrief-sync <comando> [opzioni]
@@ -180,7 +181,8 @@ async function syncCommand(command: string): Promise<void> {
     console.log(`Fonti: ${configuredSystems(config).join(', ') || 'nessuna'}`)
     const warning = patWarning(config, new Date())
     if (warning) console.log(`ATTENZIONE: ${warning}`)
-    for (const failure of await checkAccess(config, process.env, reader())) console.log(failure)
+    const claude = config.m365 ? claudeRunner(config.m365) : undefined
+    for (const line of await checkAccess(config, process.env, reader(), claude)) console.log(line)
     return
   }
   await repeat(config, async () => {
