@@ -45,7 +45,7 @@ Un file JSON **fuori dal repository**. Non contiene segreti: solo il **nome** de
 | `jira` | `site`, `email`, `tokenEnv`, `projects` (chiavi; vuoto: tutti quelli visibili) |
 | `ado` | `organization`, `project`, `patEnv`, `patExpiresOn` (giorno di scadenza del PAT) |
 | `dwsi` | `host`, `port`, `database`, `user`, `passwordEnv`, `codes` (commesse), `owner`, `tls` |
-| `m365` | `keywords` (parole, frasi, indirizzi email), `outlook.folders`, `outlook.mailboxes`, `teams.channels`, `teams.chats`, `sharepoint.paths`, `days`, `claude`, `allowedTools` |
+| `m365` | `keywords` (parole, frasi, indirizzi email), `outlook.folders`, `outlook.mailboxes`, `teams.channels`, `teams.chats`, `sharepoint.paths`, `days`, `claude`, `allowedTools`, `model` |
 | `push` | `server` e, per ogni sistema, `id` della fonte e `tokenEnv`: li mostra Octobrief quando colleghi la cartella «inviata dal PC» |
 
 ## Cosa sapere

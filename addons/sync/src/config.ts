@@ -68,6 +68,11 @@ const M365Schema = z.object({
    * `claude mcp list` names it on the PM's computer.
    */
   allowedTools: z.array(z.string().min(1)).default([DEFAULT_M365_TOOLS]),
+  /** The model Claude runs with (an alias such as `sonnet` or a full id); its own default if absent. */
+  model: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9._:\[\]-]*$/)
+    .optional(),
 })
 
 const PushSchema = z.object({

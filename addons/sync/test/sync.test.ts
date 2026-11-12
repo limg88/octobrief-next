@@ -941,6 +941,13 @@ describe('Microsoft 365 through Claude', () => {
     writeFileSync(script, '#!/bin/sh\necho "$@"\n', { mode: 0o755 })
     const printed = await claudeRunner(m365({ claude: script, allowedTools: ['a', 'b'] }))('ciao')
     expect(printed.trim()).toBe('-p ciao --output-format json --allowedTools a,b')
+    const chosen = await claudeRunner(
+      m365({ claude: script, allowedTools: ['a'], model: 'sonnet' }),
+    )('ciao')
+    expect(chosen.trim()).toBe('-p ciao --output-format json --allowedTools a --model sonnet')
+    expect(() =>
+      parseConfig({ folder: '/x', m365: { keywords: ['k'], model: '--evil' } }),
+    ).toThrow()
   })
 
   it('is built from the configuration with the runner given', async () => {

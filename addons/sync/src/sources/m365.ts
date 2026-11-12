@@ -118,7 +118,15 @@ export function claudeRunner(config: M365Config): ClaudeRunner {
     new Promise((resolve, reject) => {
       execFile(
         config.claude,
-        ['-p', prompt, '--output-format', 'json', '--allowedTools', config.allowedTools.join(',')],
+        [
+          '-p',
+          prompt,
+          '--output-format',
+          'json',
+          '--allowedTools',
+          config.allowedTools.join(','),
+          ...(config.model ? ['--model', config.model] : []),
+        ],
         { timeout: CLAUDE_TIMEOUT_MS, maxBuffer: MAX_OUTPUT_BYTES },
         (error, stdout) => {
           if (error) reject(new FeederError('provider_failed', `${config.claude} failed`))
