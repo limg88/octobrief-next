@@ -46,7 +46,8 @@ SITE_HOST=localhost HTTPS_PORT="$https_port" HTTPS_BIND=127.0.0.1 \
   ADMIN_EMAILS=alba.amministratrice@example.test \
   bash deploy/init-env.sh "$OCTOBRIEF_ENV_FILE" | sed 's/^/  /'
 echo "FAKE_OIDC_PORT=${issuer_port}" >>"$OCTOBRIEF_ENV_FILE"
-expect "$(stat -f '%Lp' "$OCTOBRIEF_ENV_FILE" 2>/dev/null || stat -c '%a' "$OCTOBRIEF_ENV_FILE")" "600" "il file d'ambiente è leggibile solo dal proprietario"
+# GNU stat first: on Linux `stat -f` describes the filesystem instead of failing.
+expect "$(stat -c '%a' "$OCTOBRIEF_ENV_FILE" 2>/dev/null || stat -f '%Lp' "$OCTOBRIEF_ENV_FILE")" "600" "il file d'ambiente è leggibile solo dal proprietario"
 
 step "2/7 Da zero: immagini, database, ruoli, migrazioni, web, worker, renderer e Caddy"
 octobrief down -v --remove-orphans >/dev/null 2>&1 || true
