@@ -196,6 +196,8 @@ function projectAnswer(request: ModelRequest): unknown {
   return { lang: 'it', segments, contradictions, absences }
 }
 
+type QuotableCell = { testo?: string | null; note?: number[] }
+
 /** A value of the document the writer may quote: its label, its text and the notes it cites. */
 interface QuotableValue {
   section: string
@@ -208,6 +210,7 @@ interface QuotableValue {
 interface SlotRequest {
   testo_da_scrivere?: {
     id?: string
+    istruzioni?: string
     nature_ammesse?: string[]
     massimo_caratteri?: number
   }
@@ -219,11 +222,39 @@ interface SlotRequest {
         tipo: string
         etichetta?: string
         valore?: { testo?: string | null; note?: number[] }
+        colonne?: string[]
+        righe?: Array<Array<{ testo?: string | null; note?: number[] }>>
       }>
     }>
+    note?: Array<{ n: number; fonte?: string }>
   }
   richiesta_del_pm?: string
 }
+
+/** A passage of a document the fake model read through the tools. */
+interface ReadPassage {
+  evidenceId: string
+  locator: unknown
+  text: string
+}
+
+const READ_TOOL = 'read_evidence'
+/** A note of the writer that names a file: a document the text may be asked to quote. */
+const FILE_NAME = /\.[a-z0-9]{2,5}$/i
+
+/**
+ * What a text looks for in a document it reads, by a word of its id: the lines of a meeting
+ * that say when it was, who was there, what was decided, who does what, what is at risk.
+ */
+const SLOT_TOPICS: ReadonlyArray<readonly [RegExp, RegExp]> = [
+  [/time|date/, /^(data|ora):/i],
+  [/participant/, /^partecipanti:/i],
+  [/decision/, /\bdecid|\bdeciso\b|\bapprov/i],
+  [/action/, /\bprepara\b|\bdeve\b|\bentro il\b/i],
+  [/risk/, /\brischi/i],
+  [/deferred/, /\brinvi/i],
+  [/next/, /\bprossim/i],
+]
 
 /** Sentences one fake text holds at most. */
 const MAX_SLOT_SENTENCES = 2
@@ -242,21 +273,86 @@ function slotRequestOf(request: ModelRequest): SlotRequest {
   return {}
 }
 
-/** The values of the document that carry a text and a note, those of the text's section first. */
+/**
+ * The values, and the cells of lists and tables, of the document that carry a text and a note;
+ * those of the section of the text first.
+ */
 function quotableValues(slot: SlotRequest): QuotableValue[] {
   const slotId = slot.testo_da_scrivere?.id
   const sections = slot.documento?.sezioni ?? []
   const own = sections.find((section) => section.blocchi?.some((block) => block.id === slotId))
   const ordered = own ? [own, ...sections.filter((section) => section !== own)] : sections
+  const quotable = (section: string, label: string | undefined, cell: QuotableCell | undefined) =>
+    label && cell?.testo && (cell.note ?? []).length > 0
+      ? [{ section, label, text: cell.testo, notes: cell.note ?? [] }]
+      : []
   return ordered.flatMap((section) =>
-    (section.blocchi ?? []).flatMap((block) => {
-      const text = block.valore?.testo
-      const notes = block.valore?.note ?? []
-      return block.tipo === 'valore' && block.etichetta && text && notes.length > 0
-        ? [{ section: section.id, label: block.etichetta, text, notes }]
-        : []
-    }),
+    (section.blocchi ?? []).flatMap((block) => [
+      ...(block.tipo === 'valore' ? quotable(section.id, block.etichetta, block.valore) : []),
+      ...(block.righe ?? []).flatMap((row) =>
+        row.flatMap((cell, column) => quotable(section.id, block.colonne?.[column], cell)),
+      ),
+    ]),
   )
+}
+
+/** The JSON every tool returned in this conversation. */
+function toolResults(request: ModelRequest): Array<Record<string, unknown>> {
+  return request.messages.flatMap((message) => {
+    if (message.role !== 'tool') return []
+    try {
+      const parsed = JSON.parse(message.content) as unknown
+      return typeof parsed === 'object' && parsed !== null
+        ? [parsed as Record<string, unknown>]
+        : []
+    } catch {
+      return []
+    }
+  })
+}
+
+/** The lines of the documents read with `read_evidence`, each where it stands. */
+function passagesRead(request: ModelRequest): ReadPassage[] {
+  return toolResults(request).flatMap((result) => {
+    const { evidence_id: evidenceId, chunks } = result as {
+      evidence_id?: string
+      chunks?: Array<{ locator: unknown; text: string }>
+    }
+    if (typeof evidenceId !== 'string' || !Array.isArray(chunks)) return []
+    return chunks.map((chunk) => ({ evidenceId, locator: chunk.locator, text: chunk.text }))
+  })
+}
+
+/** The files the notes of the document name: what the text may have to read. */
+const namedFiles = (slot: SlotRequest): string[] =>
+  (slot.documento?.note ?? []).flatMap((note) =>
+    note.fonte && FILE_NAME.test(note.fonte) ? [note.fonte] : [],
+  )
+
+/**
+ * The lines of the documents read that speak of what the text is about, quoted as they are with
+ * the place they stand at; none when the text has no topic the fake model knows.
+ */
+function quotedPassages(slot: SlotRequest, request: ModelRequest, maxChars: number) {
+  const id = slot.testo_da_scrivere?.id ?? ''
+  const topic = SLOT_TOPICS.find(([slotWord]) => slotWord.test(id))?.[1]
+  if (!topic) return []
+  const quotes: Array<{ text: string; source: { evidenceId: string; locator: unknown } }> = []
+  let length = 0
+  for (const passage of passagesRead(request)) {
+    const line = passage.text
+      .split('\n')
+      .find((candidate) => topic.test(candidate.trim()))
+      ?.trim()
+    if (!line || quotes.length === MAX_SLOT_SENTENCES || length + line.length + 1 > maxChars)
+      continue
+    quotes.push({
+      text: line,
+      source: { evidenceId: passage.evidenceId, locator: passage.locator },
+    })
+    length += line.length + 1
+  }
+  return quotes
 }
 
 /** Whether the text asked for is the first one the document has. */
@@ -277,6 +373,20 @@ function slotText(request: ModelRequest, options: FakeRunnerOptions): unknown {
   const maxChars = slot.testo_da_scrivere?.massimo_caratteri ?? DEFAULT_SLOT_CHARS
   const natures = slot.testo_da_scrivere?.nature_ammesse ?? ['fact']
   const nature = natures.includes('fact') ? 'fact' : (natures[0] ?? 'fact')
+  // A text about a document the notes name is written from what was read of that document: its
+  // own lines, each with its place, or nothing when the document does not say.
+  if (namedFiles(slot).length > 0) {
+    return {
+      lang: 'it',
+      segments: quotedPassages(slot, request, maxChars).map((quote) => ({
+        text: quote.text,
+        nature,
+        sources: [quote.source],
+      })),
+      absences: [],
+      internalNotes: [],
+    }
+  }
   const values = quotableValues(slot)
   const from = slot.richiesta_del_pm && values.length > 1 ? 1 : 0
   const segments: Array<{ text: string; nature: string; sources: Array<{ note: number }> }> = []
@@ -322,11 +432,59 @@ function answer(request: ModelRequest, options: FakeRunnerOptions): string {
   return JSON.stringify(skill ? skill(request, options) : {})
 }
 
+const READING_DONE: ModelResponse = {
+  message: { role: 'assistant', content: 'Lettura completata.' },
+  finishReason: 'stop',
+  usage: { inputTokens: 0, outputTokens: 0 },
+  backend: FAKE_BACKEND,
+}
+
+const callTool = (name: string, args: Record<string, unknown>): ModelResponse => ({
+  message: {
+    role: 'assistant',
+    content: null,
+    toolCalls: [{ id: `${name}-${JSON.stringify(args).length}`, name, arguments: args }],
+  },
+  finishReason: 'tool_calls',
+  usage: { inputTokens: 0, outputTokens: 0 },
+  backend: FAKE_BACKEND,
+})
+
+/**
+ * The reading of a text of a recipe, as an agent with few tools does it: when the notes of the
+ * document name a file, the fake model searches the project with the instructions of the text,
+ * reads the document named among what it found and stops. A text that names no file needs no
+ * reading.
+ */
+function slotToolTurn(request: ModelRequest, slot: SlotRequest): ModelResponse {
+  const offered = (name: string) => request.tools?.some((tool) => tool.name === name) === true
+  const files = namedFiles(slot)
+  if (files.length === 0) return READING_DONE
+  const found = toolResults(request).find((result) => Array.isArray(result.results)) as
+    | { results: ReadHit[] }
+    | undefined
+  if (!found) {
+    const query = slot.testo_da_scrivere?.istruzioni ?? files.join(' ')
+    return offered(SEARCH_TOOL) ? callTool(SEARCH_TOOL, { query }) : READING_DONE
+  }
+  const named = found.results.find((hit) => hit.evidence_id && files.includes(hit.title))
+  // Asked for once: a document without text gives no passage and is not asked for again.
+  const asked = request.messages.some(
+    (message) =>
+      message.role === 'assistant' && message.toolCalls?.some((call) => call.name === READ_TOOL),
+  )
+  return named && !asked && offered(READ_TOOL)
+    ? callTool(READ_TOOL, { evidence_id: named.evidence_id })
+    : READING_DONE
+}
+
 /**
  * A turn with tools: the fake model searches once with the question, then says it has read
  * enough. Only the search tool, only when it is offered.
  */
 function toolTurn(request: ModelRequest): ModelResponse {
+  const slot = slotRequestOf(request)
+  if (slot.testo_da_scrivere) return slotToolTurn(request, slot)
   const searched = request.messages.some((message) => message.role === 'tool')
   // Only a question is searched for: the writer of a recipe already has its data.
   const canSearch =

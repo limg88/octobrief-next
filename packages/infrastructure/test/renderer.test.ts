@@ -167,6 +167,168 @@ describe('fake model writing the texts of a recipe', () => {
     expect(JSON.stringify(again)).not.toContain('123.456')
   })
 
+  it('quotes the cells of lists and tables too, with the column as label', async () => {
+    const documento = {
+      sezioni: [
+        {
+          id: 'risks',
+          blocchi: [
+            { id: 'context', tipo: 'testo_da_scrivere' },
+            {
+              id: 'risks_list',
+              tipo: 'elenco',
+              colonne: ['Rischio'],
+              righe: [
+                [{ testo: 'Il fornitore è in ritardo', note: [3] }],
+                [{ testo: null, note: [] }],
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const answer = await write(slotRequest({ documento }))
+    expect(answer.segments).toEqual([
+      { text: 'Rischio: Il fornitore è in ritardo.', nature: 'fact', sources: [{ note: 3 }] },
+    ])
+  })
+
+  describe('as an agent with few tools, for a text about a document the notes name', () => {
+    const tools = [
+      { name: 'search_knowledge', description: '', parameters: {} },
+      { name: 'read_evidence', description: '', parameters: {} },
+    ]
+    const about = (id: string) => ({
+      testo_da_scrivere: {
+        id,
+        istruzioni: 'Le decisioni prese nella riunione.',
+        nature_ammesse: ['fact'],
+        massimo_caratteri: 400,
+      },
+      documento: {
+        sezioni: [],
+        note: [
+          { n: 1, fonte: 'Trascrizione.vtt' },
+          { n: 2, fonte: 'Indicato da te: Va al cliente' },
+        ],
+      },
+    })
+    const found = {
+      results: [
+        {
+          kind: 'chunk',
+          title: 'Altro.md',
+          evidence_id: 'e-9',
+          locator: { kind: 'line', from: 1, to: 1 },
+          text: 'x',
+        },
+        {
+          kind: 'chunk',
+          title: 'Trascrizione.vtt',
+          evidence_id: 'e-1',
+          locator: { kind: 'line', from: 1, to: 2 },
+          text: 'y',
+        },
+      ],
+    }
+    const read = {
+      evidence_id: 'e-1',
+      title: 'Trascrizione.vtt',
+      chunks: [
+        {
+          locator: { kind: 'line', from: 1, to: 3 },
+          text: 'Data: 2026-11-05\nPartecipanti: [PERSONA_1], [PERSONA_2]',
+        },
+        {
+          locator: { kind: 'line', from: 9, to: 9 },
+          text: '[PERSONA_2]: decidiamo di consegnare il 4 dicembre 2026.',
+        },
+        {
+          locator: { kind: 'line', from: 12, to: 12 },
+          text: '[PERSONA_1]: il rischio è il ritardo del fornitore.',
+        },
+      ],
+    }
+    const conversation = (id: string, results: unknown[]) => {
+      const request = slotRequest(about(id))
+      const calls = results.map((result, index) => [
+        {
+          role: 'assistant' as const,
+          content: null,
+          toolCalls: [
+            {
+              id: `c${index}`,
+              name: index === 0 ? 'search_knowledge' : 'read_evidence',
+              arguments: {},
+            },
+          ],
+        },
+        { role: 'tool' as const, toolCallId: `c${index}`, content: JSON.stringify(result) },
+      ])
+      return { ...request, messages: [...request.messages, ...calls.flat()] }
+    }
+
+    it('searches with the instructions of the text, reads the document named, then stops', async () => {
+      const runner = fakeRunner()
+      const { responseSchema: _schema, ...reading } = conversation('decisions_list', [])
+      const first = await runner.run({ ...reading, tools })
+      expect(first.message.toolCalls).toMatchObject([
+        { name: 'search_knowledge', arguments: { query: 'Le decisioni prese nella riunione.' } },
+      ])
+      const second = await runner.run({
+        ...conversation('decisions_list', [found]),
+        responseSchema: undefined,
+        tools,
+      } as never)
+      expect(second.message.toolCalls).toMatchObject([
+        { name: 'read_evidence', arguments: { evidence_id: 'e-1' } },
+      ])
+      const third = await runner.run({
+        ...conversation('decisions_list', [found, read]),
+        responseSchema: undefined,
+        tools,
+      } as never)
+      expect(third).toMatchObject({
+        finishReason: 'stop',
+        message: { content: 'Lettura completata.' },
+      })
+      // Nothing to read when the search finds no document of that name, or no tool is offered.
+      const nothing = await runner.run({
+        ...conversation('decisions_list', [{ results: [] }]),
+        responseSchema: undefined,
+        tools,
+      } as never)
+      expect(nothing.finishReason).toBe('stop')
+      const untooled = await runner.run({
+        ...reading,
+        tools: [{ name: 'get_fact', description: '', parameters: {} }],
+      })
+      expect(untooled.finishReason).toBe('stop')
+    })
+
+    it('quotes the lines that speak of what the text is about, each with its place', async () => {
+      const write = async (id: string) =>
+        JSON.parse(
+          (await fakeRunner().run(conversation(id, [found, read]))).message.content as string,
+        )
+      expect((await write('decisions_list')).segments).toEqual([
+        {
+          text: '[PERSONA_2]: decidiamo di consegnare il 4 dicembre 2026.',
+          nature: 'fact',
+          sources: [{ evidenceId: 'e-1', locator: { kind: 'line', from: 9, to: 9 } }],
+        },
+      ])
+      expect((await write('meeting_time')).segments[0].text).toBe('Data: 2026-11-05')
+      expect((await write('participants')).segments[0].text).toBe(
+        'Partecipanti: [PERSONA_1], [PERSONA_2]',
+      )
+      expect((await write('risks_list')).segments).toHaveLength(1)
+      // A text the document says nothing about stays empty: never filled with something else.
+      expect(await write('deferred_list')).toMatchObject({ segments: [], absences: [] })
+      expect(await write('pm_remarks')).toMatchObject({ segments: [] })
+    })
+  })
+
   it('finds nothing as a reviewer and does not search for a text to write', async () => {
     const runner = fakeRunner()
     const review = await runner.run({

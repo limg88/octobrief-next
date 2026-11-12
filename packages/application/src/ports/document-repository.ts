@@ -61,6 +61,11 @@ export interface DocumentProcessingStore {
     classification: Classification,
   ): Promise<void>
   markFailed(documentId: string, extraction: Extraction): Promise<void>
+  /**
+   * Remembers people a document names (speakers, participants) with its project, so that no
+   * model reads their names. Names chosen outside the organization: hidden in full only.
+   */
+  rememberPeople(documentId: string, names: readonly string[]): Promise<void>
   /** Up to `limit` documents uploaded before `cutoff`. */
   expired(cutoff: Date, limit: number): Promise<Array<{ id: string; blobKey: string }>>
   removeExpired(documentId: string): Promise<void>

@@ -90,7 +90,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 3 | completato (12/11/2026), demo `demo/04-fonti` |
 | 4 | completato (12/11/2026), demo `demo/05-chiedi` |
 | 5 | completato (12/11/2026), demo `demo/06-deliverable` |
-| 6 | da fare |
+| 6 | completato (12/11/2026), demo `demo/07-verbale`, `demo/08-stima-costi`, `demo/09-analisi-bug`, `demo/10-rischi-opportunita` |
+| 7 | da fare |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -209,3 +210,14 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 - **Eccezioni alle regole di architettura**, limitate al nucleo portato (`packages/domain/src/recipe` e `gate`): può avere cicli di import interni; i due moduli di hashing usano `node:crypto`. Per questo il nucleo è esportato a parte (`@octobrief/domain/recipe`) e non entra nel bundle del browser.
 - **Modello finto**: scrive ogni testo citando valori già presenti nel documento con le loro note. Con `LLM_FAKE_INVENT_IN_DRAFTS=true` mette una cifra senza fonte nel primo testo della prima bozza (solo per le demo).
 - **Dati del warehouse nelle ricette**: le righe DWSI sono lette, ma il collegamento fra righe e documento di origine è semplificato (il documento più recente della fonte). Da rivedere quando ci sarà un warehouse reale.
+
+### Scelte prese durante l'incremento 6
+- **Slot «agente»**: è il modo normale in cui il motore scrive un testo. Il modello ha solo strumenti di lettura (cerca, leggi un documento, leggi un fatto, interroga il tracker), per al più 4 turni, poi risponde nel formato fisso. Non serve un meccanismo a parte.
+- **Ricette**:
+  - **Verbale da trascritto**, **Stima dei costi** e **Dashboard bug e CR** (l'«Analisi bug» della roadmap) erano già fra le ricette portate da NX: qui hanno la loro demo;
+  - **Rischi e opportunità** è nuova (`recipes/risks-and-opportunities.json`): elenchi di rischi, azioni e decisioni dai fatti della memoria, più tre testi (valutazione, opportunità, prossimi passi). Nel catalogo OB non esisteva un contratto dedicato: i rischi erano una sezione di altri deliverable.
+- **Oratori e partecipanti**: all'elaborazione di un documento si riconoscono chi parla («Nome Cognome:» a inizio riga) e chi è in elenco («Partecipanti: …»). Vengono ricordati con il progetto e nascosti a ogni modello.
+  - **Limite noto**: un nome citato solo dentro una frase, di una persona che non è membro e che nessuna fonte ha nominato, non viene riconosciuto e arriva al modello in chiaro. Per i dati reali conviene collegare le fonti (che portano i nomi) o aggiungere le persone al progetto.
+- **Coda**: una sola lettura per fonte alla volta. Una seconda richiesta entro un minuto non aggiunge lavoro; una lettura rimasta in attesa più di mezz'ora viene scartata.
+- **Titolo delle attività del tracker**: reso disponibile come campo a ricette e Chiedi.
+- **Modello finto come agente**: per un testo che riguarda un documento nominato nelle note, cerca, legge quel documento e cita le righe pertinenti (data, partecipanti, decisioni, azioni, rischi). Per gli altri testi cita valori e righe già presenti nel documento.

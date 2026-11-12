@@ -8,6 +8,7 @@ import {
   type Extraction,
   type ExtractionWarning,
   isAdmin,
+  namedParticipants,
   type TextChunk,
   type User,
   validateUpload,
@@ -195,6 +196,9 @@ export function createProcessDocumentHandler(deps: ProcessingDependencies) {
       ...(document.systemKind ? { systemKind: document.systemKind } : {}),
       ...(document.fileModifiedAt ? { fileModifiedDate: document.fileModifiedAt } : {}),
     })
+    // People first: the model never reads a document before its speakers are known.
+    const people = namedParticipants(extraction.chunks)
+    if (people.length > 0) await deps.store.rememberPeople(document.id, people)
     await deps.store.markReady(document.id, extraction, classification)
     await deps.jobs.enqueue('document.compile', { documentId: document.id })
     deps.logger.info('document processed', {

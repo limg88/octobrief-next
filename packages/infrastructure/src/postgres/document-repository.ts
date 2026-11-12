@@ -230,6 +230,17 @@ export function createDocumentProcessingStore(pool: pg.Pool): DocumentProcessing
       })
     },
 
+    async rememberPeople(documentId, names) {
+      await pool.query(
+        `INSERT INTO project_people (project_id, display_name, untrusted)
+         SELECT d.project_id, n.name, true
+           FROM documents d, unnest($2::text[]) AS n(name)
+          WHERE d.id = $1
+         ON CONFLICT (project_id, display_name, email) DO NOTHING`,
+        [documentId, names],
+      )
+    },
+
     async markFailed(documentId, extraction) {
       await pool.query(
         `UPDATE documents SET status = 'failed', warnings = $2, extractor = $3, processed_at = now()

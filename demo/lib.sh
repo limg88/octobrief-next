@@ -64,3 +64,84 @@ finish() {
     echo "Web, worker e issuer finto restano accesi. Apri $base — per fermare: kill -- -$dev_pid"
   fi
 }
+
+# --- Deliverables: shared by the demos that run a recipe. They need $paola (cookie jar), $slug.
+
+compose() { docker compose --env-file .env.local --profile renderer "$@"; }
+
+# start_renderer: the isolated renderer of Word, PowerPoint and Excel files, on RENDERER_URL.
+start_renderer() {
+  export RENDERER_URL="http://127.0.0.1:${RENDERER_PORT:-5451}"
+  compose up -d --build --wait renderer-gateway 2>&1 | tail -1
+  ok "renderer pronto su $RENDERER_URL (rete interna senza uscita, utente non root, sola lettura)"
+}
+stop_renderer() { compose stop renderer-gateway renderer >/dev/null 2>&1 || true; }
+
+# upload <jar> <file>: uploads a document and prints its id.
+upload() {
+  curl -s -b "$1" -H "origin: $base" -H "x-csrf-token: $(csrf "$1")" \
+    -F "file=@$2" "$base/api/projects/$slug/documents" | field id
+}
+# wait_documents: until every uploaded document is extracted, classified and read by the model.
+wait_documents() {
+  for _ in $(seq 1 90); do
+    reading="$(call "$paola" GET "/projects/$slug/knowledge" | field progress.reading)"
+    [ "$reading" = "0" ] && return
+    sleep 1
+  done
+  fail "documenti non ancora letti dopo 90 secondi"
+}
+# start_run <recipe slug> <parameters json>: starts a run and prints its id.
+start_run() { call "$paola" POST "/projects/$slug/runs" "{\"recipeSlug\":\"$1\",\"parameters\":$2}" | field id; }
+run_view() { call "$paola" GET "/projects/$slug/runs/$1"; }
+# run_value <run id> <js expression on `v` (the run view)>
+run_value() { run_view "$1" | node -pe "const v = JSON.parse(require('fs').readFileSync(0)); $2"; }
+# wait_run <run id> <js condition on v> <description>
+wait_run() {
+  for _ in $(seq 1 90); do
+    [ "$(run_value "$1" "$2")" = "true" ] && { ok "$3"; return; }
+    sleep 1
+  done
+  fail "$3 (tempo scaduto: $(run_value "$1" 'v.run.status + "/" + v.run.errorCode + "/" + v.run.approval + "/" + v.run.approvalError'))"
+}
+show_findings() {
+  run_view "$1" | node -e '
+    const v = JSON.parse(require("fs").readFileSync(0))
+    console.log(`  Revisione ${v.revision}: ${v.summary.checks} controlli, ${v.summary.open} anomalie aperte, ${v.summary.accepted} accettate, ${v.summary.warnings} avvisi`)
+    for (const f of v.findings.filter((f) => f.kind === "anomaly")) {
+      const where = [f.place.section, f.place.block].filter(Boolean).join(" › ")
+      console.log(`    ${f.status === "open" ? "✘" : "✔"} [${f.class}${f.acceptable ? ", accettabile" : ""}] ${f.text} — ${where}${f.excerpt ? ` — «${f.excerpt}»` : ""}`)
+    }'
+}
+# accept_finding <run id> <reason>: accepts the first open anomaly; prints the HTTP status.
+accept_finding() {
+  local body
+  body="$(run_view "$1" | REASON="$2" node -pe 'const f = JSON.parse(require("fs").readFileSync(0)).findings.find(f=>f.status==="open"); JSON.stringify({ code: f.code, refKey: f.refKey, reason: process.env.REASON })')"
+  curl -s -o /dev/null -w '%{http_code}' -b "$paola" -X POST -H "origin: $base" -H "x-csrf-token: $(csrf "$paola")" \
+    -H 'content-type: application/json' -d "$body" "$base/api/projects/$slug/runs/$1/acceptances"
+}
+# accept_all <run id> <reason>: accepts every open anomaly that may be accepted.
+accept_all() {
+  for _ in $(seq 1 20); do
+    [ "$(run_value "$1" 'v.findings.some(f=>f.status==="open" && f.acceptable)')" = "true" ] || return 0
+    accept_finding "$1" "$2" >/dev/null
+  done
+}
+# approve_run <run id>: asks the approval and waits for the files.
+approve_run() {
+  call "$paola" POST "/projects/$slug/runs/$1/approval" >/dev/null
+  wait_run "$1" 'v.run.approval === "approved" || v.run.approval === "render_failed"' "file prodotti"
+  expect "$(run_value "$1" 'v.run.approval')" "approved" "documento approvato"
+  run_view "$1" | node -pe 'JSON.parse(require("fs").readFileSync(0)).files.map(f=>`  ${f.fileName} (${f.audience}, ${f.sizeBytes} byte)`).join("\n")'
+}
+# download <run id> <file id> <target>: saves a file of an approved run; prints the HTTP status.
+download() {
+  curl -s -b "$paola" -o "$3" -w '%{http_code}' "$base/api/projects/$slug/runs/$1/files/$2"
+}
+# download_format <run id> <format> <target>: the first file of that format.
+download_format() {
+  local id
+  id="$(run_value "$1" "v.files.find(f=>f.format==='$2').id")"
+  expect "$(download "$1" "$id" "$3")" "200" "scaricato $3"
+}
+

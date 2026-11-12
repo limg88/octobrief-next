@@ -11,46 +11,14 @@ marco=.tmp/demo-06-marco.jar
 docs=.tmp/demo-06-docs
 suffix="$(date +%H%M%S)"
 project_name="Aurora ${suffix}"
-renderer_port="${RENDERER_PORT:-5451}"
-export RENDERER_URL="http://127.0.0.1:${renderer_port}"
 # The fake model puts a figure no source holds in the first text of a first draft: an anomaly
 # to find, a change to ask, the anomaly gone.
 export LLM_FAKE_INVENT_IN_DRAFTS=true
 
-compose() { docker compose --env-file .env.local --profile renderer "$@"; }
-upload() {
-  curl -s -b "$1" -H "origin: $base" -H "x-csrf-token: $(csrf "$1")" \
-    -F "file=@$2" "$base/api/projects/$slug/documents" | field id
-}
-run_view() { call "$paola" GET "/projects/$slug/runs/$1"; }
-# run_value <run id> <js expression on `v` (the run view)>
-run_value() { run_view "$1" | node -pe "const v = JSON.parse(require('fs').readFileSync(0)); $2"; }
-# wait_run <run id> <js condition on v> <description>
-wait_run() {
-  for _ in $(seq 1 90); do
-    [ "$(run_value "$1" "$2")" = "true" ] && { ok "$3"; return; }
-    sleep 1
-  done
-  fail "$3 (tempo scaduto: $(run_value "$1" 'v.run.status + "/" + v.run.errorCode + "/" + v.run.approval + "/" + v.run.approvalError'))"
-}
-show_findings() {
-  run_view "$1" | node -e '
-    const v = JSON.parse(require("fs").readFileSync(0))
-    console.log(`  Revisione ${v.revision}: ${v.summary.checks} controlli, ${v.summary.open} anomalie aperte, ${v.summary.accepted} accettate, ${v.summary.warnings} avvisi`)
-    for (const f of v.findings.filter((f) => f.kind === "anomaly")) {
-      const where = [f.place.section, f.place.block].filter(Boolean).join(" › ")
-      console.log(`    ${f.status === "open" ? "✘" : "✔"} [${f.class}${f.acceptable ? ", accettabile" : ""}] ${f.text} — ${where}${f.excerpt ? ` — «${f.excerpt}»` : ""}`)
-    }'
-}
-download() {
-  curl -s -b "$paola" -o "$3" -w '%{http_code}' "$base/api/projects/$slug/runs/$1/files/$2"
-}
-
 step "1/9 Prerequisiti, database (migrazione 0006) e renderer isolato (Python, senza rete)"
 check_prerequisites
 prepare_database
-compose up -d --build --wait renderer-gateway 2>&1 | tail -1
-ok "renderer pronto su $RENDERER_URL (rete interna senza uscita, utente non root, file system in sola lettura)"
+start_renderer
 
 step "2/9 Progetto sintetico: ordine, fatture e i valori che il PM scrive nel modulo del SAL"
 rm -rf "$docs"
@@ -62,7 +30,7 @@ echo "  ordine: $order_file · fatture: $invoice_1, $invoice_2"
 
 step "3/9 Avvio; Paola crea il progetto e carica ordine e fatture"
 start_dev .tmp/demo-06.log
-trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; compose stop renderer-gateway renderer >/dev/null 2>&1 || true; }' EXIT
+trap '[ "${KEEP:-0}" = "1" ] || { kill -- -"$dev_pid" 2>/dev/null || true; stop_renderer; }' EXIT
 login paola "$paola"
 login marco "$marco"
 call "$paola" POST /projects "{\"name\":\"${project_name}\"}" >/dev/null
@@ -102,15 +70,8 @@ show_findings "$sal"
 expect "$(run_value "$sal" 'v.findings.some(f=>f.text.includes("123.456"))')" "false" "la cifra inventata non c'è più"
 
 step "7/9 Accetta con motivazione ciò che il PM può accettare (il warehouse non è collegato)"
-# accept <reason>: accepts the first open anomaly; prints the HTTP status.
-accept() {
-  local body
-  body="$(run_view "$sal" | REASON="$1" node -pe 'const f = JSON.parse(require("fs").readFileSync(0)).findings.find(f=>f.status==="open"); JSON.stringify({ code: f.code, refKey: f.refKey, reason: process.env.REASON })')"
-  curl -s -o /dev/null -w '%{http_code}' -b "$paola" -X POST -H "origin: $base" -H "x-csrf-token: $(csrf "$paola")" \
-    -H 'content-type: application/json' -d "$body" "$base/api/projects/$slug/runs/$sal/acceptances"
-}
-expect "$(accept "ok")" "400" "una motivazione di due lettere non basta: 400"
-expect "$(accept "Il DWSI non è collegato a questo progetto: i residui si controllano a mano sul modulo.")" "200" "anomalia accettata, con la motivazione che resta agli atti"
+expect "$(accept_finding "$sal" "ok")" "400" "una motivazione di due lettere non basta: 400"
+expect "$(accept_finding "$sal" "Il DWSI non è collegato a questo progetto: i residui si controllano a mano sul modulo.")" "200" "anomalia accettata, con la motivazione che resta agli atti"
 show_findings "$sal"
 expect "$(run_value "$sal" 'v.approvable')" "true" "nessuna anomalia aperta: il SAL è approvabile"
 

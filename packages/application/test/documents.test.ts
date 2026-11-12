@@ -97,6 +97,44 @@ async function code(promise: Promise<unknown>): Promise<string | undefined> {
 }
 
 describe('documents', () => {
+  it('remembers who speaks in a document before any model reads it', async () => {
+    const users = new InMemoryUsers()
+    const projects = new InMemoryProjects(users)
+    const documents = new InMemoryDocuments(projects, users)
+    const queue = new InMemoryJobQueue()
+    const blobs = new InMemoryBlobs()
+    const deps = { users, projects, documents, blobs, queue }
+    const paola = users.add(person('paola'))
+    const project = await createProject(deps, paola, { name: 'Aurora' })
+    const order: string[] = []
+    const remember = documents.rememberPeople.bind(documents)
+    documents.rememberPeople = async (id, names) => {
+      order.push('people')
+      await remember(id, names)
+    }
+    const enqueue = queue.enqueue.bind(queue)
+    queue.enqueue = async (name, data) => {
+      order.push(name)
+      return enqueue(name, data)
+    }
+    const uploaded = await uploadDocument(deps, paola, project.slug, {
+      fileName: 'Trascrizione.vtt',
+      mediaType: 'text/vtt',
+      bytes: bytes('x'),
+    })
+    await createProcessDocumentHandler({
+      store: documents,
+      blobs,
+      extractor: new FakeExtractor(() =>
+        text(['Partecipanti: Luca Inventato', 'Elena Cliente: Buongiorno.']),
+      ),
+      jobs: queue,
+      logger: new RecordingLogger(),
+    })({ documentId: uploaded.id })
+    expect(documents.remembered.get(uploaded.id)).toEqual(['Luca Inventato', 'Elena Cliente'])
+    expect(order).toEqual(['document.process', 'people', 'document.compile'])
+  })
+
   it('stores an upload, queues its processing and refuses the same content twice', async () => {
     const { upload, queue, blobs, paola, marco } = await setup()
     const document = await upload(paola, 'C:\\tmp\\SAL ottobre.md', 'stessi byte')

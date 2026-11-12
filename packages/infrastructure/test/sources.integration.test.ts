@@ -175,6 +175,15 @@ describe.skipIf(!hasDatabase)('sources on Postgres (integration)', () => {
       { displayName: 'Mario Rossi', trust: 'seen' },
     ])
 
+    // Speakers a document names are remembered too, as names chosen outside the organization.
+    await createDocumentProcessingStore(workerPool).rememberPeople(documentId, [
+      'Luca Inventato',
+      'Mario Rossi',
+    ])
+    expect(await createKnowledgeStore(workerPool).people(projectId)).toContainEqual({
+      displayName: 'Luca Inventato',
+      trust: 'untrusted',
+    })
     await fed.delivered(target, new Date('2026-11-12T08:00:00Z'), null)
     await fed.delivered(target, null, 'source_unavailable')
     expect((await sources.list(owner.id, projectId))[0]).toMatchObject({

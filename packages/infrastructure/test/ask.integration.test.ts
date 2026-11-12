@@ -301,7 +301,7 @@ describe.skipIf(!hasDatabase)('asking on Postgres (integration)', () => {
       externalId: 'BOR-1',
       version: '1',
       title: 'Storia',
-      record: { title: 'Storia', status: 'Done' },
+      record: { status: 'Done' },
       originAt: null,
       url: 'https://example.test/BOR-1',
       people: [],

@@ -3,7 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createConsoleLogger } from '../src/logging/console-logger.ts'
 import { createDatabaseProbe, createPool } from '../src/postgres/pool.ts'
 import { installQueue } from '../src/queue/install-queue.ts'
-import { openPgBossQueue, type PgBossQueue, toJobStatus } from '../src/queue/pg-boss-queue.ts'
+import {
+  ALREADY_QUEUED,
+  openPgBossQueue,
+  type PgBossQueue,
+  toJobStatus,
+} from '../src/queue/pg-boss-queue.ts'
 
 const { DATABASE_OWNER_URL, DATABASE_URL, DATABASE_WORKER_URL } = process.env
 const hasDatabase = Boolean(DATABASE_OWNER_URL && DATABASE_URL && DATABASE_WORKER_URL)
@@ -49,6 +54,16 @@ describe.skipIf(!hasDatabase)('queue on Postgres (integration)', () => {
     await expect
       .poll(() => web.status('system.ping', jobId), { timeout: 15_000, interval: 250 })
       .toBe('completed')
+  })
+
+  it('queues one read of a source at a time: asked again at once, nothing is added', async () => {
+    const sourceId = crypto.randomUUID()
+    const first = await web.enqueue('source.sync', { sourceId })
+    const second = await web.enqueue('source.sync', { sourceId })
+    const other = await web.enqueue('source.sync', { sourceId: crypto.randomUUID() })
+    expect(await web.status('source.sync', first)).toBe('queued')
+    expect(second).toBe(`${ALREADY_QUEUED}:${sourceId}`)
+    expect(other).not.toContain(ALREADY_QUEUED)
   })
 
   it('answers null for an unknown job', async () => {

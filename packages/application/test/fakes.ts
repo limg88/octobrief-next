@@ -369,6 +369,10 @@ export class InMemoryDocuments implements DocumentRepository, DocumentProcessing
       extraction.chunks,
     )
   }
+  readonly remembered = new Map<string, string[]>()
+  async rememberPeople(documentId: string, names: readonly string[]) {
+    this.remembered.set(documentId, [...names])
+  }
   async markFailed(documentId: string, extraction: Extraction) {
     this.update(documentId, { status: 'failed', warnings: extraction.warnings })
   }

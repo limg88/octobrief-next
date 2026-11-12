@@ -412,10 +412,11 @@ export const trackerReader: TrackerReader<Tx> = {
       source_id: string
       kind: TrackerSourceKind
       external_id: string
+      title: string
       record: Record<string, unknown>
       external_url: string | null
     }>(
-      `SELECT t.source_id, s.kind, t.external_id, t.record, t.external_url
+      `SELECT t.source_id, s.kind, t.external_id, t.title, t.record, t.external_url
          FROM tracker_items t JOIN sources s ON s.id = t.source_id
         WHERE t.project_id = $1 AND t.source_id::text = ANY($2::text[]) AND t.removed_at IS NULL
         ORDER BY t.source_id, t.external_id LIMIT $3`,
@@ -425,7 +426,8 @@ export const trackerReader: TrackerReader<Tx> = {
       sourceId: row.source_id as SourceId,
       kind: row.kind,
       externalId: row.external_id,
-      fields: row.record,
+      // The title of an item is kept beside its record: a work item reads it as a field.
+      fields: { title: row.title, ...row.record },
       url: row.external_url,
     }))
   },

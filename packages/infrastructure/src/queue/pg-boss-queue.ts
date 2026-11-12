@@ -10,7 +10,10 @@ import {
 } from '@octobrief/application'
 import type { JobStatus } from '@octobrief/domain'
 import { PgBoss } from 'pg-boss'
-import { QUEUE_SCHEMA } from './settings.ts'
+import { QUEUE_SCHEMA, SINGLETON_JOBS } from './settings.ts'
+
+/** The id given back when the same work was already queued and no new job was added. */
+export const ALREADY_QUEUED = 'already-queued'
 
 type BossState = 'created' | 'retry' | 'active' | 'completed' | 'cancelled' | 'failed'
 
@@ -65,9 +68,20 @@ export async function openPgBossQueue(
 
   return {
     async enqueue(name, data) {
-      const id = await boss.send(name, JOB_SCHEMAS[name].parse(data))
-      if (id === null) throw new Error(`queue refused a ${name} job`)
-      return id
+      const payload = JOB_SCHEMAS[name].parse(data)
+      const singleton = SINGLETON_JOBS[name]
+      if (!singleton) {
+        const id = await boss.send(name, payload)
+        if (id === null) throw new Error(`queue refused a ${name} job`)
+        return id
+      }
+      const key = String((payload as Record<string, unknown>)[singleton.field])
+      const id = await boss.send(name, payload, {
+        singletonKey: key,
+        singletonSeconds: singleton.seconds,
+      })
+      // Not added: the same work is already queued, which is what the caller wanted.
+      return id ?? `${ALREADY_QUEUED}:${key}`
     },
     async status(name, id) {
       const job = await boss.getJobById(name, id)
