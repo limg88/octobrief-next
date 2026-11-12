@@ -24,11 +24,46 @@ const webSchema = z
       LOCAL_HOSTS.has(new URL(env.OIDC_ISSUER).hostname),
     { path: ['OIDC_ALLOW_INSECURE_ISSUER'], message: 'only for a loopback issuer' },
   )
-const workerSchema = z.object({
-  DATABASE_WORKER_URL: postgresUrl,
-  BLOB_DIR: absolutePath,
-  RETENTION_DAYS: z.coerce.number().int().positive().default(DEFAULT_RETENTION_DAYS),
-})
+const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434'
+const DEFAULT_EMBEDDING_MODEL = 'bge-m3'
+const DEFAULT_EMBEDDING_DIGEST = 'unpinned'
+
+// The fake model is the default: nothing leaves the machine until a gateway is configured.
+const modelShape = {
+  LLM_BACKEND: z.enum(['fake', 'llm-api']).default('fake'),
+  LLM_API_URL: z.url().optional(),
+  LLM_API_TOKEN: z.string().min(1).optional(),
+  LLM_MODEL: z.string().min(1).optional(),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
+  LLM_ALLOWED_BACKENDS: z.string().optional(),
+  LLM_FAKE_TRANSCRIPT: absolutePath.optional(),
+  EMBEDDING_BACKEND: z.enum(['fake', 'ollama', 'llm-api', 'none']).default('fake'),
+  EMBEDDING_MODEL: z.string().min(1).default(DEFAULT_EMBEDDING_MODEL),
+  EMBEDDING_DIGEST: z.string().min(1).default(DEFAULT_EMBEDDING_DIGEST),
+  OLLAMA_URL: z.url().default(DEFAULT_OLLAMA_URL),
+}
+type ModelEnv = z.infer<z.ZodObject<typeof modelShape>>
+const LLM_API_KEYS = ['LLM_API_URL', 'LLM_API_TOKEN', 'LLM_MODEL'] as const
+
+/** The gateway needs its address, token and model; its encoder needs the gateway. */
+function checkModel(env: ModelEnv, ctx: z.RefinementCtx): void {
+  const missing = (key: string) =>
+    ctx.addIssue({ code: 'custom', path: [key], message: 'required with llm-api' })
+  if (env.LLM_BACKEND === 'llm-api') {
+    for (const key of LLM_API_KEYS) if (!env[key]) missing(key)
+  } else if (env.EMBEDDING_BACKEND === 'llm-api') {
+    missing('LLM_BACKEND')
+  }
+}
+
+const workerSchema = z
+  .object({
+    DATABASE_WORKER_URL: postgresUrl,
+    BLOB_DIR: absolutePath,
+    RETENTION_DAYS: z.coerce.number().int().positive().default(DEFAULT_RETENTION_DAYS),
+    ...modelShape,
+  })
+  .superRefine(checkModel)
 
 export interface WebConfig {
   readonly databaseUrl: string
@@ -44,10 +79,31 @@ export interface WebConfig {
   readonly blobDir: string
 }
 
+/** Which model reads the documents and which encoder makes the vectors of their text. */
+export interface ModelConfig {
+  readonly chat:
+    | { readonly backend: 'fake' }
+    | {
+        readonly backend: 'llm-api'
+        readonly url: string
+        readonly token: string
+        readonly model: string
+        readonly timeoutMs?: number
+      }
+  readonly embedding:
+    | { readonly backend: 'fake' | 'none' }
+    | { readonly backend: 'ollama'; readonly url: string; readonly model: string }
+    | { readonly backend: 'llm-api'; readonly model: string; readonly digest: string }
+  /** Backends allowed to receive project data; absent: the configured ones. */
+  readonly allowedBackends?: readonly string[]
+  readonly fakeTranscriptPath?: string
+}
+
 export interface WorkerConfig {
   readonly databaseUrl: string
   readonly blobDir: string
   readonly retentionDays: number
+  readonly model: ModelConfig
 }
 
 /** Thrown when the environment is incomplete; the message names the keys, never their values. */
@@ -67,12 +123,7 @@ function parse<T extends z.ZodType>(schema: T, env: NodeJS.ProcessEnv): z.infer<
 }
 
 function emailList(raw: string): Set<string> {
-  return new Set(
-    raw
-      .split(',')
-      .map((email) => email.trim().toLowerCase())
-      .filter((email) => email !== ''),
-  )
+  return new Set(list(raw).map((email) => email.toLowerCase()))
 }
 
 export function loadWebConfig(env: NodeJS.ProcessEnv = process.env): WebConfig {
@@ -93,11 +144,49 @@ export function loadWebConfig(env: NodeJS.ProcessEnv = process.env): WebConfig {
   }
 }
 
+function list(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item !== '')
+}
+
+function embeddingConfig(env: ModelEnv): ModelConfig['embedding'] {
+  switch (env.EMBEDDING_BACKEND) {
+    case 'ollama':
+      return { backend: 'ollama', url: env.OLLAMA_URL, model: env.EMBEDDING_MODEL }
+    case 'llm-api':
+      return { backend: 'llm-api', model: env.EMBEDDING_MODEL, digest: env.EMBEDDING_DIGEST }
+    default:
+      return { backend: env.EMBEDDING_BACKEND }
+  }
+}
+
+function modelConfig(env: ModelEnv): ModelConfig {
+  const chat: ModelConfig['chat'] =
+    env.LLM_BACKEND === 'llm-api'
+      ? {
+          backend: 'llm-api',
+          url: env.LLM_API_URL as string,
+          token: env.LLM_API_TOKEN as string,
+          model: env.LLM_MODEL as string,
+          ...(env.LLM_TIMEOUT_MS ? { timeoutMs: env.LLM_TIMEOUT_MS } : {}),
+        }
+      : { backend: 'fake' }
+  return {
+    chat,
+    embedding: embeddingConfig(env),
+    ...(env.LLM_ALLOWED_BACKENDS ? { allowedBackends: list(env.LLM_ALLOWED_BACKENDS) } : {}),
+    ...(env.LLM_FAKE_TRANSCRIPT ? { fakeTranscriptPath: env.LLM_FAKE_TRANSCRIPT } : {}),
+  }
+}
+
 export function loadWorkerConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   const parsed = parse(workerSchema, env)
   return {
     databaseUrl: parsed.DATABASE_WORKER_URL,
     blobDir: parsed.BLOB_DIR,
     retentionDays: parsed.RETENTION_DAYS,
+    model: modelConfig(parsed),
   }
 }

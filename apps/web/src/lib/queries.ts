@@ -3,12 +3,13 @@ import type { Audience, DocumentKind, Locale } from '@octobrief/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/shell/session-context'
 import { apiRequest } from './api-client'
-import type { DocumentDto, DocumentTextDto, MemberDto, ProjectDto } from './api-types'
+import type { DocumentDto, DocumentTextDto, KnowledgeDto, MemberDto, ProjectDto } from './api-types'
 
 const PROJECTS_KEY = ['projects'] as const
 const projectKey = (slug: string) => ['projects', slug] as const
 const membersKey = (slug: string) => ['projects', slug, 'members'] as const
 const documentsKey = (slug: string) => ['projects', slug, 'documents'] as const
+const knowledgeKey = (slug: string) => ['projects', slug, 'knowledge'] as const
 const documentsPath = (slug: string) => `/projects/${encodeURIComponent(slug)}/documents`
 /** How often the list refreshes while a document is still being processed. */
 export const PENDING_POLL_MS = 2_000
@@ -79,6 +80,16 @@ export function useDocuments(slug: string) {
   })
 }
 
+/** The facts of a project; refreshed while a document is still being read. */
+export function useKnowledge(slug: string) {
+  return useQuery({
+    queryKey: knowledgeKey(slug),
+    queryFn: () => apiRequest<KnowledgeDto>(`/projects/${encodeURIComponent(slug)}/knowledge`),
+    refetchInterval: (query) =>
+      (query.state.data?.progress.reading ?? 0) > 0 ? PENDING_POLL_MS : false,
+  })
+}
+
 export function useDocumentText(slug: string, documentId: string | null) {
   return useQuery({
     queryKey: [...documentsKey(slug), documentId],
@@ -95,7 +106,11 @@ function useDocumentMutation<I, O>(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: I) => call(input, csrfToken),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: documentsKey(slug) }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: documentsKey(slug) }),
+        queryClient.invalidateQueries({ queryKey: knowledgeKey(slug) }),
+      ]),
   })
 }
 

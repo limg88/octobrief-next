@@ -86,7 +86,8 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
 | 0 | completato (11/11/2026), demo `demo/00-fondamenta` |
 | 1 | completato (11/11/2026), demo `demo/01-accesso-e-shell` |
 | 2a | completato (11/11/2026), demo `demo/02-documenti` |
-| 2b | da fare: pseudonimizzatore, catena LLM (modello finto in demo, `llm-api` opzionale), fatti con citazioni verificate, embeddings, «Cosa ho capito» |
+| 2b | completato (12/11/2026), demo `demo/03-conoscenza` |
+| 3 | da fare |
 
 ### Scelte prese durante l'incremento 1
 - **Schema in SQL versionato** (`packages/infrastructure/migrations/NNNN_*.sql`), senza Drizzle. Il file SQL è l'unica fonte dello schema, quindi lo schema dichiarato non può divergere da quello reale. Le query stanno nei repository, scritte con `pg`.
@@ -126,3 +127,24 @@ Dopo l'MVP: cruscotti economici (DWSI e tracker), onboarding guidato, amministra
   - il web può modificare solo i campi della classificazione.
 - **File** in `BLOB_DIR`, un percorso assoluto. Sono indirizzati per contenuto (`<progetto>/<sha256>`), con permessi 0600 e scrittura atomica. Lo stesso contenuto caricato due volte nello stesso progetto dà 409.
 - **Conservazione**: invece di un job pianificato in coda, il worker esegue la pulizia all'avvio e poi ogni ora. Elimina prima i file e poi le righe, così non restano file orfani.
+
+### Scelte prese durante l'incremento 2b
+- **Un documento è la fonte dei fatti**: non esiste una tabella separata delle «prove». Con l'incremento 3 mail e trascritti entreranno come documenti.
+- **Il modello propone, il codice decide** (portato da NX). Un fatto viene salvato solo se:
+  - la citazione si trova parola per parola nel brano indicato;
+  - ogni numero dichiarato compare nella citazione;
+  - il testo non ha la forma di un'istruzione.
+
+  I fatti scartati vengono contati nei log, mai corretti.
+- **Contraddizioni**: due documenti che dicono cose diverse sullo stesso argomento restano entrambi, marcati «in contraddizione». Due documenti in accordo diventano un solo fatto con più fonti.
+- **Un fatto vive finché un documento lo dichiara**: eliminato l'ultimo documento che lo cita, un trigger del database elimina il fatto e toglie la contraddizione rimasta senza controparte.
+- **Catena del modello**: `guardia → pseudonimizzatore → adattatore`, unica via per chiamare un modello.
+  - Persone note di un progetto: i membri (nome ed email) e il cliente (come organizzazione). Email, telefoni e simili vengono riconosciuti comunque.
+  - Tutti i progetti contano come dati reali: i backend ammessi sono quelli configurati, oppure quelli di `LLM_ALLOWED_BACKENDS`. Groq è sempre escluso.
+- **Adattatori**:
+  - chat: modello finto (default, deterministico, nessuna rete) oppure gateway `llm-api`;
+  - vettori: finti (default), Ollama locale (`bge-m3`, 1024 dimensioni), gateway, oppure nessuno.
+
+  `llm-api` e Ollama hanno test di contratto ma non sono stati provati contro i servizi reali.
+- **Limiti per backend impostabili dall'Admin** (NX `backend-limits`) non portati: valgono i default della compilazione.
+- **«Cosa ho capito» è in sola lettura**: la correzione dei fatti da parte del PM non è ancora prevista in nessun incremento.

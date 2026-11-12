@@ -4,7 +4,9 @@ import type {
   ClassificationState,
   DocumentSummary,
   Extraction,
+  Fact,
   JobStatus,
+  KnownPerson,
   Locale,
   MemberRole,
   Project,
@@ -34,7 +36,17 @@ import type {
   PendingLogin,
 } from '../src/ports/identity-provider.ts'
 import type { JobQueue } from '../src/ports/job-queue.ts'
+import type {
+  DocumentToCompile,
+  FactRepository,
+  FactView,
+  KnowledgeChange,
+  KnowledgeProgress,
+  KnowledgeStatus,
+  KnowledgeStore,
+} from '../src/ports/knowledge-store.ts'
 import type { Logger } from '../src/ports/logger.ts'
+import type { EmbeddingModel } from '../src/ports/model-runner.ts'
 import type { ProjectRepository, ProjectWithRole } from '../src/ports/project-repository.ts'
 import type { TextExtractor } from '../src/ports/text-extractor.ts'
 
@@ -254,7 +266,7 @@ export class InMemoryDocuments implements DocumentRepository, DocumentProcessing
     this.projects = projects
     this.users = users
   }
-  private visible(viewerId: string, projectId: string): boolean {
+  visible(viewerId: string, projectId: string): boolean {
     const admin = [...this.users.bySubject.values()].some(
       (u) => u.id === viewerId && u.role === 'admin',
     )
@@ -356,5 +368,104 @@ export class InMemoryDocuments implements DocumentRepository, DocumentProcessing
   }
   async removeExpired(documentId: string) {
     this.rows.delete(documentId)
+  }
+}
+
+/** Both views of the knowledge, over the in-memory documents. */
+export class InMemoryKnowledge implements KnowledgeStore, FactRepository {
+  readonly stored: Fact[] = []
+  readonly status = new Map<string, { status: KnowledgeStatus; error?: string }>()
+  readonly embeddings = new Map<string, { encoder: EmbeddingModel; vectors: number[][] }>()
+  knownPeople: KnownPerson[] = []
+  private readonly documents: InMemoryDocuments
+  constructor(documents: InMemoryDocuments) {
+    this.documents = documents
+  }
+  async compilable(documentId: string): Promise<DocumentToCompile | null> {
+    const row = this.documents.rows.get(documentId)
+    const { summary } = row ?? {}
+    if (!row || !summary || summary.status !== 'ready') return null
+    if (this.status.get(documentId)?.status === 'ready') return null
+    if (!summary.kind || !summary.audience || !summary.audienceSource) return null
+    if (!summary.documentDate || !summary.dateSource) return null
+    return {
+      id: summary.id,
+      projectId: summary.projectId,
+      fileName: summary.fileName,
+      uploadedBy: summary.uploadedBy,
+      classification: {
+        kind: summary.kind,
+        audience: summary.audience,
+        audienceSource: summary.audienceSource,
+        dateOf: { date: summary.documentDate, source: summary.dateSource },
+        uncertain: [...summary.uncertain],
+      },
+      chunks: row.chunks,
+    }
+  }
+  async facts(projectId: string) {
+    return this.stored.filter((fact) => fact.projectId === projectId)
+  }
+  async people() {
+    return this.knownPeople
+  }
+  async saveEmbeddings(documentId: string, encoder: EmbeddingModel, vectors: number[][]) {
+    this.embeddings.set(documentId, { encoder, vectors })
+  }
+  private patch(factId: string, change: (fact: Fact) => Fact) {
+    const at = this.stored.findIndex((fact) => fact.id === factId)
+    if (at >= 0) this.stored[at] = change(this.stored[at] as Fact)
+  }
+  async saveKnowledge(documentId: string, changes: readonly KnowledgeChange[]) {
+    for (const change of changes) {
+      if (change.kind === 'insert') this.stored.push(change.fact)
+      if (change.kind === 'add_sources') {
+        this.patch(change.factId, (f) => ({ ...f, sources: [...f.sources, ...change.sources] }))
+      }
+      if (change.kind === 'replace') {
+        const { statement, value, sources } = change.proposed
+        this.patch(change.factId, (f) => ({ ...f, statement, value, sources, state: 'active' }))
+      }
+      if (change.kind === 'contest') {
+        this.patch(change.factId, (f) => ({ ...f, state: 'contested' }))
+        this.stored.push(change.fact)
+      }
+    }
+    this.status.set(documentId, { status: 'ready' })
+  }
+  async markKnowledgeFailed(documentId: string, code: string) {
+    this.status.set(documentId, { status: 'failed', error: code })
+  }
+  async list(viewerId: string, projectId: string): Promise<FactView[]> {
+    if (!this.documents.visible(viewerId, projectId)) return []
+    return this.stored
+      .filter((fact) => fact.projectId === projectId)
+      .map((fact) => ({
+        id: fact.id,
+        kind: fact.kind,
+        key: fact.key,
+        statement: fact.statement,
+        value: fact.value,
+        state: fact.state,
+        createdAt: fact.createdAt,
+        sources: fact.sources.map((source) => ({
+          documentId: source.evidenceId,
+          fileName: this.documents.rows.get(source.evidenceId)?.summary.fileName ?? '',
+          locator: source.locator,
+          excerpt: source.excerpt,
+        })),
+      }))
+  }
+  async progress(viewerId: string, projectId: string): Promise<KnowledgeProgress> {
+    const progress = { reading: 0, failed: 0, compiled: 0 }
+    if (!this.documents.visible(viewerId, projectId)) return progress
+    for (const { summary } of this.documents.rows.values()) {
+      if (summary.projectId !== projectId || summary.status === 'failed') continue
+      const status = this.status.get(summary.id)?.status
+      if (status === 'ready') progress.compiled++
+      else if (status === 'failed') progress.failed++
+      else progress.reading++
+    }
+    return progress
   }
 }

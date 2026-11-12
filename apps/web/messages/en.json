@@ -116,6 +116,24 @@
       "forbidden": "Only the uploader, the owner or an admin can delete it."
     }
   },
+  "knowledge": {
+    "title": "What I understood",
+    "subtitle": "The facts the documents state, each with the exact text it comes from. People's names never reach the model.",
+    "reading": "{count, plural, one {# document still being read…} other {# documents still being read…}}",
+    "failed": "{count, plural, one {Reading # document failed.} other {Reading # documents failed.}}",
+    "empty": "No facts yet: upload a document.",
+    "contested": "contradicted",
+    "kinds": {
+      "status": "Status",
+      "milestone": "Milestones",
+      "decision": "Decisions",
+      "risk": "Risks",
+      "action": "Actions",
+      "economics": "Economics",
+      "person": "People",
+      "note": "Notes"
+    }
+  },
   "documentStatus": {
     "pending": "Processing",
     "ready": "Ready",

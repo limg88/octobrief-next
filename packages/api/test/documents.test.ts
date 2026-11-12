@@ -41,6 +41,7 @@ describe('documents API', () => {
     await createProcessDocumentHandler({
       store: deps.documents as InMemoryDocuments,
       blobs: deps.blobs,
+      jobs: deps.queue,
       extractor: new FakeExtractor(() => ({
         extractor: 'test/1',
         chunks: [{ locator: { kind: 'line', from: 1, to: 1 }, text: 'Stato avanzamento lavori' }],

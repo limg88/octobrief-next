@@ -3,6 +3,8 @@ import {
   FakeExtractor,
   InMemoryBlobs,
   InMemoryDocuments,
+  InMemoryJobQueue,
+  InMemoryKnowledge,
   InMemoryProjects,
   InMemoryUsers,
 } from '@octobrief/application/testing'
@@ -26,8 +28,11 @@ function setup(store: InMemoryDocuments) {
   const queue = new FakeWorkerQueue()
   const deps = {
     queue,
+    jobs: new InMemoryJobQueue(),
     logger,
     store,
+    knowledge: new InMemoryKnowledge(store),
+    runner: { backend: 'fake', run: async () => Promise.reject(new Error('not used')) },
     blobs: new InMemoryBlobs(),
     extractor: new FakeExtractor(() => ({
       extractor: 'test/1',
@@ -49,7 +54,11 @@ describe('startWorker', () => {
       new InMemoryDocuments(new InMemoryProjects(users), users),
     )
     const stop = await startWorker(deps)
-    expect([...queue.handlers.keys()]).toEqual(['system.ping', 'document.process'])
+    expect([...queue.handlers.keys()]).toEqual([
+      'system.ping',
+      'document.process',
+      'document.compile',
+    ])
 
     await queue.handlers.get('system.ping')?.({ requestedAt: '2026-11-11T10:00:00.000Z' }, 'job-1')
     await stop()

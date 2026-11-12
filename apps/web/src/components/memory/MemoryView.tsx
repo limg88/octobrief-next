@@ -8,6 +8,7 @@ import { useDeleteDocument, useDocuments, useReclassifyDocument } from '@/lib/qu
 import { DocumentRow } from './DocumentRow'
 import { DocumentTextDialog } from './DocumentTextDialog'
 import { memoryErrorKey } from './format'
+import { KnowledgePanel } from './KnowledgePanel'
 import { UploadPanel } from './UploadPanel'
 
 const COLUMNS = ['name', 'kind', 'audience', 'date', 'status', 'actions'] as const
@@ -72,6 +73,7 @@ export function MemoryView({ slug }: { slug: string }) {
         </div>
       )}
       <p className="text-xs text-muted-foreground">{t('retention')}</p>
+      <KnowledgePanel slug={slug} />
       <DocumentTextDialog slug={slug} documentId={viewing} onClose={() => setViewing(null)} />
     </div>
   )

@@ -1,3 +1,5 @@
+export * from './backend-policy.ts'
+export * from './canonical.ts'
 export type {
   Audience,
   Classification,
@@ -12,6 +14,8 @@ export {
   isInternalOnly,
   UNCERTAIN_FIELDS,
 } from './classification.ts'
+export * from './compile-limits.ts'
+export * from './display-name.ts'
 export type {
   ClassificationState,
   DocumentStatus,
@@ -31,14 +35,22 @@ export {
   validateUpload,
 } from './document.ts'
 export type { DateSource, DocumentDate } from './document-date.ts'
-export { DATE_SOURCES, documentDate } from './document-date.ts'
+export { DATE_SOURCES, documentDate, isCertainDate } from './document-date.ts'
+export * from './errors.ts'
 export type { Extraction, ExtractionWarning, Locator, TextChunk } from './extraction.ts'
 export { canonicalLocator, isLocator, locatorKey } from './extraction.ts'
 export type { ComponentHealth, HealthReport, HealthStatus } from './health.ts'
 export { summarizeHealth } from './health.ts'
+export * from './ids.ts'
 export type { JobStatus } from './job-status.ts'
 export { isFinished, JOB_STATUSES } from './job-status.ts'
+export * from './knowledge.ts'
 export type { Lang } from './language/index.ts'
+export * from './name-variants.ts'
+export * from './numbers.ts'
+export * from './organizations.ts'
+export * from './people-filter.ts'
+export * from './portable-schema.ts'
 export type { MemberRole, Project, ProjectMember } from './project.ts'
 export {
   CLIENT_NAME_MAX_LENGTH,
@@ -50,5 +62,9 @@ export {
   slugify,
   uniqueSlug,
 } from './project.ts'
+export * from './pseudonymizer.ts'
+export * from './relative-dates.ts'
+export { isCalendarDate, romeDateString, romeMidnight } from './rome-time.ts'
+export * from './suspicious.ts'
 export type { Locale, User, UserRole } from './user.ts'
 export { DEFAULT_LOCALE, isAdmin, isLocale, LOCALES, USER_ROLES } from './user.ts'

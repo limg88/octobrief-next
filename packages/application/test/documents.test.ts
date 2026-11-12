@@ -57,7 +57,13 @@ async function setup() {
       ? { ...text([]), warnings: ['unsupported_format'] }
       : text(['Stato avanzamento lavori', 'Avanzamento: 60%']),
   )
-  const process = createProcessDocumentHandler({ store: documents, blobs, extractor, logger })
+  const process = createProcessDocumentHandler({
+    store: documents,
+    blobs,
+    extractor,
+    jobs: queue,
+    logger,
+  })
   const upload = (viewer: User, fileName: string, content = fileName) =>
     uploadDocument(deps, viewer, project.slug, {
       fileName,

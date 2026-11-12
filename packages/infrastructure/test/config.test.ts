@@ -69,6 +69,7 @@ describe('worker config', () => {
       databaseUrl: 'postgresql://worker@localhost/db',
       blobDir: '/var/lib/octobrief/blobs',
       retentionDays: 365,
+      model: { chat: { backend: 'fake' }, embedding: { backend: 'fake' } },
     })
     expect(loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '30' }).retentionDays).toBe(30)
     expect(() => loadWorkerConfig({ ...WORKER_ENV, RETENTION_DAYS: '0' })).toThrow(/RETENTION_DAYS/)

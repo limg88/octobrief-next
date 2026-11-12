@@ -2,6 +2,12 @@ export type { ApplicationErrorCode } from './errors.ts'
 export { APPLICATION_ERROR_CODES, ApplicationError } from './errors.ts'
 export type { JobData, JobName } from './jobs.ts'
 export { JOB_NAMES, JOB_SCHEMAS } from './jobs.ts'
+export * from './knowledge/compile.ts'
+export type { GuardOptions } from './model/guarded-runner.ts'
+export { guardedRunner } from './model/guarded-runner.ts'
+export { cachedPeopleNames, MAX_CACHED_NAMES, peopleMatcherFor } from './model/people-matchers.ts'
+export type { ProtectionOptions } from './model/protected-runner.ts'
+export { protectedRunner } from './model/protected-runner.ts'
 export type {
   ActiveSession,
   LoginAttempt,
@@ -19,7 +25,19 @@ export type {
 export type { HealthProbe } from './ports/health-probe.ts'
 export type { IdentityProvider, LoginIdentity, PendingLogin } from './ports/identity-provider.ts'
 export type { JobHandler, JobQueue, JobWorker } from './ports/job-queue.ts'
+export type {
+  DocumentToCompile,
+  FactRepository,
+  FactSourceView,
+  FactView,
+  KnowledgeChange,
+  KnowledgeProgress,
+  KnowledgeStatus,
+  KnowledgeStore,
+} from './ports/knowledge-store.ts'
+export { KNOWLEDGE_STATUSES } from './ports/knowledge-store.ts'
 export type { Logger } from './ports/logger.ts'
+export * from './ports/model-runner.ts'
 export type { ProjectRepository, ProjectWithRole } from './ports/project-repository.ts'
 export type { TextExtractor } from './ports/text-extractor.ts'
 export type { AuthDependencies } from './use-cases/auth.ts'
@@ -50,6 +68,12 @@ export {
   reclassifyDocument,
   uploadDocument,
 } from './use-cases/documents.ts'
+export type { CompileDependencies, KnowledgeDependencies } from './use-cases/knowledge.ts'
+export {
+  createCompileDocumentHandler,
+  getKnowledge,
+  mergeProposals,
+} from './use-cases/knowledge.ts'
 export { createPingHandler, getPingStatus, requestPing } from './use-cases/ping.ts'
 export type { ProjectDependencies } from './use-cases/projects.ts'
 export {

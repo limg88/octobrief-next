@@ -85,6 +85,7 @@ describe('GET /api/openapi.json', () => {
       '/api/projects/{slug}',
       '/api/projects/{slug}/documents',
       '/api/projects/{slug}/documents/{id}',
+      '/api/projects/{slug}/knowledge',
       '/api/projects/{slug}/members',
       '/api/system/pings',
       '/api/system/pings/{jobId}',

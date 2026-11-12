@@ -4,6 +4,7 @@ import {
   InMemoryBlobs,
   InMemoryDocuments,
   InMemoryJobQueue,
+  InMemoryKnowledge,
   InMemoryLoginAttempts,
   InMemoryProjects,
   InMemorySessions,
@@ -20,6 +21,7 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
   const identity = new FakeIdentityProvider()
   const logger = new RecordingLogger()
   const projects = new InMemoryProjects(users)
+  const documents = new InMemoryDocuments(projects, users)
   const deps: ApiDependencies = {
     probes: [] as HealthProbe[],
     queue: new InMemoryJobQueue() as JobQueue,
@@ -28,7 +30,8 @@ export function setup(overrides: Partial<ApiDependencies> = {}) {
     sessions: new InMemorySessions(users),
     loginAttempts: new InMemoryLoginAttempts(),
     projects,
-    documents: new InMemoryDocuments(projects, users),
+    documents,
+    facts: new InMemoryKnowledge(documents),
     blobs: new InMemoryBlobs(),
     adminEmails: new Set(['alba@example.test']),
     logger,

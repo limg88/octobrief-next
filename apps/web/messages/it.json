@@ -116,6 +116,24 @@
       "forbidden": "Può eliminarlo solo chi l'ha caricato, il responsabile o un admin."
     }
   },
+  "knowledge": {
+    "title": "Cosa ho capito",
+    "subtitle": "I fatti che i documenti dichiarano, ciascuno con il testo esatto da cui viene. I nomi delle persone non arrivano mai al modello.",
+    "reading": "{count, plural, one {# documento ancora in lettura…} other {# documenti ancora in lettura…}}",
+    "failed": "{count, plural, one {La lettura di # documento non è riuscita.} other {La lettura di # documenti non è riuscita.}}",
+    "empty": "Nessun fatto ancora: carica un documento.",
+    "contested": "in contraddizione",
+    "kinds": {
+      "status": "Stato",
+      "milestone": "Milestone",
+      "decision": "Decisioni",
+      "risk": "Rischi",
+      "action": "Azioni",
+      "economics": "Economia",
+      "person": "Persone",
+      "note": "Note"
+    }
+  },
   "documentStatus": {
     "pending": "In elaborazione",
     "ready": "Pronto",

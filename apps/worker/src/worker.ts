@@ -1,9 +1,12 @@
 import {
+  createCompileDocumentHandler,
   createPingHandler,
   createProcessDocumentHandler,
   createPurgeDocumentsHandler,
   type JobWorker,
+  type KnowledgeStore,
   type Logger,
+  type ModelRunner,
   type ProcessingDependencies,
 } from '@octobrief/application'
 import { retentionCutoff } from '@octobrief/domain'
@@ -13,6 +16,9 @@ export const PURGE_INTERVAL_MS = 60 * 60 * 1000
 
 export interface WorkerDependencies extends Omit<ProcessingDependencies, 'logger'> {
   readonly queue: JobWorker
+  readonly knowledge: KnowledgeStore
+  /** Already protected: guarded and pseudonymizing. */
+  readonly runner: ModelRunner
   readonly logger: Logger
   readonly retentionDays: number
   readonly now?: () => Date
@@ -23,6 +29,10 @@ export async function startWorker(deps: WorkerDependencies): Promise<() => Promi
   const { queue, logger } = deps
   await queue.work('system.ping', createPingHandler(logger))
   await queue.work('document.process', createProcessDocumentHandler(deps))
+  await queue.work(
+    'document.compile',
+    createCompileDocumentHandler({ knowledge: deps.knowledge, runner: deps.runner, logger }),
+  )
   const purge = createPurgeDocumentsHandler({
     store: deps.store,
     blobs: deps.blobs,

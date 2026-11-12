@@ -1,13 +1,16 @@
 export { createFileBlobStore } from './blob/file-blob-store.ts'
-export type { WebConfig, WorkerConfig } from './config.ts'
+export type { ModelConfig, WebConfig, WorkerConfig } from './config.ts'
 export { ConfigError, loadWebConfig, loadWorkerConfig } from './config.ts'
 export { createConsoleLogger } from './logging/console-logger.ts'
+export { configuredBackends, createModelRunner } from './model/create-model-runner.ts'
+export { fakeEmbedding, fakeRunner } from './model/fake-runner.ts'
 export type { OidcSettings } from './oidc/openid-identity-provider.ts'
 export { createOidcIdentityProvider } from './oidc/openid-identity-provider.ts'
 export {
   createDocumentProcessingStore,
   createDocumentRepository,
 } from './postgres/document-repository.ts'
+export { createFactRepository, createKnowledgeStore } from './postgres/knowledge-store.ts'
 export { createDatabaseProbe, createPool } from './postgres/pool.ts'
 export { createProjectRepository } from './postgres/project-repository.ts'
 export { createLoginAttemptStore, createSessionStore } from './postgres/session-store.ts'

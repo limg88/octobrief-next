@@ -3,6 +3,8 @@ import {
   createConsoleLogger,
   createDocumentProcessingStore,
   createFileBlobStore,
+  createKnowledgeStore,
+  createModelRunner,
   createPool,
   loadWorkerConfig,
   openPgBossQueue,
@@ -14,9 +16,13 @@ const logger = createConsoleLogger('worker')
 const config = loadWorkerConfig()
 const queue = await openPgBossQueue(config.databaseUrl, { supervise: true, logger })
 const pool = createPool(config.databaseUrl, 'octobrief-worker')
+const knowledge = createKnowledgeStore(pool)
 const stop = await startWorker({
   queue,
+  jobs: queue,
   logger,
+  knowledge,
+  runner: createModelRunner(config.model, (projectId) => knowledge.people(projectId)),
   store: createDocumentProcessingStore(pool),
   blobs: createFileBlobStore(config.blobDir),
   extractor: createIsolatedExtractor(),

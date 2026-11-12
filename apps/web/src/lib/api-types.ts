@@ -3,6 +3,8 @@ import type {
   DateSource,
   DocumentKind,
   DocumentStatus,
+  FactKind,
+  FactState,
   Locale,
   Locator,
   MemberRole,
@@ -53,6 +55,22 @@ export interface DocumentDto {
   uploadedBy: string
   uploaderName: string
   uploadedAt: string
+}
+
+export interface FactDto {
+  id: string
+  kind: FactKind
+  key: string
+  statement: string
+  value: string | null
+  state: FactState
+  createdAt: string
+  sources: { documentId: string; fileName: string; locator: Locator; excerpt: string }[]
+}
+
+export interface KnowledgeDto {
+  facts: FactDto[]
+  progress: { reading: number; failed: number; compiled: number }
 }
 
 export interface DocumentTextDto {

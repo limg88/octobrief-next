@@ -2,6 +2,7 @@ import type {
   AuthDependencies,
   BlobStore,
   DocumentRepository,
+  FactRepository,
   HealthProbe,
   JobQueue,
   Logger,
@@ -14,6 +15,7 @@ export interface ApiDependencies extends AuthDependencies {
   readonly queue: JobQueue
   readonly projects: ProjectRepository
   readonly documents: DocumentRepository
+  readonly facts: FactRepository
   readonly blobs: BlobStore
   readonly logger: Logger
   /** Public origin of the web app, e.g. `https://octobrief.example.com`. */

@@ -151,6 +151,8 @@ export interface ProcessingDependencies {
   readonly store: DocumentProcessingStore
   readonly blobs: BlobStore
   readonly extractor: TextExtractor
+  /** Where the reading of a classified document is queued. */
+  readonly jobs: Pick<JobQueue, 'enqueue'>
   readonly logger: Logger
 }
 
@@ -170,7 +172,7 @@ function leadingText(chunks: readonly TextChunk[]): string {
   return text
 }
 
-/** Worker job: extracts the text of an uploaded file and classifies it by rules. */
+/** Worker job: extracts the text of an uploaded file, classifies it by rules, queues its reading. */
 export function createProcessDocumentHandler(deps: ProcessingDependencies) {
   return async ({ documentId }: { documentId: string }): Promise<void> => {
     const document = await deps.store.pending(documentId)
@@ -191,6 +193,7 @@ export function createProcessDocumentHandler(deps: ProcessingDependencies) {
       acquiredAt: document.uploadedAt,
     })
     await deps.store.markReady(document.id, extraction, classification)
+    await deps.jobs.enqueue('document.compile', { documentId: document.id })
     deps.logger.info('document processed', {
       documentId,
       chunks: extraction.chunks.length,
